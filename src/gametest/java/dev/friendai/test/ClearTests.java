@@ -221,7 +221,7 @@ public class ClearTests {
      * Working from the outside in opens the inside of a dense canopy; starting at the top left the buried cells
      * "out of sight" and the task ran on with the cells it could not reach.
      */
-    @GameTest(maxTicks = 2400)
+    @GameTest(maxTicks = 2400, environment = "friendai-gametest:clear_dense_canopy")
     public void aDenseCanopyIsClearedWithoutStalling(GameTestHelper h) {
         GameTestSupport.platform(h, 64);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

@@ -1939,9 +1939,14 @@ public class ObtainTests {
      * batch gathers the wood first and then stops on the missing stone family instead of touring the same hole. The
      * gathered wood stays in the bag and the result names exactly one actionable blocker.
      */
-    @GameTest(maxTicks = 1600)
+    @GameTest(maxTicks = 1600, environment = "friendai-gametest:obtain_no_stone")
     public void impossibleStoneOrderKeepsItsWoodenWorkAndNamesOneBlocker(GameTestHelper h) {
         GameTestSupport.platformAt(h, 60, 16);
+        // The deliberate observation can see the platform itself from its edge. Use a floor
+        // outside the stone-tool ingredient tag so the fixture really has no usable stone.
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) h.setBlock(x, 60, z, Blocks.SMOOTH_QUARTZ);
+        }
         h.setBlock(2, 61, 4, Blocks.CRAFTING_TABLE);
         List<BlockPos> logs = List.of(new BlockPos(4, 61, 2), new BlockPos(4, 61, 7));
         logs.forEach(log -> h.setBlock(log, Blocks.OAK_LOG));

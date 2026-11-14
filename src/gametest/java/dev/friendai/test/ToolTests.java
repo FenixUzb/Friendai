@@ -618,13 +618,15 @@ public class ToolTests {
     public void findBlocksNamesTheNearestBlockJustPastTheRadius(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos far = new BlockPos(13, 2, 4);
-        h.setBlock(far, Blocks.IRON_BLOCK);
+        h.setBlock(far, Blocks.CHISELED_RESIN_BRICKS);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 4);
         h.assertTrue(GameTestSupport.observeVisible(h, c, h.absolutePos(far)), "fixture block should be visible");
-        ToolResult r = run(tools(c), "find_blocks", "{\"block\":\"minecraft:iron_block\",\"radius\":8}");
+        ToolResult r = run(tools(c), "find_blocks", "{\"block\":\"minecraft:chiseled_resin_bricks\",\"radius\":8}");
         h.assertTrue(!r.error(), "error: " + r.content());
         h.assertTrue(
-                r.content().startsWith("no minecraft:iron_block within 8 blocks, but the nearest")
+                r.content()
+                                .startsWith(
+                                        "no minecraft:chiseled_resin_bricks observed or remembered within 8 blocks, but the nearest")
                         && r.content().contains(coords(h.absolutePos(far))),
                 "content was " + r.content());
         h.succeed();

@@ -287,9 +287,10 @@ public class FarmingTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(maxTicks = 800, environment = "friendai-gametest:farming_plant_crop")
     public void plantsGivenCrop(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
+        h.setBlock(3, 1, 4, Blocks.WATER);
         for (int x = 4; x <= 5; x++) {
             for (int z = 4; z <= 5; z++) {
                 h.setBlock(x, 1, z, Blocks.FARMLAND);

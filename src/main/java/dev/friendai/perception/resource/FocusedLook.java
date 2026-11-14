@@ -34,6 +34,9 @@ public final class FocusedLook {
     public static final int MAX_RAYS = 64;
     private static final int MAX_SEEN = 24;
     private static final int RAY_CELLS = 128;
+    // Give a cold glance enough work to examine the eye's section before applying the soft deadline.
+    private static final int MIN_SCANNED_CELLS = 4_096;
+    private static final int MIN_RAYS = 4;
     private static final long SOFT_BUDGET_NANOS = 1_000_000L;
 
     /** An incomplete glance cannot establish absence; counts expose the actual bounded work. */
@@ -108,7 +111,10 @@ public final class FocusedLook {
                     if (y < minY || y > maxY) continue;
                     for (int z = 0; z < 16; z++) {
                         for (int x = 0; x < 16; x++) {
-                            if (scanned >= MAX_SCANNED_CELLS || (scanned % 64 == 0 && System.nanoTime() >= deadline))
+                            if (scanned >= MAX_SCANNED_CELLS
+                                    || (scanned >= MIN_SCANNED_CELLS
+                                            && scanned % 64 == 0
+                                            && System.nanoTime() >= deadline))
                                 return new Result(seen, false, scanned, rays);
                             scanned++;
                             if (!wanted.test(section.getBlockState(x, y, z))) continue;
@@ -117,7 +123,7 @@ public final class FocusedLook {
                             Exposure exposure = exposed(level, pos, neighbour);
                             if (exposure == Exposure.UNKNOWN) complete = false;
                             if (exposure != Exposure.OPEN) continue;
-                            if (rays >= MAX_RAYS || System.nanoTime() >= deadline)
+                            if (rays >= MAX_RAYS || (rays >= MIN_RAYS && System.nanoTime() >= deadline))
                                 return new Result(seen, false, scanned, rays);
                             rays++;
                             ResourceSight.Outcome outcome = ray(level, eye, pos, AIM[0]);
@@ -139,7 +145,8 @@ public final class FocusedLook {
             for (int i = 0; i < missedCenters.size(); i++) {
                 BlockPos pos = missedCenters.get(i);
                 if (pos == null) continue;
-                if (rays >= MAX_RAYS || System.nanoTime() >= deadline) return new Result(seen, false, scanned, rays);
+                if (rays >= MAX_RAYS || (rays >= MIN_RAYS && System.nanoTime() >= deadline))
+                    return new Result(seen, false, scanned, rays);
                 rays++;
                 ResourceSight.Outcome outcome = ray(level, eye, pos, AIM[aim]);
                 if (outcome == ResourceSight.Outcome.PENDING || outcome == ResourceSight.Outcome.UNLOADED)

@@ -191,11 +191,6 @@ public final class BlockInfoTools implements FeatureToolContributor {
             incompleteLook = !look.complete();
             if (look.seen() > 0) found = resources.knownWithEvidence(companion, matcher, radius, limit);
         }
-        if (found.isEmpty() && incompleteLook) {
-            return ToolResult.ok("the focused look for " + matcher.label()
-                    + " was incomplete; no matching block has been observed yet. "
-                    + "Use search_resource or look_around to continue looking");
-        }
         if (found.isEmpty()) {
             // "Near us" is a player's word, not a radius: a block just past the asked radius is still the one they
             // mean, so name it instead of reporting that there is none.
@@ -205,10 +200,17 @@ public final class BlockInfoTools implements FeatureToolContributor {
             if (!beyond.isEmpty()) {
                 BlockPos nearest = beyond.get(0);
                 double distance = Math.sqrt(Vec3.atCenterOf(nearest).distanceToSqr(companion.position()));
-                return ToolResult.ok("no " + matcher.label() + " within " + radius + " blocks, but the nearest "
+                return ToolResult.ok("no " + matcher.label() + " observed or remembered within " + radius
+                        + " blocks, but the nearest "
                         + "observed or remembered one is at " + nearest.getX() + " " + nearest.getY() + " "
                         + nearest.getZ() + " (" + String.format(Locale.ROOT, "%.1f", distance)
-                        + " blocks away); mine it or ask again with a larger radius");
+                        + " blocks away); mine it or ask again with a larger radius"
+                        + (incompleteLook ? "; the focused look was incomplete" : ""));
+            }
+            if (incompleteLook) {
+                return ToolResult.ok("the focused look for " + matcher.label()
+                        + " was incomplete; no matching block has been observed yet. "
+                        + "Use search_resource or look_around to continue looking");
             }
             return ToolResult.ok("no " + matcher.label() + " observed or remembered within " + radius
                     + " blocks; use search_resource to search for it, or look_around for a visible exposure");

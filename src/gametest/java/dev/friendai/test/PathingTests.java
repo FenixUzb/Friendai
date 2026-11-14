@@ -1762,7 +1762,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(maxTicks = 800, environment = "friendai-gametest:pathing_two_turn")
     public void twoTurnWalkKeepsTheBodyOnThePath(GameTestHelper h) {
         int base = 240;
         GameTestSupport.platformAt(h, base, 24);

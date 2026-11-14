@@ -226,12 +226,11 @@ public class MineBlocksTests {
      * "Break the cactus near us" right after a summon: nothing had been seen yet, so the job went searching and broke a
      * wild cactus far away instead of the one beside the owner. One deliberate look now finds the visible one first.
      */
-    @GameTest(maxTicks = 900)
+    @GameTest(maxTicks = 900, environment = "friendai-gametest:mine_visible_fresh")
     public void aFreshCompanionMinesTheVisibleBlockBeforeSearching(GameTestHelper h) {
         redSandFloor(h);
         BlockPos base = new BlockPos(6, 3, 2);
         h.setBlock(base, Blocks.CACTUS);
-        h.setBlock(base.above(), Blocks.CACTUS);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 3, 2);
         c.setOwner(java.util.UUID.randomUUID());
         Result result = new Result();

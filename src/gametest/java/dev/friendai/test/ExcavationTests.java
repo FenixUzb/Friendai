@@ -437,7 +437,7 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(maxTicks = 400, environment = "friendai-gametest:excavate_protected_batch")
     public void protectedFinalBatchDoesNotCompleteTheRegion(GameTestHelper h) {
         CompanionEntity c = companion(h);
         BlockPos target = new BlockPos(4, 2, 2);
