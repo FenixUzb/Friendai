@@ -3,6 +3,7 @@ package dev.friendai.test;
 import dev.friendai.debug.DebugTarget;
 import dev.friendai.entity.CompanionEntity;
 import dev.friendai.entity.FriendaiEntities;
+import dev.friendai.features.exploration.minecraft.task.ExploreTask;
 import dev.friendai.features.mining.MiningBounds;
 import dev.friendai.features.mining.minecraft.mining.ExcavationGuard;
 import dev.friendai.features.mining.minecraft.task.MineBlockAtTask;
@@ -39,6 +40,7 @@ public class MiningTests {
     private static final class Outcome implements TaskEventSink {
         TaskStatus status;
         String summary;
+        String debug;
 
         @Override
         public void onFinished(int id, String toolName, TaskStatus status, String summary) {
@@ -48,6 +50,11 @@ public class MiningTests {
 
         @Override
         public void onCancelled(int id, String toolName, String reason) {}
+
+        @Override
+        public void onDebug(String text) {
+            debug = text;
+        }
     }
 
     /** The companion alone on the platform, with a wall beside it so a block can be placed against something. */
@@ -1006,6 +1013,119 @@ public class MiningTests {
                     "the catch block was left behind: " + h.getLevel().getBlockState(below) + " / " + outcome.summary);
             h.assertTrue(companion.inventory().countItem(Items.DIRT) < 16, "no catch block was placed at all");
             h.assertTrue(companion.inventory().countItem(Items.DIRT) < 16, "no catch block was placed at all");
+        });
+    }
+
+    /**
+     * The live boundary in miniature: mud over stone, a cave pocket below, and a dug staircase that is the only way
+     * back. Every descent must pass the inverse-route check, and the check must accept this one.
+     */
+    @GameTest(maxTicks = 2400)
+    public void aMudCappedCaveKeepsAReversibleStairBackToTheSurface(GameTestHelper h) {
+        ResourceWorkFixture.MudCave fixture = ResourceWorkFixture.mudCave(h);
+        CompanionEntity companion = h.spawn(
+                FriendaiEntities.COMPANION,
+                fixture.anchor().getX(),
+                fixture.anchor().getY(),
+                fixture.anchor().getZ());
+        companion.inventory().addItem(Items.STONE_PICKAXE.getDefaultInstance());
+        BlockPos ore = h.absolutePos(fixture.stoneTarget());
+        Outcome outcome = new Outcome();
+        ExecutionCoordinator runner = new ExecutionCoordinator(companion, () -> 300, () -> false);
+        runner.setEventSink(outcome);
+        runner.start(
+                new ExploreTask(
+                        BlockMatcher.parse("minecraft:iron_ore").orElseThrow(),
+                        true,
+                        fixture.stoneTarget().getY(),
+                        16,
+                        128,
+                        1800),
+                "explore");
+        int[] routeSize = {0};
+        boolean[] logged = {false};
+        TaskTrace.of(h, runner, companion).succeedWhen(() -> {
+            runner.current()
+                    .filter(ExploreTask.class::isInstance)
+                    .map(ExploreTask.class::cast)
+                    .ifPresent(task -> routeSize[0] =
+                            Math.max(routeSize[0], task.returnRoute().size()));
+            if (h.getLevel().getBlockState(ore).is(Blocks.IRON_ORE)) {
+                GameTestSupport.observeVisible(h, companion, ore);
+            }
+            runner.tick();
+            h.assertTrue(outcome.status != null, "the underground search did not finish: " + outcome.summary);
+            if (!logged[0]) {
+                logged[0] = true;
+                dev.friendai.FriendaiMod.LOGGER.info(
+                        "[mud-cave-safe] routeSize={}, status={}, debug={}",
+                        routeSize[0],
+                        outcome.status,
+                        outcome.debug);
+            }
+            h.assertTrue(
+                    outcome.status == TaskStatus.SUCCESS,
+                    "the reversible mud-capped stair was refused: " + outcome.status + " " + outcome.summary + " | "
+                            + outcome.debug);
+            h.assertTrue(routeSize[0] > 1, "the search never descended the stair: " + outcome.debug);
+        });
+    }
+
+    /**
+     * The same terrain with one mud fall dropped into the corridor behind the companion. No route home is left, so the
+     * next descent must be refused, named by its cause, and retried a bounded number of times before failing.
+     */
+    @GameTest(maxTicks = 1600)
+    public void aMudFallThatBlocksTheCorridorStopsTheDescentWithItsCause(GameTestHelper h) {
+        ResourceWorkFixture.MudCave fixture = ResourceWorkFixture.mudCave(h);
+        CompanionEntity companion = h.spawn(
+                FriendaiEntities.COMPANION,
+                fixture.anchor().getX(),
+                fixture.anchor().getY(),
+                fixture.anchor().getZ());
+        companion.inventory().addItem(Items.STONE_PICKAXE.getDefaultInstance());
+        Outcome outcome = new Outcome();
+        ExecutionCoordinator runner = new ExecutionCoordinator(companion, () -> 300, () -> false);
+        runner.setEventSink(outcome);
+        runner.start(
+                new ExploreTask(
+                        BlockMatcher.parse("minecraft:iron_ore").orElseThrow(),
+                        true,
+                        fixture.stoneTarget().getY(),
+                        16,
+                        128,
+                        1800),
+                "explore");
+        int[] routeSize = {0};
+        boolean[] blocked = {false};
+        boolean[] logged = {false};
+        TaskTrace.of(h, runner, companion).succeedWhen(() -> {
+            runner.current()
+                    .filter(ExploreTask.class::isInstance)
+                    .map(ExploreTask.class::cast)
+                    .ifPresent(task -> routeSize[0] =
+                            Math.max(routeSize[0], task.returnRoute().size()));
+            if (!blocked[0] && routeSize[0] >= 2) {
+                h.setBlock(fixture.routeCells().getFirst(), Blocks.MUD);
+                blocked[0] = true;
+            }
+            runner.tick();
+            h.assertTrue(outcome.status != null, "the blocked descent never failed: " + outcome.debug);
+            if (!logged[0]) {
+                logged[0] = true;
+                dev.friendai.FriendaiMod.LOGGER.info(
+                        "[mud-cave-control] routeSize={}, status={}, debug={}",
+                        routeSize[0],
+                        outcome.status,
+                        outcome.debug);
+            }
+            h.assertTrue(
+                    outcome.status == TaskStatus.FAILED,
+                    "the search walked back through a blocked corridor: " + outcome.status + " " + outcome.summary);
+            h.assertTrue(blocked[0], "the fixture never had a corridor to block");
+            h.assertTrue(
+                    outcome.debug != null && outcome.debug.contains("why=return-route-obstructed-"),
+                    "the failure does not name the return cause: " + outcome.debug);
         });
     }
 }

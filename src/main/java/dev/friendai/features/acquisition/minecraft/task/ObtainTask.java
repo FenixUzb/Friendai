@@ -4,6 +4,7 @@ import dev.friendai.debug.DebugTarget;
 import dev.friendai.entity.CompanionEntity;
 import dev.friendai.execution.log.TaskLogSpan;
 import dev.friendai.execution.tool.Caller;
+import dev.friendai.features.acquisition.AcquisitionAttempts;
 import dev.friendai.features.acquisition.ObtainPlan;
 import dev.friendai.features.acquisition.ObtainPlanner;
 import dev.friendai.features.acquisition.ObtainStep;
@@ -64,6 +65,9 @@ public final class ObtainTask implements Task {
     private final Caller caller;
     private final TradingContext tradingContext;
     private final ObtainSubtaskFactory subtaskFactory;
+    /** What this acquisition already tried, so the next plan must offer a different source or route. */
+    private final AcquisitionAttempts attempts;
+
     private final List<String> history = new ArrayList<>();
     private final Set<Long> excludedSiteIds = new LinkedHashSet<>();
     private Task current;
@@ -184,6 +188,39 @@ public final class ObtainTask implements Task {
             Caller caller,
             TradingContext tradingContext,
             ObtainSubtaskFactory subtaskFactory) {
+        this(
+                item,
+                count,
+                useContainers,
+                explore,
+                maxSteps,
+                maxTicks,
+                exploreRadius,
+                exploreBlocks,
+                exploreTicks,
+                searchScope,
+                caller,
+                tradingContext,
+                subtaskFactory,
+                new AcquisitionAttempts());
+    }
+
+    /** Shares one attempt ledger with a batch, so a failed source is not retried by the next gather child. */
+    ObtainTask(
+            String item,
+            int count,
+            boolean useContainers,
+            boolean explore,
+            int maxSteps,
+            int maxTicks,
+            int exploreRadius,
+            int exploreBlocks,
+            int exploreTicks,
+            String searchScope,
+            Caller caller,
+            TradingContext tradingContext,
+            ObtainSubtaskFactory subtaskFactory,
+            AcquisitionAttempts attempts) {
         this.item = item;
         this.count = count;
         this.useContainers = useContainers;
@@ -197,6 +234,7 @@ public final class ObtainTask implements Task {
         this.caller = caller;
         this.tradingContext = tradingContext;
         this.subtaskFactory = subtaskFactory == null ? ObtainSubtaskFactory.UNAVAILABLE : subtaskFactory;
+        this.attempts = attempts == null ? new AcquisitionAttempts() : attempts;
     }
 
     @Override
@@ -308,6 +346,7 @@ public final class ObtainTask implements Task {
                                 != dev.friendai.perception.resource.ResourceCandidates.Verification.PRESENT) {
                     excludedSiteIds.add(visit.siteId());
                 }
+                recordFailedSource(step, subSummary);
                 String key = stepKey(step);
                 if (key.equals(lastFailedKey)) {
                     return fail("stuck at " + ObtainText.stepText(step) + ": " + subSummary);
@@ -344,7 +383,8 @@ public final class ObtainTask implements Task {
         }
         ServerLevel level = c.level();
         WorldFacts facts = WorldScan.scan(
-                level, companion, WorldScan.BLOCK_RADIUS, useContainers, explore, Set.of(), excludedSiteIds);
+                        level, companion, WorldScan.BLOCK_RADIUS, useContainers, explore, Set.of(), excludedSiteIds)
+                .withAttemptedSources(attempts.sourceFailures());
         ObtainPlan plan = ObtainPlanner.plan(
                 item,
                 count,
@@ -386,6 +426,7 @@ public final class ObtainTask implements Task {
         facts.put("steps", Integer.toString(plan.steps().size()));
         facts.put("have", Integer.toString(have));
         facts.put("excludedSites", Integer.toString(excludedSiteIds.size()));
+        facts.put("attemptedSources", Integer.toString(attempts.entries().size()));
         String missing = ObtainText.missingText(plan.missing(), !explore);
         if (!missing.isBlank()) facts.put("missing", missing);
         return facts;
@@ -522,6 +563,20 @@ public final class ObtainTask implements Task {
 
     private static ItemMatcher itemMatcher(String id) {
         return ItemMatcher.parse(id).orElseThrow(() -> new IllegalArgumentException("unknown item: " + id));
+    }
+
+    /**
+     * Records the material source a failed step tried, so the next plan prefers another reachable source and stops
+     * offering one that already failed twice. Only source-bearing steps count: a craft or a container take has no
+     * source to exclude and its own repetition is already caught by {@link #lastFailedKey}.
+     */
+    private void recordFailedSource(ObtainStep step, String cause) {
+        switch (step) {
+            case ObtainStep.Mine mine -> attempts.recordFailure(item, mine.block(), cause);
+            case ObtainStep.Explore explore -> attempts.recordFailure(item, explore.block(), cause);
+            case ObtainStep.VisitResource visit -> attempts.recordFailure(item, visit.block(), cause);
+            default -> {}
+        }
     }
 
     private static String stepKey(ObtainStep step) {

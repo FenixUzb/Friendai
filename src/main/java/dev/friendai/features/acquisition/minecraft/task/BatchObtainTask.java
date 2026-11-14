@@ -4,6 +4,7 @@ import dev.friendai.debug.DebugTarget;
 import dev.friendai.entity.CompanionEntity;
 import dev.friendai.execution.TaskWorkResult;
 import dev.friendai.execution.tool.Caller;
+import dev.friendai.features.acquisition.AcquisitionAttempts;
 import dev.friendai.features.acquisition.ObtainPlan;
 import dev.friendai.features.acquisition.ObtainPlanner;
 import dev.friendai.features.acquisition.ObtainStep;
@@ -73,6 +74,8 @@ public final class BatchObtainTask implements Task {
     private final ItemMatcher[] workMatchers;
     private final int[] workVerified;
     private final Set<String> failedKeys = new LinkedHashSet<>();
+    /** Shared with every gather child, so one failed material source is not retried by the next child. */
+    private final AcquisitionAttempts attempts = new AcquisitionAttempts();
 
     private Task current;
     private ChildKind childKind = ChildKind.NONE;
@@ -217,8 +220,8 @@ public final class BatchObtainTask implements Task {
                         if (candidate == null) {
                             if (search == null) {
                                 search = new Search(
-                                        WorldScan.scan(
-                                                level, companion, WorldScan.BLOCK_RADIUS, useContainers, explore),
+                                        WorldScan.scan(level, companion, WorldScan.BLOCK_RADIUS, useContainers, explore)
+                                                .withAttemptedSources(attempts.sourceFailures()),
                                         book,
                                         DropIndex.of(level));
                             }
@@ -282,6 +285,7 @@ public final class BatchObtainTask implements Task {
         lastGatherSummary = "";
         summary = "";
         failedKeys.clear();
+        attempts.clear();
         children = 0;
         ticks = 0;
         workStarted = true;
@@ -362,7 +366,8 @@ public final class BatchObtainTask implements Task {
             // One scan answers every station this pass rejects; a later pass scans again, so a station tried and
             // skipped here is not excluded for the rest of the task.
             Search search = new Search(
-                    WorldScan.scan(level, companion, WorldScan.BLOCK_RADIUS, useContainers, explore),
+                    WorldScan.scan(level, companion, WorldScan.BLOCK_RADIUS, useContainers, explore)
+                            .withAttemptedSources(attempts.sourceFailures()),
                     book,
                     DropIndex.of(level));
             StationFallback.Decision decision = StationFallback.decide(
@@ -417,7 +422,8 @@ public final class BatchObtainTask implements Task {
                 searchScope,
                 caller,
                 tradingContext,
-                subtaskFactory);
+                subtaskFactory,
+                attempts);
     }
 
     /** The world view one planning pass asks about, scanned once however many stations the pass rejects. */
@@ -570,6 +576,7 @@ public final class BatchObtainTask implements Task {
     public String debugStatus() {
         String inner = current == null ? "" : current.debugStatus();
         return "t=" + ticks + "/" + maxTicks + " children=" + children + "/" + maxChildren
+                + " failedSources=" + attempts.entries().size()
                 + (inner.isEmpty() ? "" : " | " + inner);
     }
 

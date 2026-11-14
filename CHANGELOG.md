@@ -6,6 +6,13 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ## [Unreleased]
 
+## [0.214.3] - 2026-11-14
+
+### Fixed
+
+- A dig that cannot be safely exited now says why: the companion names the exact step of the way back it refused — a stale or unloaded route, a blockade in the tunnel or missing support material — instead of reporting one vague "return route blocked or unknown".
+- A companion that failed to reach one kind of stone now tries another valid stone or a different site instead of digging the same unreachable hole again, while still retrying a source that is the only way to get the item.
+
 ## [0.214.2] - 2026-11-14
 
 ### Fixed

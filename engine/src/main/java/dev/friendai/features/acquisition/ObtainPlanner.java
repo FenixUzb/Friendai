@@ -476,8 +476,12 @@ public final class ObtainPlanner {
                 if (!(source instanceof Source.Mine mine)) {
                     continue;
                 }
+                // A source that already failed costs more, so another valid recipe member wins the comparison. It is
+                // never removed: a search that found nothing is not proof the block is absent, and a transient route
+                // failure must not make the only route to the item unplannable.
+                int failures = world.attemptedSources().getOrDefault(mine.block(), 0);
                 if (world.blocksNearby().getOrDefault(mine.block(), 0) > 0) {
-                    providers.add(new MineProvider(item, mine, false));
+                    providers.add(new MineProvider(item, mine, false, failures));
                 }
                 if (allowExplore && world.exploreAllowed()) {
                     world.resourceCandidates().stream()
@@ -492,7 +496,7 @@ public final class ObtainPlanner {
                             .anyMatch(candidate -> !candidate.visibleNow()
                                     && candidate.blockId().equals(mine.block())
                                     && !world.excludedSiteIds().contains(candidate.siteId()));
-                    if (!hasRememberedSite) providers.add(new MineProvider(item, mine, true));
+                    if (!hasRememberedSite) providers.add(new MineProvider(item, mine, true, failures));
                 }
             }
             return providers;
@@ -951,11 +955,17 @@ public final class ObtainPlanner {
             private final String item;
             private final Source.Mine source;
             private final boolean explore;
+            private final int failures;
 
             MineProvider(String item, Source.Mine source, boolean explore) {
+                this(item, source, explore, 0);
+            }
+
+            MineProvider(String item, Source.Mine source, boolean explore, int failures) {
                 this.item = item;
                 this.source = source;
                 this.explore = explore;
+                this.failures = failures;
             }
 
             @Override
@@ -998,6 +1008,9 @@ public final class ObtainPlanner {
                 }
                 attempt.add(new ObtainStep.Mine(source.block(), blocks, source.tool()));
                 attempt.cost += 4 * blocks;
+                // A single failure must not exclude the source- the terrain may have been the problem- but it must
+                // lose a tie against an untried member of the same need, so an alternative source is tried next.
+                attempt.cost += failures * AcquisitionAttempts.PENALTY_PER_FAILURE;
                 return new Candidate(this, attempt, sim, want);
             }
         }

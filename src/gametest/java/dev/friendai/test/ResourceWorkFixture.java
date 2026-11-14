@@ -63,6 +63,21 @@ final class ResourceWorkFixture {
         }
     }
 
+    /** A mud-capped stone hill with a cave pocket below and a dug staircase between them. */
+    record MudCave(
+            BlockPos anchor,
+            BlockPos stoneTarget,
+            List<BlockPos> routeCells,
+            List<BlockPos> routeSupports,
+            List<BlockPos> mudCeiling,
+            int surfaceY) {
+        MudCave {
+            routeCells = List.copyOf(routeCells);
+            routeSupports = List.copyOf(routeSupports);
+            mudCeiling = List.copyOf(mudCeiling);
+        }
+    }
+
     static BirchKit birchKit(GameTestHelper h) {
         return birchKit(h, 1);
     }
@@ -140,6 +155,55 @@ final class ResourceWorkFixture {
                 routeSupports,
                 new BlockPos(8, surfaceY - 1, 5),
                 surfaceY);
+    }
+
+    /**
+     * The boundary the live session could not cross: mud on the surface, stone below, a cave pocket at the bottom and a
+     * dug staircase that is the only way back. The staircase is reversible cell by cell, so the safe fixture proves the
+     * return check accepts it; a test that fills one corridor cell with a mud fall turns the same terrain into the
+     * control with no safe return.
+     */
+    static MudCave mudCave(GameTestHelper h) {
+        int surfaceY = 160;
+        int size = 24;
+        GameTestSupport.platformAt(h, surfaceY, size);
+        List<BlockPos> mudCeiling = new ArrayList<>();
+        for (int x = 4; x <= 12; x++) {
+            for (int z = 4; z <= 8; z++) {
+                for (int y = surfaceY - 8; y <= surfaceY + 3; y++) {
+                    h.setBlock(x, y, z, Blocks.STONE);
+                }
+                for (int y = surfaceY + 4; y <= surfaceY + 5; y++) {
+                    h.setBlock(x, y, z, Blocks.MUD);
+                    mudCeiling.add(new BlockPos(x, y, z));
+                }
+            }
+        }
+
+        List<BlockPos> routeCells = new ArrayList<>();
+        List<BlockPos> routeSupports = new ArrayList<>();
+        int length = 9;
+        for (int step = 0; step < length; step++) {
+            for (int dy = 0; dy < 2; dy++) {
+                BlockPos cell = new BlockPos(5 + step, surfaceY + 1 - step + dy, 6);
+                h.setBlock(cell, Blocks.AIR);
+                routeCells.add(cell);
+            }
+            routeSupports.add(new BlockPos(5 + step, surfaceY - step, 6));
+        }
+
+        BlockPos lowest = new BlockPos(5 + length - 1, surfaceY + 1 - (length - 1), 6);
+        for (int x = lowest.getX() - 2; x <= lowest.getX() + 1; x++) {
+            for (int z = lowest.getZ() - 2; z <= lowest.getZ() + 2; z++) {
+                for (int y = lowest.getY(); y <= lowest.getY() + 2; y++) {
+                    h.setBlock(new BlockPos(x, y, z), Blocks.AIR);
+                }
+            }
+        }
+        BlockPos stoneTarget = new BlockPos(lowest.getX() + 1, lowest.getY(), lowest.getZ() - 2);
+        h.setBlock(stoneTarget, Blocks.IRON_ORE);
+        return new MudCave(
+                new BlockPos(5, surfaceY + 1, 6), stoneTarget, routeCells, routeSupports, mudCeiling, surfaceY);
     }
 
     static void removeDeliveryObstruction(GameTestHelper h, BirchKit fixture) {

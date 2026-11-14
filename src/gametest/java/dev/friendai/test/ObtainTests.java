@@ -1748,6 +1748,95 @@ public class ObtainTests {
         });
     }
 
+    /**
+     * The impossible half of the stone-tool order: the wood is reachable, the stone is not, and exploring is off. The
+     * batch gathers the wood first and then stops on the missing stone family instead of touring the same hole. The
+     * gathered wood stays in the bag and the result names exactly one actionable blocker.
+     */
+    @GameTest(maxTicks = 1600)
+    public void impossibleStoneOrderKeepsItsWoodenWorkAndNamesOneBlocker(GameTestHelper h) {
+        GameTestSupport.platformAt(h, 60, 16);
+        h.setBlock(2, 61, 4, Blocks.CRAFTING_TABLE);
+        List<BlockPos> logs = List.of(new BlockPos(4, 61, 2), new BlockPos(4, 61, 7));
+        logs.forEach(log -> h.setBlock(log, Blocks.OAK_LOG));
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 61, 2);
+        c.inventory().addItem(new ItemStack(Items.IRON_AXE));
+        for (BlockPos log : logs) {
+            h.assertTrue(GameTestSupport.observeVisible(h, c, h.absolutePos(log)), "the log at " + log + " is visible");
+        }
+        h.assertTrue(
+                GameTestSupport.observeVisible(h, c, h.absolutePos(new BlockPos(2, 61, 4))),
+                "the crafting table is visible");
+        Result result = new Result();
+        BatchObtainTask task = new BatchObtainTask(
+                List.of(
+                        new CraftPlanner.Target("minecraft:wooden_pickaxe", 1),
+                        new CraftPlanner.Target("minecraft:stone_pickaxe", 1)),
+                false,
+                false,
+                8,
+                1600,
+                16,
+                64,
+                600,
+                "local",
+                null,
+                null,
+                new MinecraftObtainSubtaskFactory());
+        ExecutionCoordinator runner = batch(c, result, task);
+        long startTick = h.getLevel().getGameTime();
+        String[] debug = {""};
+        boolean[] logged = {false};
+        TaskTrace.of(h, runner, c).succeedWhen(() -> {
+            runner.tick();
+            h.assertTrue(result.status != null, "the impossible order did not finish: " + task.debugStatus());
+            if (!logged[0]) {
+                logged[0] = true;
+                debug[0] = task.debugStatus();
+                dev.friendai.FriendaiMod.LOGGER.info(
+                        "[impossible-order] elapsedTicks={} status={} debug={} summary={} work={}",
+                        h.getLevel().getGameTime() - startTick,
+                        result.status,
+                        debug[0],
+                        result.summary,
+                        task.workResult().map(TaskWorkResult::compact).orElse("<none>"));
+            }
+            h.assertTrue(result.status == TaskStatus.FAILED, "status " + result.status + ": " + result.summary);
+            h.assertTrue(
+                    result.summary.contains("#minecraft:stone_tool_materials"),
+                    "the blocker must name the missing material family: " + result.summary);
+            h.assertTrue(
+                    result.summary.contains("exploring is off"),
+                    "the blocker must say why it could not be found: " + result.summary);
+            int wood = c.inventory().countItem(Items.OAK_LOG)
+                    + c.inventory().countItem(Items.OAK_PLANKS)
+                    + c.inventory().countItem(Items.STICK);
+            h.assertTrue(wood > 0, "the gathered wood stays in the bag: " + result.summary);
+            int ticks = boundedCount(debug[0], "t=", "/1600");
+            int children = boundedCount(debug[0], "children=", "/8");
+            h.assertTrue(ticks < 1600, "the order stopped for its blocker, not for time: " + debug[0]);
+            h.assertTrue(children < 8, "the order stopped for its blocker, not for the step cap: " + debug[0]);
+            TaskWorkResult work = task.workResult().orElseThrow();
+            h.assertTrue(!work.blocker().isBlank(), "the result carries one blocker: " + work.compact());
+            h.assertTrue(
+                    result.summary.startsWith(work.blocker()),
+                    "the blocker is the failure text, not a second one: " + work.compact());
+            h.assertTrue(work.reasonCode().equals("blocked"), "nothing was finished: " + work.compact());
+            for (TaskWorkResult.Line line : work.lines()) {
+                h.assertValueEqual(line.verified(), 0, "no tool was finished: " + work.compact());
+            }
+            h.assertTrue(h.getLevel().getGameTime() - startTick <= 1600, "the order stayed inside its tick bound");
+        });
+    }
+
+    /** Reads the used part of {@code prefix<number><suffix>} from a task's debug status. */
+    private static int boundedCount(String debug, String prefix, String suffix) {
+        int start = debug.indexOf(prefix);
+        int end = start < 0 ? -1 : debug.indexOf(suffix, start + prefix.length());
+        if (start < 0 || end < 0) throw new AssertionError("no " + prefix + " count in: " + debug);
+        return Integer.parseInt(debug.substring(start + prefix.length(), end));
+    }
+
     @GameTest(maxTicks = 600)
     public void batchNamesWhatItCouldNotGet(GameTestHelper h) {
         GameTestSupport.platform(h, 8);

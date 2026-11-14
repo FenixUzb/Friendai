@@ -125,6 +125,10 @@ public final class MiningSession {
     private String phase = "";
     /** Which plan attempt last gave up, for the debug line; empty while the session is getting on with the job. */
     private String diagnostic = "";
+    /** The typed cause of the last refused return route, recorded beside the diagnostic so the log names it. */
+    private String returnRefusal = "";
+    /** The first refused inverse leg, as {@code x,y,z->x,y,z}, when the refusal is about one leg. */
+    private String returnLeg = "";
     /** The current break is the fallback descent of the support cell, which the normal target guard refuses. */
     private boolean descent;
 
@@ -619,18 +623,33 @@ public final class MiningSession {
     /** Checks every inverse edge in the current excavation route against the live, loaded terrain. */
     private boolean assessReturnBeforeDescent(TaskContext context, PathStep next) {
         Node current = node();
-        if (verifiedReturnRoute.isEmpty()
-                || !verifiedReturnRoute.get(verifiedReturnRoute.size() - 1).equals(current)
-                || verifiedReturnRoute.size() >= 64
-                || !explorationDimension.equals(
-                        context.level().dimension().identifier().toString())) {
-            diagnostic = "return-route-stale";
+        returnRefusal = "";
+        returnLeg = "";
+        if (verifiedReturnRoute.isEmpty()) {
+            diagnostic = "return-route-stale-empty";
+            requiredReturnSupports = 0;
+            return false;
+        }
+        if (!verifiedReturnRoute.get(verifiedReturnRoute.size() - 1).equals(current)) {
+            diagnostic = "return-route-stale-chain";
+            requiredReturnSupports = 0;
+            return false;
+        }
+        if (verifiedReturnRoute.size() >= 64) {
+            diagnostic = "return-route-stale-long";
+            requiredReturnSupports = 0;
+            return false;
+        }
+        if (!explorationDimension.equals(
+                context.level().dimension().identifier().toString())) {
+            diagnostic = "return-route-dimension";
+            returnRefusal = ReturnAssessment.Refusal.DIMENSION_CHANGED.name();
             requiredReturnSupports = 0;
             return false;
         }
         List<Node> forward = new ArrayList<>(verifiedReturnRoute);
         if (!forward.get(forward.size() - 1).equals(next.from())) {
-            diagnostic = "return-route-stale";
+            diagnostic = "return-route-stale-chain";
             requiredReturnSupports = 0;
             return false;
         }
@@ -662,13 +681,35 @@ public final class MiningSession {
         ReturnAssessment.Result result = ReturnAssessment.assess(evidence, spare);
         if (result.status() != ReturnAssessment.Status.SAFE) {
             requiredReturnSupports = 0;
-            diagnostic = result.status() == ReturnAssessment.Status.NEEDS_SUPPORTS
-                    ? "return-needs-supports-" + result.requiredSupports() + "-spare-" + spare
-                    : "return-route-blocked-or-unknown";
+            diagnostic = returnDiagnostic(result, spare);
+            returnRefusal = result.refusal() == null ? "" : result.refusal().name();
+            returnLeg = legText(result.failedLeg());
             return false;
         }
         requiredReturnSupports = result.requiredSupports();
+        diagnostic = "";
         return true;
+    }
+
+    /** One bounded line naming the first refused inverse edge and its cause, for the debug trace and the log. */
+    private static String returnDiagnostic(ReturnAssessment.Result result, int spare) {
+        return switch (result.refusal()) {
+            case SUPPORTS -> "return-needs-supports-" + result.requiredSupports() + "-spare-" + spare;
+            case LEG_UNLOADED -> "return-route-unloaded-" + legText(result.failedLeg());
+            case LEG_OBSTRUCTED -> "return-route-obstructed-" + legText(result.failedLeg());
+            case LEG_BROKEN_CHAIN -> "return-route-chain-" + legText(result.failedLeg());
+            case ANCHOR_UNREACHED -> "return-route-anchor-" + legText(result.failedLeg());
+            case ANCHOR_UNLOADED -> "return-route-anchor-unloaded";
+            case DIMENSION_CHANGED -> "return-route-dimension";
+            case STALE -> "return-route-stale";
+            case null -> "return-route-unknown";
+        };
+    }
+
+    private static String legText(ReturnAssessment.Leg leg) {
+        if (leg == null) return "none";
+        return leg.from().x() + "," + leg.from().y() + "," + leg.from().z() + "->"
+                + leg.to().x() + "," + leg.to().y() + "," + leg.to().z();
     }
 
     private ReturnAssessment.Leg probeInverse(CellView view, Node from, Node to) {
@@ -997,15 +1038,15 @@ public final class MiningSession {
 
     private State retryPlan(TaskContext context, UserMessage reason) {
         if (!diagnostic.isEmpty()) {
-            context.decision(
-                    LogEvents.RESOURCE_DECISION,
-                    "diagnostic",
-                    Map.of(
-                            "diagnostic", diagnostic,
-                            "target", target == null ? "none" : coords(target),
-                            "excludedTargets", Integer.toString(excludedTargets.size()),
-                            "excludedStances", Integer.toString(excludedStances.size()),
-                            "candidates", Integer.toString(targets.size())));
+            Map<String, String> facts = new java.util.LinkedHashMap<>();
+            facts.put("diagnostic", diagnostic);
+            facts.put("target", target == null ? "none" : coords(target));
+            facts.put("excludedTargets", Integer.toString(excludedTargets.size()));
+            facts.put("excludedStances", Integer.toString(excludedStances.size()));
+            facts.put("candidates", Integer.toString(targets.size()));
+            if (!returnRefusal.isEmpty()) facts.put("returnRefusal", returnRefusal);
+            if (!returnLeg.isEmpty()) facts.put("returnLeg", returnLeg);
+            context.decision(LogEvents.RESOURCE_DECISION, "diagnostic", facts);
         }
         noProgressPlans++;
         if (primaryFailure == null) {
