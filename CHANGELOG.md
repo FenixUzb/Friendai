@@ -6,6 +6,12 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ## [Unreleased]
 
+## [0.214.2] - 2026-11-14
+
+### Fixed
+
+- A companion that is pressed against a wall, pushed sideways or shuffling in place no longer looks like it is walking: it notices the missing forward progress within half a second, tries a jump, and then finds another route instead of waiting out the step.
+
 ## [0.214.1] - 2026-11-14
 
 ### Fixed

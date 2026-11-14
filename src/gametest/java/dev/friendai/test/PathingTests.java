@@ -1486,6 +1486,92 @@ public class PathingTests {
         });
     }
 
+    @GameTest(maxTicks = 600)
+    public void aWallPlacedMidWalkIsDugThroughAfterAReplan(GameTestHelper h) {
+        int base = 304;
+        GameTestSupport.platformAt(h, base, 24);
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, base + 1, 12);
+        Vec3 target = h.absoluteVec(new Vec3(18.5, base + 1, 12.5));
+        TaskContext context = new TaskContext(c, h.getLevel());
+        Navigator navigator = new Navigator(context);
+        navigator.setGoal(new GoalPoint(target.x, target.y, target.z, 0.5, 0.5));
+        Navigator.State[] state = {Navigator.State.SEARCHING};
+        int[] ticks = {0};
+        h.onEachTick(() -> {
+            state[0] = navigator.tick(context);
+            if (ticks[0]++ == 25) {
+                // The route was planned over open ground; the wall appears while the body is already walking it.
+                for (int z = 0; z < 24; z++) {
+                    h.setBlock(new BlockPos(14, base + 1, z), Blocks.DIRT);
+                    h.setBlock(new BlockPos(14, base + 2, z), Blocks.DIRT);
+                }
+            }
+        });
+        h.succeedWhen(() -> {
+            h.assertTrue(state[0] == Navigator.State.ARRIVED, "not arrived: " + state[0] + " at " + c.position());
+            // The goal is past the wall, so arriving proves the new route went through it.
+            h.assertTrue(c.position().distanceTo(target) <= 2.0, "arrived away from the target: " + c.position());
+        });
+    }
+
+    @GameTest(maxTicks = 600)
+    public void twoConcurrentRoutesFinishWithinFiniteWait(GameTestHelper h) {
+        int base = 310;
+        GameTestSupport.platformAt(h, base, 40);
+        int companions = 2;
+        CompanionEntity[] bodies = new CompanionEntity[companions];
+        TaskContext[] contexts = new TaskContext[companions];
+        Navigator[] navigators = new Navigator[companions];
+        Navigator.State[] states = new Navigator.State[companions];
+        int[] arrivedAt = new int[companions];
+        int[] ticks = {0};
+        long[] maxTickNanos = {0L};
+        long[] totalNanos = {0L};
+        for (int i = 0; i < companions; i++) {
+            bodies[i] = h.spawn(FriendaiEntities.COMPANION, 2, base + 1, 10 + i * 20);
+            contexts[i] = new TaskContext(bodies[i], h.getLevel());
+            navigators[i] = new Navigator(contexts[i]);
+            Vec3 target = h.absoluteVec(new Vec3(26.5, base + 1, 10.5 + i * 20));
+            navigators[i].setGoal(new GoalPoint(target.x, target.y, target.z, 0.5, 0.5));
+            states[i] = Navigator.State.SEARCHING;
+            arrivedAt[i] = -1;
+        }
+        h.onEachTick(() -> {
+            long started = System.nanoTime();
+            for (int i = 0; i < companions; i++) {
+                if (states[i] == Navigator.State.ARRIVED || states[i] == Navigator.State.UNREACHABLE) continue;
+                states[i] = navigators[i].tick(contexts[i]);
+                if (states[i] == Navigator.State.ARRIVED) arrivedAt[i] = ticks[0];
+            }
+            long elapsed = System.nanoTime() - started;
+            maxTickNanos[0] = Math.max(maxTickNanos[0], elapsed);
+            totalNanos[0] += elapsed;
+            ticks[0]++;
+        });
+        h.succeedWhen(() -> {
+            StringBuilder line =
+                    new StringBuilder("concurrent pathing: ").append(companions).append(" companions");
+            for (int i = 0; i < companions; i++) {
+                h.assertTrue(
+                        arrivedAt[i] >= 0,
+                        "companion " + i + " did not arrive: " + states[i] + " at " + bodies[i].position());
+                line.append(", #")
+                        .append(i)
+                        .append(" took ")
+                        .append(arrivedAt[i])
+                        .append(" ticks");
+            }
+            line.append(", max tick ")
+                    .append(String.format(java.util.Locale.ROOT, "%.2f", maxTickNanos[0] / 1_000_000.0))
+                    .append(" ms, avg ")
+                    .append(String.format(
+                            java.util.Locale.ROOT, "%.2f", totalNanos[0] / 1_000_000.0 / Math.max(1, ticks[0])))
+                    .append(" ms");
+            System.out.println(line);
+            h.succeed();
+        });
+    }
+
     @GameTest(maxTicks = 400)
     public void companionEnclosedInBedrockReportsUnreachableWithoutBuilding(GameTestHelper h) {
         GameTestSupport.platform(h, 14);
