@@ -641,6 +641,55 @@ public class StorageTests {
         });
     }
 
+    @GameTest(maxTicks = 400)
+    public void liveViewDoesNotReadAfterProtectionIsApplied(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        h.setBlock(6, 2, 6, Blocks.CHEST);
+        Container chest = containerAt(h, 6, 2, 6);
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 4, 2, 4);
+        c.setOwner(UUID.randomUUID());
+        BlockPos target = h.absolutePos(new BlockPos(6, 2, 6));
+        Result result = new Result();
+        ExecutionCoordinator runner = runner(c, result);
+        runner.start(new CheckContainerTask(target), "check_container");
+        var tools = GameTestToolRegistry.create(c, () -> 32).bind(c);
+        h.succeedWhen(() -> {
+            runner.tick();
+            h.assertTrue(result.status == TaskStatus.SUCCESS, "not opened yet: " + result.status);
+            c.hands().overrideProtection(target::equals);
+            chest.setItem(0, new ItemStack(Items.DIAMOND));
+            String answer = find(tools, "minecraft:diamond");
+            h.assertTrue(answer.startsWith("I have no record"), "protected contents leaked: " + answer);
+        });
+    }
+
+    @GameTest(maxTicks = 400)
+    public void liveViewDoesNotReadAfterChestIsLocked(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        h.setBlock(6, 2, 6, Blocks.CHEST);
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 4, 2, 4);
+        c.setOwner(UUID.randomUUID());
+        BlockPos target = h.absolutePos(new BlockPos(6, 2, 6));
+        Result result = new Result();
+        ExecutionCoordinator runner = runner(c, result);
+        runner.start(new CheckContainerTask(target), "check_container");
+        var tools = GameTestToolRegistry.create(c, () -> 32).bind(c);
+        h.succeedWhen(() -> {
+            runner.tick();
+            h.assertTrue(result.status == TaskStatus.SUCCESS, "not opened yet: " + result.status);
+            ChestBlockEntity chest = (ChestBlockEntity) h.getLevel().getBlockEntity(target);
+            chest.setItem(0, new ItemStack(Items.DIAMOND));
+            var registry = h.getLevel().registryAccess();
+            var tag = chest.saveWithFullMetadata(registry);
+            var lockTag = new net.minecraft.nbt.CompoundTag();
+            lockTag.putString("items", "minecraft:stick");
+            tag.put(LockCode.TAG_LOCK, lockTag);
+            chest.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, registry, tag));
+            String answer = find(tools, "minecraft:diamond");
+            h.assertTrue(answer.startsWith("I have no record"), "locked contents leaked: " + answer);
+        });
+    }
+
     private static String find(dev.friendai.execution.tool.ToolExecutor tools, String item) {
         String json = "{\"item\":\"" + item + "\"}";
         return tools.execute(new dev.friendai.agent.llm.model.ToolCall(

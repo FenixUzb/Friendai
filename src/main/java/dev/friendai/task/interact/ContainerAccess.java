@@ -157,7 +157,7 @@ public final class ContainerAccess {
      * level whose chunk is loaded and forgets one whose container is gone. The window is never renewed here: only
      * opening the container again starts a new one. Server thread only.
      */
-    public static void refreshLive(ServerLevel level, ResourceKnowledge book) {
+    public static void refreshLive(ServerLevel level, CompanionEntity companion, ResourceKnowledge book) {
         long now = level.getServer().overworld().getGameTime();
         String dimension = level.dimension().identifier().toString();
         for (ResourceKnowledge.ContainerObservation observation : book.containerObservations()) {
@@ -168,6 +168,10 @@ public final class ContainerAccess {
             if (!level.hasChunkAt(pos)) continue;
             Optional<Container> container = at(level, pos);
             if (container.isEmpty()) {
+                book.invalidateContainer(observation.location());
+                continue;
+            }
+            if (!companion.hands().mayReadStorage(pos)) {
                 book.invalidateContainer(observation.location());
                 continue;
             }
@@ -196,7 +200,7 @@ public final class ContainerAccess {
         ServerLevel level = context.level();
         if (context.companion().ownerUuid() == null) return Optional.empty();
         ResourceKnowledge book = context.ownerKnowledge();
-        refreshLive(level, book);
+        refreshLive(level, context.companion(), book);
         long now = level.getServer().overworld().getGameTime();
         String dimension = level.dimension().identifier().toString();
         BlockPos origin = context.companion().blockPosition();

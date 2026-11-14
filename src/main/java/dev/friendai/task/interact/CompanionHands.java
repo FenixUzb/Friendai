@@ -246,6 +246,23 @@ public final class CompanionHands {
         return new Storage(hands);
     }
 
+    /** Rechecks storage permissions and the vanilla menu without disturbing an active hands session. */
+    public boolean mayReadStorage(BlockPos pos) {
+        if (!canInteract(pos)) return false;
+        BlockState state = level().getBlockState(pos);
+        if (state.hasProperty(ChestBlock.TYPE)
+                && state.getValue(ChestBlock.TYPE) != ChestType.SINGLE
+                && !canInteract(ChestBlock.getConnectedBlockPos(pos, state))) return false;
+        MenuProvider provider = state.getMenuProvider(level(), pos);
+        if (provider == null) return false;
+        FakePlayer hands = handsPlayer();
+        if (!mayOpenStorage(pos, state, hands)) return false;
+        AbstractContainerMenu menu = provider.createMenu(1, hands.getInventory(), hands);
+        if (menu == null) return false;
+        menu.removed(hands);
+        return true;
+    }
+
     /** Vanilla's own lock rule for the block and, for a double chest, for the other half as well. */
     private boolean mayOpenStorage(BlockPos pos, BlockState state, FakePlayer hands) {
         if (!(level().getBlockEntity(pos) instanceof BaseContainerBlockEntity blockEntity)) {
