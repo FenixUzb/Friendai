@@ -664,13 +664,13 @@ public class ToolTests {
             for (int y = 1; y < 17; y++) {
                 for (int z = 4; z < 20; z++) {
                     boolean shell = x == 4 || x == 19 || y == 1 || y == 16 || z == 4 || z == 19;
-                    h.setBlock(x, y, z, shell ? Blocks.STONE : Blocks.DIAMOND_ORE);
+                    h.setBlock(x, y, z, shell ? Blocks.STONE : Blocks.CHISELED_TUFF_BRICKS);
                 }
             }
         }
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
         c.setOwner(java.util.UUID.randomUUID());
-        ToolResult r = run(tools(c), "find_blocks", "{\"block\":\"minecraft:diamond_ore\",\"radius\":32}");
+        ToolResult r = run(tools(c), "find_blocks", "{\"block\":\"minecraft:chiseled_tuff_bricks\",\"radius\":32}");
         h.assertTrue(
                 !r.error()
                         && r.content().contains("focused look")
