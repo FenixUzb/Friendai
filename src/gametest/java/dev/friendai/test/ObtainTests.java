@@ -351,13 +351,15 @@ public class ObtainTests {
                 }
                 List<String> requestLines = gateway.requestLastUserLines();
                 List<Integer> toolResultCounts = gateway.requestToolResultCounts();
-                if (gateway.requests() != 3
-                        || toolResultCounts.size() < 2
-                        || toolResultCounts.get(1) != 1
+                // A fast plan can finish before the tool-result reply is composed: the queue_add result and the
+                // plan-finished event then share one request, so the last reply is either the second or the third.
+                if ((gateway.requests() != 2 && gateway.requests() != 3)
+                        || toolResultCounts.size() != gateway.requests()
+                        || toolResultCounts.getLast() != 1
                         || !requestLines.getLast().startsWith("[event] plan #")) {
-                    throw new IllegalStateException("expected one plan call, one tool-result reply and one final "
-                            + "plan event; got requests=" + gateway.requests() + ", toolResults=" + toolResultCounts
-                            + ", last user lines=" + requestLines);
+                    throw new IllegalStateException("expected one plan call, the queue_add result and one final "
+                            + "plan event in the last reply; got requests=" + gateway.requests()
+                            + ", toolResults=" + toolResultCounts + ", last user lines=" + requestLines);
                 }
                 h.assertValueEqual(firstPickupTick[0] >= 0, true, "a delivered tool was actually picked up");
                 h.assertTrue(
