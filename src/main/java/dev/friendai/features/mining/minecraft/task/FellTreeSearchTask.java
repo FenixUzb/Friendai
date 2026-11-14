@@ -99,7 +99,8 @@ public final class FellTreeSearchTask implements Task {
             return status;
         }
         waited++;
-        boolean pending = waited > TREE_SEARCH_WAIT_TICKS
+        boolean pending = remaining <= 0
+                && waited > TREE_SEARCH_WAIT_TICKS
                 && c.observations().observer(c.companion()).queuedJobs() > 0;
         boolean timedOut = waited > TREE_SEARCH_WAIT_TICKS && (!pending || waited > TREE_SEARCH_MAX_WAIT_TICKS);
         long now = c.level().getGameTime();
