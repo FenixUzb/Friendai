@@ -94,8 +94,8 @@ const RU = {
     "Добыть до 64 блоков одного типа за один вызов; древесину получает из целых сваленных деревьев; один раз ищет цель, которую ещё не видел.",
   "Mine the block you point at, follow its vein, and report what was taken.":
     "Добыть указанный блок, пройти по его жиле и сообщить, что подобрано.",
-  "Mine a box, tunnel, stair, shaft or strip mine in one call, with drops and safety; a stair is carved as a walkable passage, fallback descents stay within the target depth, and uncleared solid cells are reported.":
-    "Выкопать котлован, тоннель, лестницу, шахту или штрек с безопасным сбором добычи. По лестнице можно пройти, запасные спуски ограничены глубиной цели, а неубранные твёрдые блоки указываются в отчёте.",
+  "Mine a box, tunnel, stair, shaft or strip mine in one call, with drops and safety; a stair is carved as a walkable passage, fallback descents stay within the target depth, and uncleared solid cells are reported; a count larger than the region is capped and the result names both numbers.":
+    "Выкопать котлован, тоннель, лестницу, шахту или штрек с безопасным сбором добычи. По лестнице можно пройти, запасные спуски ограничены глубиной цели, а неубранные твёрдые блоки указываются в отчёте; запрос больше области ограничивается её объёмом, и результат называет оба числа.",
   "Collect every drop in the radius in one call.": "Подобрать все выпавшие предметы в радиусе за один вызов.",
   "Scan for trees.": "Найти деревья.",
   "Scan for blocks and ore veins, naming what is observed now, what is only remembered, and whether a stance could start each one.": "Найти блоки и рудные жилы, указывая, что видно сейчас, что только запомнено и можно ли начать добычу с соседней позиции.",
@@ -241,7 +241,7 @@ const RU = {
   "Gather shared materials once for a set of items, then craft them all; accepts item/count aliases; mines a mineable item instead of crafting it from a rarer one; wood is felled as whole trees.":
     "Один раз собрать общие материалы для набора предметов, а затем создать их все; принимает псевдонимы item/count; добывает доступный материал вместо крафта из более редкого; древесину добывает, свалив деревья целиком.",
   "Show the plan without doing it.": "Показать план, не выполняя его.",
-  "Explore to find a resource.": "Отправиться на поиск ресурса.",
+  "Explore to find a resource when nothing is visible or remembered; read-only questions use find_blocks or known_resources.": "Отправиться на поиск ресурса, когда рядом ничего не видно и не запомнено; для вопроса без похода есть find_blocks и known_resources.",
   "What it already knows about.": "Что ему уже известно.",
   "Show up to three remembered resource sites with their age and uncertainty.": "Показать до трёх запомненных мест с ресурсами, их возраст и неопределённость.",
   "Prioritizes verified approaches, usable tools and lower estimated trip cost.": "Сначала выбирает проверенный подход, подходящий инструмент и меньшую расчётную стоимость пути.",
@@ -593,6 +593,8 @@ const RU = {
   "Become an error result, never an exception.": "Становятся результатом-ошибкой, а не исключением.",
   "Ordered tool calls": "Упорядоченные вызовы",
   "Anthropic and Gemini get one merged result message.": "Anthropic и Gemini получают одно объединённое сообщение с результатами.",
+  "Repeated failures": "Повторные неудачи",
+  "An identical failing call runs once more, then reuses its recorded error.": "Идентичный неудачный вызов выполняется ещё раз, затем переиспользует записанную ошибку.",
   "Keys never leak": "Ключи не утекают",
   "Not in logs, URLs, toasts or toString.": "Ни в логах, ни в URL, ни в уведомлениях, ни в toString.",
   "Layer boundary": "Граница слоёв",

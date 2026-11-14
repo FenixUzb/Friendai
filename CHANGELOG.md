@@ -6,6 +6,14 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ## [Unreleased]
 
+## [0.216.0] - 2026-11-14
+
+### Changed
+
+- Repeating the same failing tool call in one answer no longer repeats the work: an identical call is retried once, then reports the earlier failure and asks for different arguments or a changed world.
+- `excavate` now says when a requested count was larger than the region and what number it actually mined to.
+- Tool guidance now explains when to use `find_blocks`, `known_resources` and `search_resource` instead of one another, and that handing items to the owner is a delivery, not storage.
+
 ## [0.215.0] - 2026-11-14
 
 ### Changed

@@ -198,8 +198,11 @@ public final class ToolCatalog {
         hint(
                 metas,
                 "give_items",
-                "- Give requested items only to the authenticated owner. For an order set, use one exact item per step"
-                        + " with count=<owner share>, retain=<companion share>, and strict=true.");
+                "- Give items only to the authenticated owner. For an order set, use one exact item per step"
+                        + " with count=<owner share>, retain=<companion share>, and strict=true. When you finish"
+                        + " a job that was for the owner, give them the items it produced: their request is the"
+                        + " permission, so never ask whether to hand them over. A hand-over is not storage: use"
+                        + " store_items for a container and drop_items to drop at your feet.");
         group(metas, ToolGroup.BUILDING, Cost.MEDIUM, "place_block", "use_block", "light_area", "clear_area");
         group(metas, ToolGroup.STORAGE, Cost.MEDIUM, "store_items", "take_items", "check_container", "deposit_items");
         metas.add(new ToolMeta("move_items", ToolGroup.STORAGE, false, "", List.of(), Cost.MEDIUM));
@@ -324,6 +327,26 @@ public final class ToolCatalog {
                 "mine_block_at",
                 "- Use mine_block_at when the owner points at one block: it mines that block and continues into its connected vein, then says how many it mined and what it took. Use mine_blocks to collect a number of blocks of a kind found around you; use fell_tree for a whole tree.\n"
                         + "- vein:false mines only the pointed block; vein_limit caps the vein. collect:false skips the drop sweep when speed matters.");
+        hint(
+                metas,
+                "known_resources",
+                "- Use known_resources to list what you already remember about a material and where it was seen:"
+                        + " read-only, no travel. Use find_blocks for the nearest visible or remembered blocks and"
+                        + " search_resource to go looking when nothing is known.");
+        hint(
+                metas,
+                "find_blocks",
+                "- Use find_blocks for a read-only question about what is already visible or remembered: it lists the"
+                        + " nearest blocks of a kind with the freshness of the evidence and whether a stance can start"
+                        + " them, and it never travels. Use search_resource when the material is not in sight and a"
+                        + " trip is needed; use mine_blocks, excavate or obtain_item to take it.");
+        hint(
+                metas,
+                "search_resource",
+                "- Use search_resource when the material is not visible or remembered nearby: it runs a bounded trip"
+                        + " that explores, inspects and returns, then reports what it found and where. Use find_blocks"
+                        + " for the question alone and known_resources for remembered sites. Taking the material is a"
+                        + " separate mine_blocks, excavate or obtain_item call.");
         hint(
                 metas,
                 "excavate",

@@ -113,6 +113,32 @@ class ToolCatalogTest {
     }
 
     @Test
+    void similarToolsCarryGuidanceThatNamesTheAlternative() {
+        for (String tool : List.of(
+                "find_blocks",
+                "search_resource",
+                "known_resources",
+                "mine_blocks",
+                "mine_block_at",
+                "excavate",
+                "clear_area",
+                "give_items",
+                "pickup_items",
+                "store_items")) {
+            assertFalse(
+                    catalog.meta(tool).orElseThrow().whenToUse().isBlank(),
+                    tool + " overlaps another tool and needs guidance");
+        }
+        String find = catalog.meta("find_blocks").orElseThrow().whenToUse();
+        assertTrue(find.contains("search_resource"), find);
+        String search = catalog.meta("search_resource").orElseThrow().whenToUse();
+        assertTrue(search.contains("find_blocks"), search);
+        String excavate = catalog.meta("excavate").orElseThrow().whenToUse();
+        assertTrue(excavate.contains("clear_area"), excavate);
+        assertTrue(catalog.meta("give_items").orElseThrow().whenToUse().contains("store_items"));
+    }
+
+    @Test
     void planValidateIsNotAdvertisedOnAnOrdinaryActionTurn() {
         List<ToolSpec> specs = List.of(spec("plan_validate"), spec("mine_blocks"), spec("stop"));
 

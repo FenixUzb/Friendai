@@ -95,6 +95,8 @@ public final class CompanionBrain {
     private final LinkedHashMap<String, Long> authorityQuestionAt = new LinkedHashMap<>(16, 0.75f, true);
     /** What one blocked job has already spent on recovery, so a chain of unrelated jobs cannot reset it. */
     private final RecoveryIncidentBook incidents = new RecoveryIncidentBook(new RecoveryAdvisor());
+
+    private final RepeatedCallGuard repeatedCalls = new RepeatedCallGuard();
     /** This turn's batch reports a block or a failure, so a spent incident makes it a words-only turn. */
     private boolean recoveryTurn;
 
@@ -609,6 +611,7 @@ public final class CompanionBrain {
         }
         turnKind = turnPlayerTexts.isEmpty() ? TurnKind.EVENT : TurnKind.PLAYER;
         long startedTurn = ++turnSeq;
+        repeatedCalls.clear();
         turnEvent = batch.get(0);
         // A spent incident pauses only the turn that reports its own block or failure; unrelated news keeps its
         // tools and its own work.
@@ -1178,17 +1181,26 @@ public final class CompanionBrain {
             ToolResult result;
             observe(o -> o.onToolCall(call));
             noteAttempt(call.name());
-            try {
-                if ("trade_item".equals(call.name())
-                        && (decision.mode() == TurnMode.CHAT
-                                || !decision.groups().contains(ToolGroup.TRADING))) {
-                    result = ToolResult.error("trading is not available for this request");
-                } else {
-                    result = REQUEST_TOOLS.equals(call.name()) ? requestTools(call) : tools.execute(call, turnCaller);
+            Optional<ToolResult> reused = repeatedCalls.blocked(call);
+            if (reused.isPresent()) {
+                result = reused.get();
+                LOGGER.debug("Reused the recorded failure of an identical {} call", call.name());
+            } else {
+                try {
+                    if ("trade_item".equals(call.name())
+                            && (decision.mode() == TurnMode.CHAT
+                                    || !decision.groups().contains(ToolGroup.TRADING))) {
+                        result = ToolResult.error("trading is not available for this request");
+                    } else {
+                        result = REQUEST_TOOLS.equals(call.name())
+                                ? requestTools(call)
+                                : tools.execute(call, turnCaller);
+                    }
+                } catch (RuntimeException e) {
+                    LOGGER.warn("Tool {} threw", call.name(), e);
+                    result = ToolResult.error("Tool " + call.name() + " failed: " + e.getMessage());
                 }
-            } catch (RuntimeException e) {
-                LOGGER.warn("Tool {} threw", call.name(), e);
-                result = ToolResult.error("Tool " + call.name() + " failed: " + e.getMessage());
+                repeatedCalls.record(call, result);
             }
             ToolResult finalResult = result;
             observe(o -> o.onToolResult(call, finalResult));

@@ -405,8 +405,15 @@ public final class BlockInfoTools implements FeatureToolContributor {
 
     private static ToolMeta metadata(String name) {
         return switch (name) {
-            case "find_trees", "find_blocks", "describe_block" ->
-                new ToolMeta(name, ToolGroup.INFO, false, "", List.of(), Cost.LOW);
+            case "find_blocks" ->
+                new ToolMeta(
+                        name,
+                        ToolGroup.INFO,
+                        false,
+                        "- Use find_blocks for a read-only question about what is already visible or remembered: it lists the nearest blocks of a kind with the freshness of the evidence and whether a stance can start them, and it never travels. Use search_resource when the material is not in sight and a trip is needed; use mine_blocks, excavate or obtain_item to take it.",
+                        List.of(),
+                        Cost.LOW);
+            case "find_trees", "describe_block" -> new ToolMeta(name, ToolGroup.INFO, false, "", List.of(), Cost.LOW);
             default -> throw new IllegalArgumentException("unknown block information tool: " + name);
         };
     }

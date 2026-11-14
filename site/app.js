@@ -27,7 +27,7 @@ const CATS = [
   { id: "mining", domain: "hands", name: "Mining & Gathering", icon: "⛏️", color: COLORS.iron,
     desc: "Collects raw materials: trees, ores, drops. Tool choice comes from item data components, never hard-coded tiers.",
     items: [
-      "fell_tree|Fell a whole tree from the base when one stance reaches it, or from the crown; a partly felled tree reports the logs left standing.", "mine_blocks|Mine up to 64 blocks of a type in one call; wood comes from whole felled trees; searches once for a target you have not seen.", "mine_block_at|Mine the block you point at, follow its vein, and report what was taken.", "excavate|Mine a box, tunnel, stair, shaft or strip mine in one call, with drops and safety; a stair is carved as a walkable passage, fallback descents stay within the target depth, and uncleared solid cells are reported.",
+      "fell_tree|Fell a whole tree from the base when one stance reaches it, or from the crown; a partly felled tree reports the logs left standing.", "mine_blocks|Mine up to 64 blocks of a type in one call; wood comes from whole felled trees; searches once for a target you have not seen.", "mine_block_at|Mine the block you point at, follow its vein, and report what was taken.", "excavate|Mine a box, tunnel, stair, shaft or strip mine in one call, with drops and safety; a stair is carved as a walkable passage, fallback descents stay within the target depth, and uncleared solid cells are reported; a count larger than the region is capped and the result names both numbers.",
       "pickup_items|Collect every drop in the radius in one call.", "find_trees|Scan for trees.", "find_blocks|Scan for blocks and ore veins, naming what is observed now, what is only remembered, and whether a stance could start each one.",
       "find_placed|List blocks the companion placed earlier.",
       "~Vein follower|Mines a whole vein, not one block.", "~Tool selection|Picks the best tool from the stack's tool component.", "~Safe digging|Checks support and hazards before approaching.",
@@ -80,7 +80,7 @@ const CATS = [
   { id: "acquire", domain: "hands", name: "Resource Acquisition", icon: "🧭", color: COLORS.diamond,
     desc: "Ask for an item and it works out how: inventory, chests, craft, smelt, mine, hunt, harvest, shear, milk or explore.",
     items: [
-      "obtain_item|Get an item by any means; wood is felled as whole trees.", "obtain_items|Gather shared materials once for a set of items, then craft them all; accepts item/count aliases; mines a mineable item instead of crafting it from a rarer one; wood is felled as whole trees.", "plan_obtain|Show the plan without doing it.", "search_resource|Explore to find a resource.",
+      "obtain_item|Get an item by any means; wood is felled as whole trees.", "obtain_items|Gather shared materials once for a set of items, then craft them all; accepts item/count aliases; mines a mineable item instead of crafting it from a rarer one; wood is felled as whole trees.", "plan_obtain|Show the plan without doing it.", "search_resource|Explore to find a resource when nothing is visible or remembered; read-only questions use find_blocks or known_resources.",
       "known_resources|Show up to three remembered resource sites with their age and uncertainty.", "search_hint|Give it a hint where to look.", "find_target|Resolve a search target.", "find_structure|Find a village, fortress or stronghold by markers.", "search_structure|Travel to a verified structure instance.",
       "~Obtain planner|Depth up to 8, nine step kinds.", "~Resource ranking|Prioritizes verified approaches, usable tools and lower estimated trip cost.", "~Safe return|Checks a route and support reserve before automatic descent.", "~Measured results|Reports carried, delivered and remaining item counts separately.", "~Frontier search|Biome edges, water, hazards and trails.", "~Search budget|Gives up sensibly; a restart resumes the same trip with the budget it already spent." ] },
   { id: "trading", domain: "hands", name: "Trading", icon: "💎", color: COLORS.lapis,
@@ -510,7 +510,7 @@ const ARCH_CARDS = [
     hub: { label: "Rules", icon: "📜", color: COLORS.gold, desc: "Violating any of these breaks the mod in subtle ways." },
     color: COLORS.gold, items: [
       "~Server thread only|World access never leaves it.", "~Late replies dropped|Generation counter after stop or logout.", "~Bad tool args|Become an error result, never an exception.",
-      "~Ordered tool calls|Anthropic and Gemini get one merged result message.", "~Keys never leak|Not in logs, URLs, toasts or toString.", "~Layer boundary|Pure code never imports Minecraft.",
+      "~Ordered tool calls|Anthropic and Gemini get one merged result message.", "~Repeated failures|An identical failing call runs once more, then reuses its recorded error.", "~Keys never leak|Not in logs, URLs, toasts or toString.", "~Layer boundary|Pure code never imports Minecraft.",
       "~Cheap per tick|Bounded work, resumable state." ] }
 ];
 

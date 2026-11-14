@@ -111,7 +111,12 @@ public final class ExcavationTools implements FeatureToolContributor {
                 .build();
         JsonObject schema = SchemaBuilder.object()
                 .enumeration("shape", "box, tunnel, stair, shaft or strip", "box", "tunnel", "stair", "shaft", "strip")
-                .integer("count", "Stop after this many broken blocks", 1, 4096)
+                .integer(
+                        "count",
+                        "Stop after this many broken blocks; a request larger than the region is capped to its volume"
+                                + " and the started result says so",
+                        1,
+                        4096)
                 .string("until_item", "Stop once this many of this item were taken, e.g. minecraft:raw_iron")
                 .integer("until_count", "How many of until_item to take before stopping", 1, 4096)
                 .bool("collect", "Collect drops; default follows the server setting")
@@ -182,7 +187,7 @@ public final class ExcavationTools implements FeatureToolContributor {
                         intArg(a, "reserve_durability", 0))
                 .orElseThrow(() -> new IllegalArgumentException(
                         "invalid excavation: check the shape fields, count, until pair and reserve_durability"));
-        return new ExcavateTask(spec);
+        return new ExcavateTask(spec, count);
     }
 
     private static ExcavationGeometry box(JsonObject a) {
