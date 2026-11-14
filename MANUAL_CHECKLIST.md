@@ -594,3 +594,12 @@ These need a real provider, a microphone or a live world; the automated suite us
 - [ ] Ask for a plan-worthy order and stay silent: the plan is acknowledged once and work starts without a second model round trip; a question or a mixed "how are you? also dig here" still gets its own reply.
 
 These need a real provider and a long session; the automated suite used scripted models.
+
+## Recent conversation across a reload (TODO 86)
+
+- [ ] Talk to the companion, then restart the server (or dismiss and re-summon it) and ask a follow-up that only makes sense with the previous exchange ("and the other one?", "where were we?"): it answers from the last few lines you actually heard.
+- [ ] Open the memory tab and clear the conversation, then ask the same follow-up: the cleared lines are unknown to it, and a fresh conversation starts.
+- [ ] Join as a trusted player and then as a guest after an owner conversation: neither hears the owner's lines, and a guest's own earlier lines are not restored.
+- [ ] Load a second world in singleplayer: the first world's conversation is not mentioned there.
+
+These need a live world and two players; the automated suite used a scripted model and a live transcript book.

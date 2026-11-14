@@ -347,7 +347,7 @@ const RU = {
   "Merge duplicate facts safely, dry run first (owner only).": "Безопасно слить дубликаты фактов, сначала пробный запуск (только владелец).",
   "Drop a manner the owner dislikes and never drift back into it (owner only).": "Убрать манеру, которая не нравится владельцу, и не возвращаться к ней (только владелец).",
   "Conversation transcript": "Запись разговоров",
-  "Both sides of every chat, redacted, capped by count and age.": "Обе стороны каждого разговора, секреты скрыты, ограничено по числу и возрасту.",
+  "Both sides of every chat, redacted, capped by count and age; a recreated companion restores the last few delivered lines.": "Обе стороны каждого разговора, секреты скрыты, ограничено по числу и возрасту; пересозданный компаньон восстанавливает последние произнесённые реплики.",
   "Store a fact.": "Запомнить факт.",
   "List the owner's skills with ids, versions and on/off state.":
     "Показать навыки владельца: идентификаторы, версии и включённость.",
@@ -511,7 +511,7 @@ const RU = {
   "Detects whether the companion is addressed.": "Определяет, обращаются ли к компаньону.",
   "Own companion in hearing range, else the nearest other whose owner is online.": "Свой компаньон в зоне слышимости, иначе ближайший другой, чей владелец в сети.",
   "CompanionBrain": "CompanionBrain",
-  "The per-owner agent loop. One principal per turn; late replies are dropped by a generation counter. A blocked job that fails three times without a new fact pauses the turn that carries it and asks the owner, instead of starting unrelated work. Every request is fitted into one conservative token budget, and a committed plan is acknowledged without a second round trip.": "Цикл агента для каждого владельца. Один принципал на ход; запоздалые ответы отбрасывает счётчик поколений. Заблокированная работа, трижды сорвавшаяся без новых фактов, приостанавливает свой ход и спрашивает владельца, вместо того чтобы начинать постороннюю работу. Каждый запрос укладывается в один осторожный бюджет токенов, а принятый план подтверждается без второго обращения к модели.",
+  "The per-owner agent loop. One principal per turn; late replies are dropped by a generation counter. A blocked job that fails three times without a new fact pauses the turn that carries it and asks the owner, instead of starting unrelated work. Every request is fitted into one conservative token budget, and a committed plan is acknowledged without a second round trip. A recreated companion restores the last few delivered lines of the owner's conversation.": "Цикл агента для каждого владельца. Один принципал на ход; запоздалые ответы отбрасывает счётчик поколений. Заблокированная работа, трижды сорвавшаяся без новых фактов, приостанавливает свой ход и спрашивает владельца, вместо того чтобы начинать постороннюю работу. Каждый запрос укладывается в один осторожный бюджет токенов, а принятый план подтверждается без второго обращения к модели. Пересозданный компаньон восстанавливает последние произнесённые реплики разговора владельца.",
   "TurnRouter": "TurnRouter",
   "Picks chat, action, goal, recovery or event, and which tool groups are visible; PlanningPolicy then names what a plan-worthy turn is about.": "Выбирает режим: чат, действие, цель, восстановление или событие, и какие группы инструментов видны; затем PlanningPolicy решает, о чём стоит планировать.",
   "Planner": "Планировщик",

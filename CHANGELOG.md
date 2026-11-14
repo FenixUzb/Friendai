@@ -6,6 +6,12 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ## [Unreleased]
 
+## [0.218.0] - 2026-11-14
+
+### Added
+
+- The companion now remembers the last few lines of your conversation after a restart, a death or a re-summon: a follow-up like "and the other one?" can refer to the exchange just before it. Only lines you actually heard are restored, at most four exchanges, and clearing the conversation in the memory tab removes them for good.
+
 ## [0.217.0] - 2026-11-14
 
 ### Changed

@@ -4,6 +4,7 @@ import dev.friendai.agent.goal.GoalView;
 import dev.friendai.agent.llm.RequestTelemetry;
 import dev.friendai.agent.llm.model.LlmResponse;
 import dev.friendai.agent.llm.model.Message;
+import dev.friendai.agent.llm.model.Role;
 import dev.friendai.agent.llm.model.StopReason;
 import dev.friendai.agent.llm.model.ToolCall;
 import dev.friendai.agent.llm.model.ToolSpec;
@@ -108,6 +109,11 @@ public final class CompanionBrain {
     private PlacedSource placedSource = PlacedSource.NONE;
     private PlannerPort plannerPort = PlannerPort.NONE;
     private TradingTurnPort tradingTurnPort = TradingTurnPort.NOOP;
+    /** Delivered lines a principal's conversation starts from when this brain first answers them. */
+    private RecentConversationSource recentConversation = RecentConversationSource.NONE;
+
+    /** A cleared transcript must also leave the live conversation it backed; applied when the turn settles. */
+    private boolean clearConversationOnTurnEnd;
     /** A plan that failed or needs a decision in this turn's batch is the one the goal follows. */
     private boolean ownsTroubledPlan;
     /** What the planner just did; shown once in the next request's Mission block. */
@@ -444,6 +450,30 @@ public final class CompanionBrain {
         this.plannerPort = java.util.Objects.requireNonNull(plannerPort);
     }
 
+    /**
+     * Where a recreated principal conversation may start from. Consulted once per principal, when its history is
+     * created; {@link RecentConversationSource#NONE} leaves every conversation to start empty.
+     */
+    public void setRecentConversationSource(RecentConversationSource source) {
+        this.recentConversation = source == null ? RecentConversationSource.NONE : source;
+    }
+
+    /**
+     * Forgets every live principal conversation. Called after the transcript was cleared, so neither the text still
+     * in memory nor a restored seed can bring the cleared exchange back. A turn already running is forgotten when it
+     * ends; a queued turn then starts empty. Facts and other memory stores are not touched.
+     */
+    public void clearConversationHistory() {
+        for (PrincipalHistory history : histories.values()) {
+            history.memory.clear();
+        }
+        if (thinking) {
+            clearConversationOnTurnEnd = true;
+        } else {
+            memory.clear();
+        }
+    }
+
     public void setTradingTurnPort(TradingTurnPort tradingTurnPort) {
         this.tradingTurnPort = tradingTurnPort == null ? TradingTurnPort.NOOP : tradingTurnPort;
     }
@@ -549,7 +579,9 @@ public final class CompanionBrain {
         PrincipalHistory history = histories.get(principal);
         if (history == null) {
             evictHistorySlot();
-            history = new PrincipalHistory(new ConversationMemory(historyMessages), level);
+            ConversationMemory fresh = new ConversationMemory(historyMessages);
+            seedRecentConversation(fresh, principal, level);
+            history = new PrincipalHistory(fresh, level);
             histories.put(principal, history);
         } else if (history.access != level) {
             // A trust change must not carry text or tool output across the authorization boundary.
@@ -558,6 +590,49 @@ public final class CompanionBrain {
         }
         memory = history.memory;
         activePrincipal = principal;
+    }
+
+    /**
+     * Starts a principal's conversation from the delivered lines an earlier session left behind, so a follow-up
+     * after the companion was recreated can refer to the exchange before it. Only a player line and a companion
+     * line that was actually spoken become history — never a tool call or a tool result — and the conversation must
+     * start at a player line. A guest's conversation is never restored, a failing source costs only the continuity,
+     * and a source that returns anything else is ignored line by line.
+     */
+    private void seedRecentConversation(ConversationMemory fresh, UUID principal, AccessLevel level) {
+        if (level == AccessLevel.GUEST) {
+            return;
+        }
+        List<Message> recent;
+        try {
+            recent = recentConversation.recent(
+                    new Caller(principal, "", level), RecentConversationSource.BUDGET_MESSAGES);
+        } catch (RuntimeException e) {
+            LOGGER.debug("Recent conversation unavailable", e);
+            return;
+        }
+        if (recent == null || recent.isEmpty()) {
+            return;
+        }
+        List<Message> delivered = new ArrayList<>(recent.size());
+        for (Message message : recent) {
+            if (message == null || message.text().isBlank()) {
+                continue;
+            }
+            if (message.role() == Role.USER) {
+                delivered.add(Message.user(message.text()));
+            } else if (message.role() == Role.ASSISTANT && message.toolCalls().isEmpty()) {
+                delivered.add(Message.assistant(message.text(), List.of()));
+            }
+        }
+        int start = 0;
+        while (start < delivered.size() && delivered.get(start).role() != Role.USER) {
+            start++;
+        }
+        if (start == delivered.size()) {
+            return;
+        }
+        fresh.seed(delivered.subList(start, delivered.size()));
     }
 
     /** Drops the least recently used guest conversation; the owner and the active turn are never evicted. */
@@ -1446,6 +1521,13 @@ public final class CompanionBrain {
     private void endTurn() {
         teachingContext = null;
         thinking = false;
+        if (clearConversationOnTurnEnd) {
+            clearConversationOnTurnEnd = false;
+            for (PrincipalHistory history : histories.values()) {
+                history.memory.clear();
+            }
+            memory.clear();
+        }
         streamInFlight = false;
         requestFuture = null;
         hasFinishedTurn = true;
