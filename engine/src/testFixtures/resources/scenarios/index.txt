@@ -37,3 +37,11 @@ casual_chat_en.json
 casual_chat_ru.json
 delayed_provider.json
 duplicate_invalid_call.json
+correction_mid_task_en.json
+correction_mid_task_ru.json
+brief_acknowledgement_en.json
+brief_acknowledgement_ru.json
+clarifying_question_en.json
+clarifying_question_ru.json
+ordinary_completion_en.json
+ordinary_completion_ru.json

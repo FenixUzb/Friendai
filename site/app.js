@@ -145,7 +145,7 @@ const CATS = [
   { id: "voiceout", domain: "senses", name: "Speech Output", icon: "🔊", color: COLORS.gold,
     desc: "Replies can be spoken locally or through a cloud voice, panned and attenuated by where the companion is.",
     items: [
-      "~Streamed sentences|Ordered per stream and session, with one cut-off report.", "~Early sentence|The first safe sentence speaks before the provider finishes; the full reply stays authoritative.", "~Local Piper voices|Five catalogued voices via sherpa-onnx.", "~OpenAI TTS|Cloud speech.", "~ElevenLabs|Cloud speech.", "~Yandex SpeechKit|Cloud speech.",
+      "~Streamed sentences|Ordered per stream and session, with one cut-off report.", "~Early sentence|Only ordinary conversation speaks its first safe sentence before the provider finishes; a claim about work waits for the tool result.", "~Grounded reply|A reply that arrives with tool calls is spoken only after every call is accepted, so a refused order is answered by what really happened.", "~One line per plan|A successful step inside a plan stays quiet; the plan's final result is what the owner hears.", "~Local Piper voices|Five catalogued voices via sherpa-onnx.", "~OpenAI TTS|Cloud speech.", "~ElevenLabs|Cloud speech.", "~Yandex SpeechKit|Cloud speech.",
       "~Spatial audio|Equal-power pan and distance level.", "~Stop speaking key|Cuts playback instantly.", "~Off by default|Opt in from settings." ] },
   { id: "menu", domain: "senses", name: "Companion Menu", icon: "🖥️", color: COLORS.iron,
     desc: "A tabbed control screen that pauses the companion while open. Operator-only tabs are filtered on the server.",

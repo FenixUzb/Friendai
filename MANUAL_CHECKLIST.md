@@ -577,3 +577,12 @@ These checks need a real provider and the GUI; the automated tests use a scripte
 - [ ] `/friendai logs prune` removes old files and never the active one; `/friendai logs export` writes a bundle whose `summary.txt` contains the `logs:` path.
 - [ ] Set the level to `normal`, let a turn and a task run, and confirm the files contain no prompt, reply or tool-result bodies; switch to `detailed` and confirm they appear; check that configured API keys are `***` in both.
 - [ ] After a failed task ask "what happened?": the companion uses `logs_search` and reports ids and causes instead of guessing.
+
+## Grounded speech (TODO 84)
+
+- [ ] Ask for work that will be refused (for example a block you are not allowed to break): no "on it" or other start claim precedes the refusal, and the next line says what happened.
+- [ ] With an OpenAI-compatible streaming provider, ask a casual question and confirm the first sentence is heard before the answer finishes; then give an action order and confirm nothing about starting is heard before the result.
+- [ ] Run a two-step plan and confirm the owner hears one line at the plan's end rather than one per successful step; a failed or blocked step still speaks.
+- [ ] Correct an order mid-task and answer a companion question: the correction is acknowledged once and the question is not repeated after it is answered.
+
+These need a real provider, a microphone or a live world; the automated suite used a scripted model.

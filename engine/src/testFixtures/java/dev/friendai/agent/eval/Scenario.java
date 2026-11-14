@@ -139,6 +139,7 @@ public record Scenario(
             Boolean nothingSpoken,
             Integer maxClarifications,
             Integer maxRepeatedToolCalls,
+            Integer maxFalseConfirmations,
             Integer plannerConsulted,
             Integer plansApplied) {
         public Expectations {

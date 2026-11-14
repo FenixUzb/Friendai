@@ -1,0 +1,29 @@
+{
+  "name": "ordinary_completion_ru",
+  "access": "owner",
+  "language": "ru",
+  "playerSays": "Накопай три угля.",
+  "replies": [
+    {
+      "text": "",
+      "tools": [
+        "mine_blocks"
+      ]
+    },
+    {
+      "text": "Готово: три угля.",
+      "tools": []
+    }
+  ],
+  "expect": {
+    "maxRequests": 2,
+    "toolsCalled": [
+      "mine_blocks"
+    ],
+    "maxRepeatedToolCalls": 0,
+    "maxFalseConfirmations": 0,
+    "spokenContains": [
+      "Готово: три угля"
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "correction_mid_task_en",
+  "access": "owner",
+  "playerSays": "Actually, forget the iron: mine five coal instead.",
+  "replies": [
+    {
+      "text": "",
+      "tools": [
+        "mine_blocks"
+      ]
+    },
+    {
+      "text": "Switched to five coal.",
+      "tools": []
+    }
+  ],
+  "expect": {
+    "maxRequests": 2,
+    "toolsCalled": [
+      "mine_blocks"
+    ],
+    "maxRepeatedToolCalls": 0,
+    "maxFalseConfirmations": 0,
+    "spokenContains": [
+      "five coal"
+    ]
+  }
+}

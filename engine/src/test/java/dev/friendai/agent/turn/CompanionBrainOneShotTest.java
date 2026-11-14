@@ -157,7 +157,10 @@ class CompanionBrainOneShotTest {
         brain.post(said("mine 3 stone"));
 
         assertEquals(2, gateway.requests.size(), "the model must see the plan error");
-        assertEquals(List.of("On it.", "Corrected and queued."), speaker.said);
+        assertEquals(
+                List.of("Corrected and queued."),
+                speaker.said,
+                "a reply beside a refused call is not spoken; the repair answers instead");
         assertEquals(List.of("queue_add", "queue_add"), tools.executed);
         assertFalse(brain.isThinking());
         assertTrue(
@@ -178,7 +181,33 @@ class CompanionBrainOneShotTest {
         brain.post(said("mine 3 stone"));
 
         assertEquals(2, gateway.requests.size(), "a failed call is not hidden by a queued plan");
-        assertEquals(List.of("On it.", "Fixed."), speaker.said);
+        assertEquals(List.of("Fixed."), speaker.said, "the refusal suppresses the acknowledgement beside it");
+    }
+
+    @Test
+    void aMixedBatchHoldsItsAcknowledgementUntilEveryCallIsAdmitted() {
+        tools.results.put("stay", new ArrayDeque<>(List.of(ToolResult.error("cannot stay here"))));
+        gateway.enqueue(calls("Queued the plan.", call("q1", "queue_add"), call("s1", "stay")));
+        gateway.enqueue(text("The plan is queued; staying there failed."));
+
+        brain.post(said("mine 3 stone"));
+
+        assertEquals(2, gateway.requests.size(), "the refusal must reach the model before the owner hears a claim");
+        assertEquals(
+                List.of("The plan is queued; staying there failed."),
+                speaker.said,
+                "one refused call withholds the acknowledgement of the whole batch");
+    }
+
+    @Test
+    void aStatusQuestionWithNoCallsIsAnsweredImmediately() {
+        gateway.enqueue(text("Two jobs remain."));
+
+        brain.post(said("what are you doing?"));
+
+        assertEquals(1, gateway.requests.size());
+        assertEquals(List.of("Two jobs remain."), speaker.said);
+        assertFalse(brain.isThinking());
     }
 
     @Test

@@ -1007,6 +1007,7 @@ public final class CompanionBrain {
                 || !thinking
                 || !turnSpeechAllowed
                 || hasPendingFailure()
+                || decision.mode() != TurnMode.CHAT
                 || speechPolicy == null
                 || !streamedTurn
                 || turnCaller == null) {
@@ -1148,16 +1149,8 @@ public final class CompanionBrain {
         }
         String spoken = null;
         if (!raw.isBlank() && turnSpeechAllowed) {
-            Optional<String> guarded = ReplyGuard.filter(raw, coordinatesAllowed(), recentSpeech(), turnToolNames);
-            if (guarded.isPresent()) {
-                spoken = guarded.get();
-                deliverSpeech(spoken, raw);
-                rememberSpoken(spoken);
-                String heard = spoken;
-                observe(o -> o.onReply(turnCaller, heard));
-                long delivered = turnSeq;
-                observe(o -> o.onTurnEnd(delivered, "delivered"));
-            }
+            spoken = ReplyGuard.filter(raw, coordinatesAllowed(), recentSpeech(), turnToolNames)
+                    .orElse(null);
         }
         // A words-only turn has no schema to call: a call the provider typed anyway would start the very work the
         // turn exists to stop, so it is not accepted and not remembered as an answered call.
@@ -1168,6 +1161,9 @@ public final class CompanionBrain {
             memory.add(Message.assistant(remembered, calls));
         }
         if (calls.isEmpty()) {
+            if (spoken != null) {
+                deliverTurnReply(spoken, raw);
+            }
             answerIdleGoal(spoken);
             answerPausedRecovery(spoken);
             endTurn();
@@ -1212,6 +1208,11 @@ public final class CompanionBrain {
             queueMutatedBesidesAdd |=
                     !result.error() && ("queue_edit".equals(call.name()) || "plan_patch".equals(call.name()));
         }
+        // Every call was admitted, so the held text describes work that really started; a refusal is never narrated
+        // by the response that produced it, because the next step has the real result and can answer truthfully.
+        if (spoken != null && !anyCallFailed) {
+            deliverTurnReply(spoken, raw);
+        }
         if (activityChosen) {
             // Free time's choice is the whole answer; the planner does the rest, so the turn costs one request.
             endTurn();
@@ -1228,7 +1229,20 @@ public final class CompanionBrain {
             endTurn();
             return;
         }
+        // Any refused call, or work that is only starting, means this text cannot be trusted yet: the owner hears the
+        // next response, which has the real tool results in hand. A failure is never narrated from the response that
+        // produced it.
         requestStep(gen);
+    }
+
+    /** Speaks a reply that the turn has grounded in admitted work or in a completed step. */
+    private void deliverTurnReply(String spoken, String raw) {
+        deliverSpeech(spoken, raw);
+        rememberSpoken(spoken);
+        String heard = spoken;
+        observe(o -> o.onReply(turnCaller, heard));
+        long delivered = turnSeq;
+        observe(o -> o.onTurnEnd(delivered, "delivered"));
     }
 
     private boolean isRecoveryTurn() {

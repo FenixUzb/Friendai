@@ -48,7 +48,15 @@ class ScenarioBaselineTest {
             "stone_tools_from_forest",
             "casual_chat_en",
             "casual_chat_ru",
-            "delayed_provider");
+            "delayed_provider",
+            "correction_mid_task_en",
+            "correction_mid_task_ru",
+            "brief_acknowledgement_en",
+            "brief_acknowledgement_ru",
+            "clarifying_question_en",
+            "clarifying_question_ru",
+            "ordinary_completion_en",
+            "ordinary_completion_ru");
 
     private static final Duration RUN_BOUND = Duration.ofSeconds(30);
 
@@ -107,13 +115,17 @@ class ScenarioBaselineTest {
                 + " only non-zero stage a fake can produce: in-process work and world work take the same virtual"
                 + " instant, and a real client's numbers come from `turn.start`/`turn.end`, `llm.response` and"
                 + " `task.cancel` durations in the durable log.\n");
+        report.append("- `speech c/n/f`: clarifying lines (those with a question mark), lines carrying a completion"
+                + " marker, and false completion claims — a completion marker spoken in a turn whose tool batch"
+                + " contained a refused call, minus lines that name the refusal. The last column is the `84.2`"
+                + " zero-false-confirmation check.\n");
         report.append("- `unknown`: the metric was not observed, for example payload fields in a run that made no"
                 + " request.\n\n");
         report.append(
                 "| fixture | scenario | autonomy | budget | requests | system chars | history msgs | history chars |"
                         + " tools | tool bytes | ticks | planner/plans | usage | retries/errors/cancelled | timeline |"
-                        + " outcome | provenance |\n");
-        report.append("|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|---|---|---|\n");
+                        + " speech c/n/f | outcome | provenance |\n");
+        report.append("|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|---|---|---|---|\n");
         for (Scenario scenario : scenarios) {
             ScenarioRunner.Result first = runBounded(scenario);
             ScenarioRunner.Result second = runBounded(scenario);
@@ -185,7 +197,8 @@ class ScenarioBaselineTest {
                 + value(result.simulatedTicks()) + " | " + result.plannerConsultations() + "/"
                 + result.plansApplied() + " | " + usage(result) + " | " + value(result.retries()) + "/"
                 + value(result.errors()) + "/" + value(result.cancelledRequests()) + " | "
-                + timeline(result.timeline()) + " | " + outcome(result) + " | " + result.provenance() + " |";
+                + timeline(result.timeline()) + " | " + result.clarifications() + "/" + result.narration() + "/"
+                + result.falseConfirmations() + " | " + outcome(result) + " | " + result.provenance() + " |";
     }
 
     /** `event→request / provider / event→tool / event→speech / stop→cancel`, each `-` when it never happened. */

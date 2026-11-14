@@ -6,6 +6,14 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ## [Unreleased]
 
+## [0.216.1] - 2026-11-14
+
+### Fixed
+
+- The companion no longer says that work started before the tool call that starts it is accepted: a reply that arrives with tool calls is spoken only after every call succeeds, so a refused order is answered by what really happened.
+- Streamed speech no longer announces a start before the call is accepted; only ordinary conversation streams its first sentence ahead of the complete answer.
+- A successful step inside a plan is no longer narrated separately: the plan's final result is the one line the owner hears, while direct tasks, failures and blockers keep speaking.
+
 ## [0.216.0] - 2026-11-14
 
 ### Changed
