@@ -6,6 +6,18 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ## [Unreleased]
 
+## [0.219.0] - 2026-11-14
+
+### Changed
+
+- Gathering now measures what the next step really needs before deciding that space is short: it counts the room left in a stack it is already carrying, the slot an ingredient frees when the recipe consumes it, and the expected drop of a mined block.
+
+### Fixed
+
+- The companion no longer reports a full inventory while a carried stack still has room for the item it is about to gather, so a 63-item stack takes the 64th without opening a chest.
+- Crafting no longer stops in a full bag when the recipe consumes the very stack its result will occupy.
+- When a step genuinely needs a free slot, the companion moves only the unrelated stacks it must into a nearby container instead of unloading the rest of the bag.
+
 ## [0.218.0] - 2026-11-14
 
 ### Added
