@@ -50,6 +50,20 @@ public final class ResourceCandidates {
         UNLOADED
     }
 
+    /** Where a listed block came from: this session's revalidated sight, or the durable owner book. */
+    public enum Evidence {
+        OBSERVED,
+        REMEMBERED
+    }
+
+    /**
+     * One listed block with the evidence behind it.
+     *
+     * @param ageTicks how long ago the block was last seen
+     * @param loaded whether its chunk is loaded now, so the block can be read again
+     */
+    public record KnownBlock(BlockPos pos, String blockId, Evidence evidence, long ageTicks, boolean loaded) {}
+
     private final KnowledgeStore knowledge;
     /** Recent sight is attached to the observing entity; only durable history is owner scoped. */
     private final TransientBook<ObservationWindow> recent = new TransientBook<>(MAX_TRANSIENT_COMPANIONS);
@@ -296,6 +310,55 @@ public final class ResourceCandidates {
             positions.addAll(remembered(companion, matcher, radius, limit - positions.size()));
         return positions.stream()
                 .sorted(Comparator.comparingDouble(pos -> companion.position().distanceToSqr(Vec3.atCenterOf(pos))))
+                .limit(limit)
+                .toList();
+    }
+
+    /**
+     * The same list as {@link #knownOrVisible}, each entry carrying where its evidence came from and how old it is.
+     * Sight wins a position it shares with the book, because a revalidated block is a stronger claim than a record,
+     * and a remembered position outside a loaded chunk says so instead of pretending it can be looked at again.
+     */
+    public List<KnownBlock> knownWithEvidence(CompanionEntity companion, BlockMatcher matcher, int radius, int limit) {
+        if (matcher == null || limit < 1 || radius < 0 || !(companion.level() instanceof ServerLevel level)) {
+            return List.of();
+        }
+        long now = logicalTick(level);
+        Map<BlockPos, KnownBlock> found = new java.util.LinkedHashMap<>();
+        for (ResourceObservation observation : confirmedRecent(companion, radius)) {
+            if (!matches(matcher, observation.blockId())) continue;
+            var at = observation.location().pos();
+            BlockPos pos = new BlockPos(at.x(), at.y(), at.z());
+            found.putIfAbsent(
+                    pos,
+                    new KnownBlock(
+                            pos,
+                            observation.blockId(),
+                            Evidence.OBSERVED,
+                            Math.max(0, now - observation.observedTick()),
+                            true));
+        }
+        if (companion.ownerUuid() != null) {
+            String dimension = level.dimension().identifier().toString();
+            double radiusSquared = (double) radius * radius;
+            for (var record : knowledge.book(companion.ownerUuid()).snapshot().records()) {
+                if (!record.dimension().equals(dimension) || !matches(matcher, record.blockId())) continue;
+                BlockPos pos = new BlockPos(record.x(), record.y(), record.z());
+                if (found.containsKey(pos) || companion.position().distanceToSqr(Vec3.atCenterOf(pos)) > radiusSquared)
+                    continue;
+                found.put(
+                        pos,
+                        new KnownBlock(
+                                pos,
+                                record.blockId(),
+                                Evidence.REMEMBERED,
+                                Math.max(0, now - record.lastSeen()),
+                                level.hasChunkAt(pos)));
+            }
+        }
+        return found.values().stream()
+                .sorted(Comparator.comparingDouble(
+                        entry -> companion.position().distanceToSqr(Vec3.atCenterOf(entry.pos()))))
                 .limit(limit)
                 .toList();
     }

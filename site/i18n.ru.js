@@ -98,7 +98,7 @@ const RU = {
     "Выкопать котлован, тоннель, лестницу, шахту или штрек с безопасным сбором добычи. По лестнице можно пройти, запасные спуски ограничены глубиной цели, а неубранные твёрдые блоки указываются в отчёте.",
   "Collect every drop in the radius in one call.": "Подобрать все выпавшие предметы в радиусе за один вызов.",
   "Scan for trees.": "Найти деревья.",
-  "Scan for blocks and ore veins.": "Найти блоки и рудные жилы.",
+  "Scan for blocks and ore veins, naming what is observed now, what is only remembered, and whether a stance could start each one.": "Найти блоки и рудные жилы, указывая, что видно сейчас, что только запомнено и можно ли начать добычу с соседней позиции.",
   "List blocks the companion placed earlier.": "Список блоков, поставленных компаньоном раньше.",
   "Vein follower": "Следование за жилой",
   "Mines a whole vein, not one block.": "Добывает всю жилу, а не один блок.",

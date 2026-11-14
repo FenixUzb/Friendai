@@ -133,7 +133,7 @@ public final class ExcavationGuard implements PathExecutionGuard {
     }
 
     /** A mining-specific fresh view that treats waterlogged cells as water without changing normal navigation. */
-    public CellView planningView(TaskContext context, PathingConfig config) {
+    public static CellView planningView(TaskContext context, PathingConfig config) {
         CompanionEntity companion = context.companion();
         ServerLevel level = context.level();
         CellView terrain = new LevelCellView(companion, config, CostModel.DEFAULTS, context.breakList());

@@ -108,7 +108,8 @@ public final class MiningSafety {
         return true;
     }
 
-    private static boolean safeTarget(CellView view, Pos target) {
+    /** Package-private so {@link MiningEntry} asks this one rule instead of repeating its neighbour checks. */
+    static boolean safeTarget(CellView view, Pos target) {
         Cell targetCell = view.at(target);
         if (targetCell.kind() == Cell.Kind.UNLOADED
                 || targetCell.hazard()
@@ -178,7 +179,8 @@ public final class MiningSafety {
         return feet.kind() != Cell.Kind.WATER && feet.free() && head.kind() != Cell.Kind.WATER && head.free();
     }
 
-    private static boolean safeNode(CellView view, Node node) {
+    /** Package-private so {@link MiningEntry} names a standable stance without a second copy of the rule. */
+    static boolean safeNode(CellView view, Node node) {
         Cell feet = view.at(node.pos());
         Cell head = view.at(node.head());
         Cell support = view.at(node.support());

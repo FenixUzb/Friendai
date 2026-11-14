@@ -74,6 +74,9 @@ public final class MiningSession {
     /** Ticks a fall is waited out before planning from mid-air, so a body that never lands still reports a failure. */
     private static final int MAX_AIRBORNE_TICKS = 40;
 
+    /** How much of the typed refusal is carried into a task summary the model reads. */
+    private static final int MAX_FAILURE_DETAIL = 220;
+
     private final CompanionEntity companion;
     private final MiningBounds bounds;
     private final int maxBlocks;
@@ -296,6 +299,81 @@ public final class MiningSession {
         return dot < 0 ? key : key.substring(dot + 1);
     }
 
+    /**
+     * The typed cause of the last refusal as one bounded sentence the model can act on: what failed, at which block,
+     * what the refused return edge was and how much work is left. Empty when the session recorded no refusal.
+     */
+    public String failureDetail() {
+        if (diagnostic.isEmpty() && returnRefusal.isEmpty() && primaryFailure == null) {
+            return "";
+        }
+        String why = diagnostic.isEmpty() ? "refused-" + shortKey(primaryFailure.key()) : diagnostic;
+        return detailText(why, target == null ? "" : coords(target), targets.size(), excludedTargets.size());
+    }
+
+    /** The bounded sentence itself, kept separate so its wording and its bound are testable without a world. */
+    static String detailText(String diagnostic, String at, int candidates, int refused) {
+        StringBuilder text = new StringBuilder(describeDiagnostic(diagnostic));
+        if (at != null && !at.isBlank()) {
+            text.append(" at ").append(at);
+        }
+        if (candidates > 0) {
+            text.append("; ").append(candidates).append(" candidate(s) left");
+        }
+        if (refused > 0) {
+            text.append("; ").append(refused).append(" refused");
+        }
+        return text.length() > MAX_FAILURE_DETAIL ? text.substring(0, MAX_FAILURE_DETAIL) : text.toString();
+    }
+
+    /** One readable phrase per recorded diagnostic token; an unknown token is shown as it was recorded. */
+    static String describeDiagnostic(String token) {
+        if (token.startsWith("return-route") || token.startsWith("return-needs-supports")) {
+            return returnPhrase(token);
+        }
+        if (token.startsWith("refused-")) {
+            return "the plan was refused (" + token.substring("refused-".length()) + ")";
+        }
+        if (token.startsWith("target-refused-")) {
+            return "the block cannot be taken here (" + token.substring("target-refused-".length()) + ")";
+        }
+        return switch (token) {
+            case "no-path", "no-path-close" -> "no route to a stance that can break it";
+            case "cut-passage" -> "the planned passage is no longer walkable";
+            case "blind-stance" -> "the stance cannot see the block";
+            case "no-route" -> "no route to the block";
+            case "walk-failed" -> "the walk to the block failed";
+            case "target-gone" -> "the block is gone";
+            case "inventory-full" -> "the inventory is full";
+            case "catch-refused", "platform-refused" -> "there is no safe place for the drops";
+            case "break-blocked" -> "the break was refused";
+            case "break-failed" -> "the break failed";
+            default -> token;
+        };
+    }
+
+    static String returnPhrase(String token) {
+        if (token.startsWith("return-needs-supports")) {
+            return "the way back needs more support blocks than are free";
+        }
+        if (token.startsWith("return-route-unloaded") || token.equals("return-route-anchor-unloaded")) {
+            return "the way back crosses an unloaded chunk";
+        }
+        if (token.startsWith("return-route-obstructed")) {
+            return "the way back is obstructed";
+        }
+        if (token.startsWith("return-route-chain")) {
+            return "the way back no longer connects to where the companion stands";
+        }
+        if (token.startsWith("return-route-anchor")) {
+            return "the way back does not end at the safe anchor";
+        }
+        if (token.equals("return-route-dimension")) {
+            return "the way back is in another dimension";
+        }
+        return "the way back cannot be verified";
+    }
+
     private String cell(BlockPos pos) {
         return companion.level().getBlockState(pos).isAir() ? "air" : "solid";
     }
@@ -478,7 +556,7 @@ public final class MiningSession {
         }
         Node current = node();
         if (passage.steps().isEmpty()) {
-            var visibleTarget = goal.targetAt(current, guard(context).planningView(context, context.pathingConfig()));
+            var visibleTarget = goal.targetAt(current, ExcavationGuard.planningView(context, context.pathingConfig()));
             if (visibleTarget.isEmpty()) {
                 excludedStances.add(current);
                 diagnostic = "blind-stance";
@@ -532,7 +610,7 @@ public final class MiningSession {
                 refusedExplorationSteps.clear();
                 explorationRetryFrom = current;
             }
-            var view = guard(context).planningView(context, context.pathingConfig());
+            var view = ExcavationGuard.planningView(context, context.pathingConfig());
             exploration = new ExplorationPlanner(
                     view,
                     current,
@@ -655,7 +733,7 @@ public final class MiningSession {
         }
         forward.add(next.to());
 
-        CellView live = guard(context).planningView(context, context.pathingConfig());
+        CellView live = ExcavationGuard.planningView(context, context.pathingConfig());
         Set<Pos> newlyBroken = Set.copyOf(next.breaks());
         CellView afterDescent = (x, y, z) -> {
             Pos pos = new Pos(x, y, z);
@@ -961,7 +1039,7 @@ public final class MiningSession {
     }
 
     private void createTargetSearch(TaskContext context) {
-        var view = guard(context).planningView(context, context.pathingConfig());
+        var view = ExcavationGuard.planningView(context, context.pathingConfig());
         List<Pos> candidates = new ArrayList<>();
         for (BlockPos candidate : targets) {
             Pos plain = plain(candidate);

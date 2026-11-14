@@ -6,6 +6,13 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ## [Unreleased]
 
+## [0.215.0] - 2026-11-14
+
+### Changed
+
+- `find_blocks` now says what it actually knows about each listed block: whether it is observed now or only remembered, how old the sighting is, whether its chunk is loaded, and whether a stance could start it today.
+- A failed mining or excavation job now names the exact cause in its result — an obstructed way back, missing support blocks, a stance that cannot see the block, or a target that cannot be taken — instead of only "unreachable".
+
 ## [0.214.4] - 2026-11-14
 
 ### Fixed

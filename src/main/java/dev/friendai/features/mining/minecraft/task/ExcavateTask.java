@@ -214,9 +214,13 @@ public final class ExcavateTask implements Task {
                     return feed(c);
                 case FAILED:
                     UserMessage failure = session.failure();
+                    String detail = session.failureDetail();
                     session.stop(c);
                     session = null;
                     String reason = failure == null ? "unknown" : failureText(failure);
+                    if (!detail.isEmpty()) {
+                        reason = reason + " (" + detail + ")";
+                    }
                     progress.markRefused(reason);
                     if ("friendai.mining.inventory_full".equals(failure == null ? "" : failure.key())) {
                         return finish(
