@@ -185,11 +185,16 @@ public final class BlockInfoTools implements FeatureToolContributor {
         int limit = args.has("limit") ? args.get("limit").getAsInt() : 5;
         List<ResourceCandidates.KnownBlock> found =
                 resources == null ? List.of() : resources.knownWithEvidence(companion, matcher, radius, limit);
-        if (found.isEmpty()
-                && resources != null
-                && companion.level() instanceof ServerLevel level
-                && FocusedLook.lookFor(level, companion, resources, matcher::test, radius) > 0) {
-            found = resources.knownWithEvidence(companion, matcher, radius, limit);
+        boolean incompleteLook = false;
+        if (found.isEmpty() && resources != null && companion.level() instanceof ServerLevel level) {
+            FocusedLook.Result look = FocusedLook.lookFor(level, companion, resources, matcher::test, radius);
+            incompleteLook = !look.complete();
+            if (look.seen() > 0) found = resources.knownWithEvidence(companion, matcher, radius, limit);
+        }
+        if (found.isEmpty() && incompleteLook) {
+            return ToolResult.ok("the focused look for " + matcher.label()
+                    + " was incomplete; no matching block has been observed yet. "
+                    + "Use search_resource or look_around to continue looking");
         }
         if (found.isEmpty()) {
             // "Near us" is a player's word, not a radius: a block just past the asked radius is still the one they

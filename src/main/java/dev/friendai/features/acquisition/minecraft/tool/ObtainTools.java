@@ -343,7 +343,8 @@ public final class ObtainTools implements FeatureToolContributor {
                         + "- In creative mode, obtain_item can supply a registered item directly for an authorized owner.\n"
                         + "- For several items that share materials, use obtain_items so the raw materials are gathered once.";
             case "obtain_items" ->
-                "- For items that share materials, use one obtain_items batch with each count including the owner's share plus the companion's retained share. Then queue one strict give_items step per exact owner item.";
+                "- For a set of items that share materials, use one obtain_items batch with the owner share plus"
+                        + " retained share in each count; then add one strict give_items step per owner item.";
             default -> "";
         };
         return new ToolMeta(name, ToolGroup.OBTAIN, false, hint, List.of(), Cost.HIGH);

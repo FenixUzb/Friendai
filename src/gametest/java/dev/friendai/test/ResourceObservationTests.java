@@ -801,7 +801,14 @@ public class ResourceObservationTests {
         String dimension = level.dimension().identifier().toString();
         BlockPos target = h.absolutePos(new BlockPos(5, 3, 5));
         h.setBlock(5, 3, 5, Blocks.COAL_ORE);
-        state.resourceCandidates().observe(companion, observation(target, companion.blockPosition()));
+        state.resourceCandidates()
+                .observe(
+                        companion,
+                        new ResourceObservation(
+                                "minecraft:coal_ore",
+                                new ResourceObservation.Location(dimension, pos(target)),
+                                pos(companion.blockPosition()),
+                                level.getServer().overworld().getGameTime()));
         state.resourceCandidates()
                 .observeCaveEntrance(
                         companion,
@@ -830,6 +837,31 @@ public class ResourceObservationTests {
                                 && record.y() == target.getY()
                                 && record.z() == target.getZ()),
                 "durable knowledge must survive the unload");
+        h.succeed();
+    }
+
+    @GameTest(maxTicks = 100)
+    public void focusedLookKeepsScanningBounded(GameTestHelper h) {
+        GameTestSupport.platform(h, 32);
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        companion.setOwner(java.util.UUID.randomUUID());
+        for (int x = 0; x < 24; x++) {
+            for (int y = 0; y < 16; y++) {
+                for (int z = 0; z < 24; z++) h.setBlock(x, y + 1, z, Blocks.STONE);
+            }
+        }
+        int[] tested = {0};
+        var resources = GameTestSupport.runtime(h.getLevel().getServer()).resourceCandidates();
+        dev.friendai.perception.resource.FocusedLook.lookFor(
+                h.getLevel(),
+                companion,
+                resources,
+                state -> {
+                    tested[0]++;
+                    return state.is(Blocks.STONE);
+                },
+                32);
+        h.assertTrue(tested[0] <= 9000, "focused look exceeded its cell budget: " + tested[0]);
         h.succeed();
     }
 

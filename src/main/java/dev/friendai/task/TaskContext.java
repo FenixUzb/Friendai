@@ -380,8 +380,13 @@ public record TaskContext(
     }
 
     /** The shared bounded writer for a checkpoint a task keeps off its own tick. */
-    public dev.friendai.infrastructure.persistence.OwnerStoreWriter storeWriter() {
-        return runtime().storeWriter();
+    public java.util.concurrent.Executor checkpointWriter() {
+        var writer = runtime().storeWriter();
+        return command -> {
+            if (!writer.trySubmit(command)) {
+                throw new java.util.concurrent.RejectedExecutionException("owner writer is full");
+            }
+        };
     }
 
     private ServerRuntime runtime() {

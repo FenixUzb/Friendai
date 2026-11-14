@@ -1668,7 +1668,7 @@ public final class BuildTask implements Task {
 
     private BlueprintStore checkpoints(TaskContext c) {
         if (checkpoints == null) {
-            checkpoints = BlueprintStore.forLevel(c.level(), c.storeWriter());
+            checkpoints = BlueprintStore.forLevel(c.level(), c.checkpointWriter());
         }
         return checkpoints;
     }

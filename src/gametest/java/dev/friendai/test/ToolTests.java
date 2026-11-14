@@ -655,6 +655,28 @@ public class ToolTests {
         h.succeed();
     }
 
+    @GameTest(maxTicks = 100)
+    public void findBlocksReportsAnIncompleteFocusedLook(GameTestHelper h) {
+        GameTestSupport.platform(h, 32);
+        for (int x = 4; x < 20; x++) {
+            for (int y = 1; y < 17; y++) {
+                for (int z = 4; z < 20; z++) {
+                    boolean shell = x == 4 || x == 19 || y == 1 || y == 16 || z == 4 || z == 19;
+                    h.setBlock(x, y, z, shell ? Blocks.STONE : Blocks.DIAMOND_ORE);
+                }
+            }
+        }
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        c.setOwner(java.util.UUID.randomUUID());
+        ToolResult r = run(tools(c), "find_blocks", "{\"block\":\"minecraft:diamond_ore\",\"radius\":32}");
+        h.assertTrue(
+                !r.error()
+                        && r.content().contains("focused look")
+                        && r.content().contains("incomplete"),
+                "a bounded search must disclose an incomplete look: " + r.content());
+        h.succeed();
+    }
+
     @GameTest
     public void findBlocksNone(GameTestHelper h) {
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

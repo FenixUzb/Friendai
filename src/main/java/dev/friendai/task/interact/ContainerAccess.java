@@ -166,12 +166,12 @@ public final class ContainerAccess {
             Pos at = observation.location().pos();
             BlockPos pos = new BlockPos(at.x(), at.y(), at.z());
             if (!level.hasChunkAt(pos)) continue;
-            Optional<Container> container = at(level, pos);
-            if (container.isEmpty()) {
+            if (!companion.hands().mayReadStorage(pos)) {
                 book.invalidateContainer(observation.location());
                 continue;
             }
-            if (!companion.hands().mayReadStorage(pos)) {
+            Optional<Container> container = at(level, pos);
+            if (container.isEmpty()) {
                 book.invalidateContainer(observation.location());
                 continue;
             }

@@ -7,8 +7,7 @@ import com.google.gson.JsonParser;
 import dev.friendai.features.construction.blueprint.Blueprint;
 import dev.friendai.features.construction.blueprint.BlueprintJson;
 import dev.friendai.features.construction.blueprint.PartKind;
-import dev.friendai.infrastructure.persistence.LatestWriteQueue;
-import dev.friendai.infrastructure.persistence.OwnerStoreWriter;
+import dev.friendai.foundation.persistence.LatestWriteQueue;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -22,7 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -82,23 +81,16 @@ public final class BlueprintStore {
      * A store whose in-progress snapshots can be coalesced onto the runtime's bounded writer. The newest snapshot of a
      * build is the one that reaches the disk, so a fast scaffold costs one queued write instead of one per tick.
      */
-    public BlueprintStore(Path dir, OwnerStoreWriter writer) {
+    public BlueprintStore(Path dir, Executor writer) {
         this.dir = dir;
-        this.queued = writer == null
-                ? null
-                : new LatestWriteQueue<>(
-                        command -> {
-                            if (!writer.trySubmit(command))
-                                throw new RejectedExecutionException("owner writer is full");
-                        },
-                        this::writeInProgress);
+        this.queued = writer == null ? null : new LatestWriteQueue<>(writer, this::writeInProgress);
     }
     /** The blueprint directory of the world the level belongs to. */
     public static BlueprintStore forLevel(ServerLevel level) {
         return forLevel(level, null);
     }
     /** The same directory, coalescing in-progress snapshots onto {@code writer} when it is present. */
-    public static BlueprintStore forLevel(ServerLevel level, OwnerStoreWriter writer) {
+    public static BlueprintStore forLevel(ServerLevel level, Executor writer) {
         return new BlueprintStore(
                 level.getServer()
                         .getWorldPath(LevelResource.ROOT)

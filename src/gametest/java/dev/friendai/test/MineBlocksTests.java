@@ -229,14 +229,14 @@ public class MineBlocksTests {
     @GameTest(maxTicks = 900)
     public void aFreshCompanionMinesTheVisibleBlockBeforeSearching(GameTestHelper h) {
         redSandFloor(h);
-        BlockPos base = new BlockPos(9, 3, 7);
+        BlockPos base = new BlockPos(6, 3, 2);
         h.setBlock(base, Blocks.CACTUS);
         h.setBlock(base.above(), Blocks.CACTUS);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 3, 2);
         c.setOwner(java.util.UUID.randomUUID());
         Result result = new Result();
         ExecutionCoordinator runner = runner(c, result);
-        runner.start(mine("minecraft:cactus", 1), "mine_blocks");
+        runner.start(new MineBlocksTask(BlockMatcher.parse("minecraft:cactus").orElseThrow(), 1, 8), "mine_blocks");
         h.succeedWhen(() -> {
             runner.tick();
             h.assertTrue(result.status == TaskStatus.SUCCESS, "not finished: " + result.status + " " + result.summary);
@@ -244,12 +244,8 @@ public class MineBlocksTests {
         });
     }
 
-    /**
-     * "Clear this sand away": the model asked for radius 4 and the pile lay five blocks off, so the job found nothing
-     * and failed. Around the companion the deliberate look reaches past a guessed radius to the block in view.
-     */
     @GameTest(maxTicks = 900)
-    public void aGuessedRadiusDoesNotHideTheBlockJustPastIt(GameTestHelper h) {
+    public void focusedLookRespectsTheRequestedRadius(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos sand = new BlockPos(8, 2, 3);
         h.setBlock(sand, Blocks.MOSS_BLOCK);
@@ -261,8 +257,8 @@ public class MineBlocksTests {
                 new MineBlocksTask(BlockMatcher.parse("minecraft:moss_block").orElseThrow(), 1, 4), "mine_blocks");
         h.succeedWhen(() -> {
             runner.tick();
-            h.assertTrue(result.status == TaskStatus.SUCCESS, "not finished: " + result.status + " " + result.summary);
-            h.assertFalse(h.getBlockState(sand).is(Blocks.MOSS_BLOCK), "the block in view still lies there");
+            h.assertTrue(result.status == TaskStatus.FAILED, "not finished: " + result.status + " " + result.summary);
+            h.assertTrue(h.getBlockState(sand).is(Blocks.MOSS_BLOCK), "the block outside the order must remain");
         });
     }
 
@@ -286,9 +282,7 @@ public class MineBlocksTests {
             runner.tick();
             h.assertTrue(result.status == TaskStatus.SUCCESS, "not finished: " + result.status + " " + result.summary);
             h.assertValueEqual(countBlocks(h, Blocks.HAY_BLOCK, pile), 0, "blocks left");
-            h.assertTrue(
-                    result.summary.startsWith("mined 3 minecraft:hay_block: all that was in view"),
-                    "summary was " + result.summary);
+            h.assertTrue(result.summary.startsWith("mined 3 minecraft:hay_block"), "summary was " + result.summary);
         });
     }
 

@@ -143,26 +143,55 @@ public class TreeFellingTests {
         for (int y = 5; y <= 7; y++) {
             int r = y == 7 ? 1 : 2;
             for (int dx = -r; dx <= r; dx++) {
-                for (int dz = -r; dz <= r; dz++) h.setBlock(11 + dx, y, 11 + dz, leaves);
+                for (int dz = -r; dz <= r; dz++) h.setBlock(11 + dx, y, 3 + dz, leaves);
             }
         }
-        for (int y = 2; y <= 6; y++) h.setBlock(11, y, 11, Blocks.OAK_LOG);
+        for (int y = 2; y <= 6; y++) h.setBlock(11, y, 3, Blocks.OAK_LOG);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 3, 2, 3);
         c.setOwner(java.util.UUID.randomUUID());
         Result result = new Result();
         ExecutionCoordinator runner = new ExecutionCoordinator(c, () -> 300, () -> false);
         runner.setEventSink(result);
         runner.start(
+                // GameTests share a world; constrain the request to this fixture's oak, so another test's
+                // dark oak cannot be selected before the fresh companion observes this tree.
                 new dev.friendai.features.mining.minecraft.task.FellTreeSearchTask(
-                        null, c.blockPosition(), 32, 6, true),
+                        oak(), c.blockPosition(), 12, 6, true, true),
                 "fell_tree");
         h.succeedWhen(() -> {
             runner.tick();
             h.assertTrue(result.status != TaskStatus.FAILED, "gave up: " + result.summary);
+            h.assertTrue(h.getBlockState(new BlockPos(11, 2, 3)).isAir(), "the fixture's oak was not felled");
             h.assertTrue(
                     c.inventory().countItem(net.minecraft.world.item.Items.OAK_LOG) >= 3,
                     "logs carried " + c.inventory().countItem(net.minecraft.world.item.Items.OAK_LOG));
         });
+    }
+
+    /** A starved observer may finish a pending sweep after the ordinary search deadline. */
+    @GameTest(maxTicks = 80)
+    public void treeSearchWaitsForPendingObservationButEventuallyStops(GameTestHelper h) {
+        GameTestSupport.platform(h, 12);
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 3, 2, 3);
+        companion.setOwner(java.util.UUID.randomUUID());
+        var observer =
+                GameTestSupport.runtime(h.getLevel().getServer()).observations().observer(companion);
+        observer.scheduleSweep(h.getLevel().getServer().overworld().getGameTime());
+        h.assertTrue(observer.queuedJobs() > 0, "the observation sweep must be pending");
+        Result result = new Result();
+        ExecutionCoordinator runner = new ExecutionCoordinator(companion, () -> 300, () -> false);
+        runner.setEventSink(result);
+        runner.start(
+                new dev.friendai.features.mining.minecraft.task.FellTreeSearchTask(
+                        null, companion.blockPosition(), 16, 6, true),
+                "fell_tree");
+        // Advance only the task, deliberately leaving its observer queue undrained.
+        for (int i = 0; i < 310; i++) runner.tick();
+        h.assertTrue(result.status == null, "a pending sweep must get time beyond the ordinary deadline");
+        for (int i = 0; i < 1_000 && result.status == null; i++) runner.tick();
+        h.assertTrue(result.status == TaskStatus.FAILED, "a permanently starved observer must not wait forever");
+        h.assertTrue(result.summary.contains("incomplete"), "a timed-out sweep must be reported as incomplete");
+        h.succeed();
     }
 
     @GameTest(maxTicks = 7000)

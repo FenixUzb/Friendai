@@ -25,7 +25,6 @@ import dev.friendai.features.crafting.minecraft.RecipeIndex;
 import dev.friendai.features.crafting.minecraft.Stations;
 import dev.friendai.features.creative.CreativeAction;
 import dev.friendai.features.creative.minecraft.CreativeItemCapability;
-import dev.friendai.features.inventory.minecraft.StackSpace;
 import dev.friendai.perception.resource.ResourceCandidates;
 import dev.friendai.task.Task;
 import dev.friendai.task.TaskContext;

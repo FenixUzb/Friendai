@@ -690,6 +690,25 @@ public class StorageTests {
         });
     }
 
+    @GameTest
+    public void liveViewDoesNotActivateTrappedChest(GameTestHelper h) {
+        GameTestSupport.platform(h, 12);
+        h.setBlock(6, 2, 6, Blocks.TRAPPED_CHEST);
+        BlockPos pos = h.absolutePos(new BlockPos(6, 2, 6));
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 4, 2, 4);
+        companion.setOwner(UUID.randomUUID());
+        Container chest = containerAt(h, 6, 2, 6);
+        // Prime a prior authorized observation without a real open that would schedule its own recheck.
+        ContainerAccess.recordContents(new TaskContext(companion, h.getLevel()), pos, chest);
+        chest.setItem(0, new ItemStack(Items.DIAMOND));
+        var tools = GameTestToolRegistry.create(companion, () -> 32).bind(companion);
+        h.assertTrue(find(tools, "minecraft:diamond").contains("still in view"), "the live view must update");
+        h.assertFalse(
+                h.getLevel().getBlockTicks().hasScheduledTick(pos, Blocks.TRAPPED_CHEST),
+                "a read-only refresh must not open the trapped chest");
+        h.succeed();
+    }
+
     private static String find(dev.friendai.execution.tool.ToolExecutor tools, String item) {
         String json = "{\"item\":\"" + item + "\"}";
         return tools.execute(new dev.friendai.agent.llm.model.ToolCall(

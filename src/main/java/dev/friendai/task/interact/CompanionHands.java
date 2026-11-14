@@ -246,21 +246,21 @@ public final class CompanionHands {
         return new Storage(hands);
     }
 
-    /** Rechecks storage permissions and the vanilla menu without disturbing an active hands session. */
+    /** Rechecks access without opening a menu or unpacking a loot table. */
     public boolean mayReadStorage(BlockPos pos) {
-        if (!canInteract(pos)) return false;
+        if (!canInteract(pos) || !hasUnpackedStorage(pos)) return false;
         BlockState state = level().getBlockState(pos);
-        if (state.hasProperty(ChestBlock.TYPE)
-                && state.getValue(ChestBlock.TYPE) != ChestType.SINGLE
-                && !canInteract(ChestBlock.getConnectedBlockPos(pos, state))) return false;
-        MenuProvider provider = state.getMenuProvider(level(), pos);
-        if (provider == null) return false;
-        FakePlayer hands = handsPlayer();
-        if (!mayOpenStorage(pos, state, hands)) return false;
-        AbstractContainerMenu menu = provider.createMenu(1, hands.getInventory(), hands);
-        if (menu == null) return false;
-        menu.removed(hands);
-        return true;
+        if (state.hasProperty(ChestBlock.TYPE) && state.getValue(ChestBlock.TYPE) != ChestType.SINGLE) {
+            BlockPos other = ChestBlock.getConnectedBlockPos(pos, state);
+            if (!level().hasChunkAt(other) || !canInteract(other) || !hasUnpackedStorage(other)) return false;
+        }
+        return state.getMenuProvider(level(), pos) != null && mayOpenStorage(pos, state, handsPlayer());
+    }
+
+    private boolean hasUnpackedStorage(BlockPos pos) {
+        return level().getBlockEntity(pos) instanceof BaseContainerBlockEntity storage
+                && (!(storage instanceof net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity loot)
+                        || loot.getLootTable() == null);
     }
 
     /** Vanilla's own lock rule for the block and, for a double chest, for the other half as well. */

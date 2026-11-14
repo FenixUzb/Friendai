@@ -34,8 +34,8 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 - Taking an item from storage during an obtain order goes to the chest the item was seen in, not to whichever chest is nearest.
 - The companion no longer stops remembering the chests it opens once it has looked at a lot of the world: the oldest memories make room instead.
 - A farm pass that finds nothing in its radius, and its preview, now say where the nearest ripe crop, empty farmland or soil beside water is, so a too-small guess around the companion is corrected instead of ending the order.
-- Right after it arrives, the companion no longer says it sees no diamond ore (or any other block) standing in plain view: asked about a block it has not seen yet, it takes a deliberate look, and only what its eyes actually reach counts — ore sealed in stone stays unseen.
-- "Break the cactus near us" right after a summon breaks the cactus in view instead of searching and breaking a wild one far off, and "clear this sand away" with a too-small radius still finds the pile a few blocks past it: a mining order takes the same deliberate look first.
+- Asked about a block it has not seen yet, the companion takes a bounded deliberate look and records only what its eyes reach; if the look cannot finish, it says so.
+- A mining order takes a bounded deliberate look for unseen targets within its requested radius before searching farther away.
 - "Plant wheat" with nothing to plant right around the companion now walks to the nearest grass by the water within sixteen blocks and plants there, instead of asking whether it should.
 - "Pick the flowers" or "clear this sand away" no longer stop after one block: an order with no number takes every matching block in view (the new `all_nearby` mode of mining), and a job that was asked for fewer says how many are still in view.
 - Right after finishing a job the companion reports on it and can carry the order on, instead of opening small talk in the same breath and asking whether to continue; its own subjects now wait ten seconds after a job's report.
