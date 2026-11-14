@@ -84,7 +84,7 @@ public final class ObtainTask implements Task {
     private final List<String> history = new ArrayList<>();
     private final Set<Long> excludedSiteIds = new LinkedHashSet<>();
     private Task current;
-    /** A look through the storage nearby, run once before the first step that leaves for the world. */
+    /** A look through nearby storage, run once before making or gathering the item. */
     private Task tour;
 
     private boolean touredContainers;
@@ -777,17 +777,14 @@ public final class ObtainTask implements Task {
     }
 
     /**
-     * Whether to look through the storage nearby first: once per task, when containers may be used and the plan is
-     * about to leave for the world (mine, hunt, explore, trade…) or cannot be made at all. A player checks the chests
-     * of their house before going out for something one of them may already hold.
+     * Whether to look through nearby storage first: once per task, when containers may be used and the next step does
+     * not already take from a known container. Check for the finished item before spending materials or going out.
      */
     private boolean shouldTour(ObtainPlan plan) {
         if (touredContainers || !useContainers) return false;
         if (!plan.actionable() || plan.steps().isEmpty()) return true;
         ObtainStep first = plan.steps().get(0);
-        return !(first instanceof ObtainStep.Take
-                || first instanceof ObtainStep.Craft
-                || first instanceof ObtainStep.Smelt);
+        return !(first instanceof ObtainStep.Take);
     }
 
     /** Accepts an item id the matcher accepts, so remembered container contents can be searched by matcher. */

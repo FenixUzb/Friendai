@@ -577,6 +577,30 @@ public class StorageTests {
         });
     }
 
+    @GameTest(maxTicks = 1200, environment = "friendai-gametest:storage_tour")
+    public void obtainChecksChestBeforeCrafting(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        h.setBlock(6, 2, 6, Blocks.CHEST);
+        Container chest = containerAt(h, 6, 2, 6);
+        chest.setItem(0, new ItemStack(Items.OAK_PLANKS, 4));
+        chest.setChanged();
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 3, 2, 6);
+        c.setOwner(UUID.randomUUID());
+        c.inventory().addItem(new ItemStack(Items.OAK_LOG));
+        Result result = new Result();
+        ExecutionCoordinator runner = runner(c, result);
+        runner.start(
+                new ObtainTask("minecraft:oak_planks", 4, true, false, new MinecraftObtainSubtaskFactory()),
+                "obtain_item");
+        h.succeedWhen(() -> {
+            runner.tick();
+            h.assertTrue(result.status == TaskStatus.SUCCESS, "not finished: " + result.status + " " + result.summary);
+            h.assertValueEqual(c.inventory().countItem(Items.OAK_LOG), 1, "log preserved");
+            h.assertValueEqual(chest.countItem(Items.OAK_PLANKS), 0, "planks taken from chest");
+            h.assertValueEqual(c.inventory().countItem(Items.OAK_PLANKS), 4, "planks carried");
+        });
+    }
+
     /**
      * For five minutes after the companion opened a chest it still sees what the owner puts in; past that window what
      * it remembers is a hint that may have changed, and something new is not seen until it looks again.
