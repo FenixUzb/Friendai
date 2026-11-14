@@ -39,8 +39,8 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 - "Plant wheat" with nothing to plant right around the companion now walks to the nearest grass by the water within sixteen blocks and plants there, instead of asking whether it should.
 - "Pick the flowers" or "clear this sand away" no longer stop after one block: an order with no number takes every matching block in view (the new `all_nearby` mode of mining), and a job that was asked for fewer says how many are still in view.
 - Right after finishing a job the companion reports on it and can carry the order on, instead of opening small talk in the same breath and asking whether to continue; its own subjects now wait ten seconds after a job's report.
-- "Plant wheat" also walks to the nearest soil when the companion was told to farm at the spot it stands on.
-- "Harvest the wheat" takes the whole field when the plot lies on the edge of the pass's circle: a farm pass follows the field for up to three more passes instead of taking two ears and saying nothing ripe is left.
+- A farm pass without a specified centre can walk to the nearest soil; explicit coordinates and remembered places keep the pass within their requested area.
+- "Harvest the wheat" takes the whole field when the plot lies on the edge of an unbounded pass: the pass follows the field for up to three more passes instead of taking two ears and saying nothing ripe is left.
 - The companion wins a fair melee fight: its sword now recharges on every tick of the fight, as a player's does, instead of only while the enemy is in reach, so a husk that kept knocking it back no longer out-hit an iron sword and killed it.
 - The companion no longer destroys an ore it cannot harvest: told to mine a diamond (or any valuable block) while carrying only a wooden pickaxe, it now refuses, leaves the ore whole and says it needs a better pickaxe first, where it used to break the ore and lose the diamond.
 - "Dig a 3x3 pit, 2 deep" digs two layers of earth: a shaft down started from where someone stands begins with the ground under their feet, where it used to spend its first layer on air.

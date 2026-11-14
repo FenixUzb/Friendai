@@ -539,7 +539,7 @@ public class FarmingTests {
         h.assertTrue(
                 result.summary.contains("the nearest soil next to water to till is at "),
                 "the failure names where to farm: " + result.summary);
-        // The model often passes the companion's own position as the point: the tool still moves to the soil.
+        // An explicit point limits the task to its radius even when other soil is nearby.
         var tools = GameTestToolRegistry.create(c, () -> 32).bind(c);
         BlockPos here = h.absolutePos(new BlockPos(12, 2, 12));
         String farmHere = "{\"x\":" + here.getX() + ",\"y\":" + here.getY() + ",\"z\":" + here.getZ()
@@ -557,8 +557,23 @@ public class FarmingTests {
             c.executionCoordinator().tick();
         }
         h.assertTrue(
-                c.executionCoordinator().current().orElse(null) == farming,
-                "an empty pass at a given point moves to the nearest soil instead of ending");
+                c.executionCoordinator().current().orElse(null) != farming,
+                "an empty pass at explicit coordinates must not move to nearby soil");
+        String farmNearby = "{\"radius\":3,\"crop\":\"minecraft:wheat_seeds\"}";
+        var nearbyStarted = tools.execute(new dev.friendai.agent.llm.model.ToolCall(
+                "farm-nearby",
+                "farm",
+                com.google.gson.JsonParser.parseString(farmNearby).getAsJsonObject(),
+                farmNearby,
+                null));
+        h.assertTrue(!nearbyStarted.error(), "farm around the companion starts: " + nearbyStarted.content());
+        Task nearby = c.executionCoordinator().current().orElse(null);
+        for (int i = 0; i < 4 && c.executionCoordinator().current().orElse(null) == nearby; i++) {
+            c.executionCoordinator().tick();
+        }
+        h.assertTrue(
+                nearby instanceof FarmTask && c.executionCoordinator().current().orElse(null) == nearby,
+                "an unspecified centre follows nearby work");
         c.executionCoordinator().stop("test");
         // The preview the model tries first must not read as "there is no soil here" either.
         BlockPos at = h.absolutePos(new BlockPos(12, 2, 12));
