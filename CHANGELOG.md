@@ -6,6 +6,12 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ## [Unreleased]
 
+## [0.214.0] - 2026-11-14
+
+### Changed
+
+- A resource search now survives a restart: the companion continues the same trip with the budget it already spent instead of starting over or giving up, reacquires only the chunks its next leg needs, and walks home with a find it had already made. A save written before this change still retries the search without resetting its spend.
+
 ## [0.213.2] - 2026-11-14
 
 ### Changed

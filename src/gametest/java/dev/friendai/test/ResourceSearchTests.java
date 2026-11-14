@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import dev.friendai.agent.llm.model.ToolCall;
 import dev.friendai.entity.CompanionEntity;
 import dev.friendai.entity.FriendaiEntities;
+import dev.friendai.execution.queue.QueueSave;
 import dev.friendai.execution.tool.AccessLevel;
 import dev.friendai.execution.tool.Caller;
 import dev.friendai.features.acquisition.minecraft.task.ExploreTaskFactory;
@@ -11,12 +12,14 @@ import dev.friendai.features.acquisition.minecraft.task.ObtainTask;
 import dev.friendai.features.acquisition.minecraft.task.ResourceSearchDriver;
 import dev.friendai.features.knowledge.ResourceObservation;
 import dev.friendai.features.knowledge.search.ResourceSearchProfile;
+import dev.friendai.features.knowledge.search.SearchPlanner;
 import dev.friendai.features.knowledge.search.SearchSession;
 import dev.friendai.features.knowledge.search.TargetKind;
 import dev.friendai.features.memory.minecraft.tool.MemoryAccess;
 import dev.friendai.foundation.spatial.Pos;
 import dev.friendai.perception.resource.CaveEntranceObservation;
 import dev.friendai.server.execution.TaskEventSink;
+import dev.friendai.server.execution.persistence.SavedExecution;
 import dev.friendai.server.execution.tools.MinecraftObtainSubtaskFactory;
 import dev.friendai.task.TaskContext;
 import dev.friendai.task.TaskStatus;
@@ -250,9 +253,9 @@ public final class ResourceSearchTests {
                 companion
                         .executionCoordinator()
                         .current()
-                        .map(task -> task.type().equals("search_resource") && task.saveData() == null)
+                        .map(task -> task.type().equals("search_resource") && task.saveData() != null)
                         .orElse(false),
-                "active search should rely on coordinator interruption, not a resumable task checkpoint");
+                "an active search must carry a resumable checkpoint");
         companion.executionCoordinator().stop("test cleanup");
         config.tasks.resources.allowExpeditions = oldExpeditions;
         config.tasks.resources.expeditionRadius = oldRadius;
@@ -262,8 +265,180 @@ public final class ResourceSearchTests {
         h.succeed();
     }
 
+    @GameTest(maxTicks = 160)
+    public void restartResumesAnOutboundExpeditionAndReacquiresItsLease(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
+        CompanionEntity original = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        original.setOwner(owner.getUUID());
+        var state = GameTestSupport.runtime(h.getLevel().getServer());
+        var config = state.config();
+        boolean oldExpeditions = config.tasks.resources.allowExpeditions;
+        boolean oldChunkLoading = config.companion.chunkLoading.enabled;
+        int oldRadius = config.tasks.resources.expeditionRadius;
+        int oldTicks = config.tasks.resources.expeditionTicks;
+        config.tasks.resources.allowExpeditions = true;
+        config.companion.chunkLoading.enabled = true;
+        config.tasks.resources.expeditionRadius = 96;
+        config.tasks.resources.expeditionTicks = 6_000;
+        state.applyConfig(config);
+
+        var started = GameTestToolRegistry.create(original, () -> 16, MemoryAccess.DISABLED)
+                .bind(original)
+                .execute(
+                        searchCall("minecraft:coal_ore", "surface", "expedition"),
+                        new Caller(owner.getUUID(), owner.getName().getString(), AccessLevel.OWNER));
+        h.assertTrue(!started.error(), started.content());
+        h.assertTrue(
+                original.executionCoordinator().current().isPresent(),
+                "a search enqueued by its tool must start at once: jobs="
+                        + original.executionCoordinator().queue().jobs());
+        var horizon = state.chunkLoader().expeditionHorizon();
+        var context = new TaskContext(original, h.getLevel());
+        var task = original.executionCoordinator().current().orElseThrow();
+        for (int i = 0; i < 120 && horizon.activeLeases() == 0; i++) task.tick(context);
+        h.assertTrue(horizon.activeLeases() == 1, "the outbound expedition should hold its next-leg lease");
+
+        var ledger = state.knowledge().book(owner.getUUID()).searchLedger();
+        SearchSession.Snapshot before = ledger.snapshot().getFirst();
+        var persistence = state.taskPersistence();
+        var captured = persistence.capture(original.executionCoordinator()).orElseThrow();
+        // The durable document is written before the restart, exactly as a real save would be.
+        String stored = persistence.encode(captured);
+        h.assertTrue(
+                captured.activeTask() != null
+                        && captured.activeTask().type().equals("search_resource")
+                        && captured.queue().activeJobId() > 0,
+                "an active search must carry a checkpoint that names its session; activeJob="
+                        + captured.queue().activeJobId() + " task="
+                        + (captured.activeTask() == null
+                                ? "none"
+                                : captured.activeTask().type()) + " jobs="
+                        + captured.queue().queue().jobs());
+        ledger.interruptActive();
+        original.executionCoordinator().stop("simulated restart");
+        original.discard();
+        h.assertTrue(horizon.activeLeases() == 0, "a restart must not leave a stale lease behind");
+
+        CompanionEntity restored = h.spawn(FriendaiEntities.COMPANION, 6, 2, 6);
+        restored.setOwner(owner.getUUID());
+        var saved = persistence.decode(stored).orElseThrow();
+        var report = persistence.restore(restored, saved);
+        var job = restored.executionCoordinator()
+                .queue()
+                .job(saved.queue().activeJobId())
+                .orElseThrow();
+        h.assertTrue(
+                job.state() == dev.friendai.execution.queue.JobState.RUNNING,
+                "a recoverable search job must stay running after a restart");
+        var resumed = restored.executionCoordinator().current().orElseThrow();
+        h.assertTrue(horizon.activeLeases() == 0, "the resumed search must not hold a lease before its first leg");
+        SearchSession.Snapshot after = ledger.snapshot().getFirst();
+        h.assertTrue(after.id().equals(before.id()), "the same ledger session must continue");
+        h.assertTrue(
+                after.spentTicks() == before.spentTicks() && after.spentTravelBlocks() == before.spentTravelBlocks(),
+                "a restart must neither reset nor double-charge the spent search budget");
+        h.assertTrue(
+                report.restored().stream().anyMatch(line -> line.contains("resumed after restart")),
+                report.restored().toString());
+
+        var resumedContext = new TaskContext(restored, h.getLevel());
+        resumed.tick(resumedContext);
+        h.assertTrue(resumed.resultSummary().contains("resumed after restart"), resumed.resultSummary());
+        for (int i = 0; i < 120 && horizon.activeLeases() == 0; i++) resumed.tick(resumedContext);
+        h.assertTrue(horizon.activeLeases() == 1, "the resumed expedition must reacquire a lease for its next leg");
+
+        restored.executionCoordinator().stop("test cleanup");
+        config.tasks.resources.allowExpeditions = oldExpeditions;
+        config.tasks.resources.expeditionRadius = oldRadius;
+        config.tasks.resources.expeditionTicks = oldTicks;
+        config.companion.chunkLoading.enabled = oldChunkLoading;
+        state.applyConfig(config);
+        h.succeed();
+    }
+
+    @GameTest(maxTicks = 120)
+    public void restartResumesAnInspectionWithOnlyItsRemainingExcavation(GameTestHelper h) {
+        GameTestSupport.platform(h, 12);
+        var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
+        CompanionEntity original = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        original.setOwner(owner.getUUID());
+        original.inventory().setItem(0, Items.IRON_PICKAXE.getDefaultInstance());
+        original.inventory().setItem(1, Items.TORCH.getDefaultInstance().copyWithCount(16));
+        var state = GameTestSupport.runtime(h.getLevel().getServer());
+        var started = GameTestToolRegistry.create(original, () -> 16, MemoryAccess.DISABLED)
+                .bind(original)
+                .execute(
+                        searchCall("minecraft:iron_ore", "mine", "local"),
+                        new Caller(owner.getUUID(), owner.getName().getString(), AccessLevel.OWNER));
+        h.assertTrue(!started.error(), started.content());
+        original.executionCoordinator().tick();
+
+        var ledger = state.knowledge().book(owner.getUUID()).searchLedger();
+        SearchSession.Snapshot snapshot = ledger.snapshot().getFirst();
+        SearchSession live = ledger.session(snapshot.id());
+        long now = h.getLevel().getServer().overworld().getGameTime();
+        var at = original.blockPosition();
+        Pos here = new Pos(at.getX(), at.getY(), at.getZ());
+        String dimension = h.getLevel().dimension().identifier().toString();
+        var frontier = new SearchPlanner.Frontier(here, here, ResourceSearchProfile.Strategy.MINE, 1, 2);
+        // Two advances with a valid frontier reach TRAVEL from either PREPARE or CHOOSE_FRONTIER.
+        live.advance(new SearchSession.Input(
+                now + 1, dimension, here, true, false, SearchSession.LegOutcome.NONE, frontier, 0, 0, 0, 0));
+        live.advance(new SearchSession.Input(
+                now + 2, dimension, here, true, false, SearchSession.LegOutcome.NONE, frontier, 0, 0, 0, 0));
+        h.assertTrue(
+                live.snapshot().phase() == SearchSession.Phase.TRAVEL,
+                "phase " + live.snapshot().phase());
+        live.accountWork(now + 3, here, 0, 5);
+        live.advance(new SearchSession.Input(
+                now + 4, dimension, here, true, false, SearchSession.LegOutcome.ARRIVED, null, 0, 0, 0, 0));
+        h.assertTrue(
+                live.snapshot().phase() == SearchSession.Phase.INSPECT,
+                "the fixture should be inspecting after five excavated blocks: "
+                        + live.snapshot().phase());
+
+        var persistence = state.taskPersistence();
+        var captured = persistence.capture(original.executionCoordinator()).orElseThrow();
+        String stored = persistence.encode(captured);
+        h.assertTrue(
+                captured.activeTask() != null && captured.queue().activeJobId() > 0,
+                "a mining search must carry a checkpoint: activeJob="
+                        + captured.queue().activeJobId() + " task="
+                        + (captured.activeTask() == null
+                                ? "none"
+                                : captured.activeTask().type()) + " jobs="
+                        + captured.queue().queue().jobs());
+        ledger.interruptActive();
+        original.executionCoordinator().stop("simulated restart");
+        original.discard();
+
+        CompanionEntity restored = h.spawn(FriendaiEntities.COMPANION, 6, 2, 6);
+        restored.setOwner(owner.getUUID());
+        restored.inventory().setItem(0, Items.IRON_PICKAXE.getDefaultInstance());
+        restored.inventory().setItem(1, Items.TORCH.getDefaultInstance().copyWithCount(16));
+        var report = persistence.restore(restored, persistence.decode(stored).orElseThrow());
+        var resumed = restored.executionCoordinator().current().orElseThrow();
+        h.assertTrue(
+                report.restored().stream().anyMatch(line -> line.contains("resumed after restart")),
+                report.restored().toString());
+        h.assertTrue(
+                ledger.snapshot().getFirst().excavationBlocks() >= 5,
+                "the resumed search must keep the five blocks it already excavated");
+        resumed.tick(new TaskContext(restored, h.getLevel()));
+        String summary = resumed.resultSummary();
+        h.assertTrue(summary.contains("resumed after restart"), summary);
+        h.assertTrue(!summary.contains("excavation=0/"), "a restart must not replay the mining leg: " + summary);
+        h.assertTrue(
+                ledger.snapshot().getFirst().excavationBlocks()
+                        < ledger.snapshot().getFirst().limits().excavationBlocks(),
+                "the resumed mining leg must stay inside the remaining excavation budget");
+        restored.executionCoordinator().stop("test cleanup");
+        h.succeed();
+    }
+
     @GameTest(maxTicks = 80)
-    public void restartInterruptsAnActiveResourceSearch(GameTestHelper h) {
+    public void restartFinishesAReturnWalkWithItsDiscovery(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
         CompanionEntity original = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -273,33 +448,113 @@ public final class ResourceSearchTests {
                 .execute(
                         searchCall("minecraft:coal_ore", "surface", "local"),
                         new Caller(owner.getUUID(), owner.getName().getString(), AccessLevel.OWNER));
-        h.assertTrue(!started.error(), "owner search should start: " + started.content());
+        h.assertTrue(!started.error(), started.content());
         original.executionCoordinator().tick();
 
         var state = GameTestSupport.runtime(h.getLevel().getServer());
+        var ledger = state.knowledge().book(owner.getUUID()).searchLedger();
+        SearchSession.Snapshot snapshot = ledger.snapshot().getFirst();
+        SearchSession live = ledger.session(snapshot.id());
+        long now = h.getLevel().getServer().overworld().getGameTime();
+        var at = original.blockPosition();
+        Pos here = new Pos(at.getX(), at.getY(), at.getZ());
+        live.advance(new SearchSession.Input(
+                now + 1,
+                h.getLevel().dimension().identifier().toString(),
+                here,
+                true,
+                true,
+                SearchSession.LegOutcome.NONE,
+                null,
+                0,
+                0,
+                0,
+                0));
+        h.assertTrue(live.snapshot().phase() == SearchSession.Phase.RETURN, "the trip should be walking home");
+        h.assertTrue(live.snapshot().discovered(), "the discovery must be recorded before the restart");
+
         var persistence = state.taskPersistence();
-        var saved = persistence.capture(original.executionCoordinator()).orElseThrow();
-        h.assertTrue(saved.queue().activeJobId() > 0, "the saved search should be an active queue job");
-        h.assertTrue(saved.activeTask() == null, "searches must not carry restartable task checkpoints");
+        String stored = persistence.encode(
+                persistence.capture(original.executionCoordinator()).orElseThrow());
+        ledger.interruptActive();
+        original.executionCoordinator().stop("simulated restart");
+        original.discard();
+
+        CompanionEntity restored = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        restored.setOwner(owner.getUUID());
+        persistence.restore(restored, persistence.decode(stored).orElseThrow());
+        restored.executionCoordinator().current().orElseThrow();
+        // Restoring attaches the owner's session sink first; the test sink replaces it afterwards.
+        Result result = new Result();
+        restored.executionCoordinator().setEventSink(result);
+
+        for (int i = 0; i < 10 && result.status == null; i++)
+            restored.executionCoordinator().tick();
+        h.assertTrue(result.status == TaskStatus.SUCCESS, "status " + result.status + " " + result.summary);
+        h.assertTrue(result.summary.contains("returned to origin"), result.summary);
+        h.assertTrue(result.summary.contains("found"), result.summary);
+        h.assertTrue(
+                ledger.snapshot().getFirst().phase() == SearchSession.Phase.COMPLETE,
+                "the resumed walk home must complete the same session");
+        h.succeed();
+    }
+
+    @GameTest(maxTicks = 100)
+    public void restartRetriesASearchSavedWithoutACheckpoint(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
+        CompanionEntity original = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        original.setOwner(owner.getUUID());
+        var started = GameTestToolRegistry.create(original, () -> 16, MemoryAccess.DISABLED)
+                .bind(original)
+                .execute(
+                        searchCall("minecraft:coal_ore", "surface", "local"),
+                        new Caller(owner.getUUID(), owner.getName().getString(), AccessLevel.OWNER));
+        h.assertTrue(!started.error(), started.content());
+        original.executionCoordinator().tick();
+
+        var state = GameTestSupport.runtime(h.getLevel().getServer());
+        var ledger = state.knowledge().book(owner.getUUID()).searchLedger();
+        SearchSession.Snapshot before = ledger.snapshot().getFirst();
+        var persistence = state.taskPersistence();
+        var captured = persistence
+                .decode(persistence.encode(
+                        persistence.capture(original.executionCoordinator()).orElseThrow()))
+                .orElseThrow();
+        // A save written before the checkpoint existed: the job args are all the restart has to rebuild from.
+        var legacy = new SavedExecution(
+                SavedExecution.CURRENT_VERSION,
+                new QueueSave.Decoded(captured.queue().queue(), captured.queue().activeJobId()),
+                null);
+        ledger.interruptActive();
+        original.executionCoordinator().stop("simulated restart");
+        original.discard();
 
         CompanionEntity restored = h.spawn(FriendaiEntities.COMPANION, 6, 2, 6);
         restored.setOwner(owner.getUUID());
-        persistence.restore(
-                restored, persistence.decode(persistence.encode(saved)).orElseThrow());
-
+        var report = persistence.restore(restored, legacy);
         var job = restored.executionCoordinator()
                 .queue()
-                .job(saved.queue().activeJobId())
+                .job(captured.queue().activeJobId())
                 .orElseThrow();
-        var sessions = state.knowledge().book(owner.getUUID()).searchLedger().snapshot();
         h.assertTrue(
-                job.state() == dev.friendai.execution.queue.JobState.CANCELLED,
-                "active resource search must be cancelled on restart");
+                job.state() == dev.friendai.execution.queue.JobState.RUNNING,
+                "a search job without a checkpoint must be retried, not cancelled");
+        var resumed = restored.executionCoordinator().current().orElseThrow();
+        SearchSession.Snapshot after = ledger.snapshot().getFirst();
+        h.assertTrue(after.id().equals(before.id()), "the retry must reuse the interrupted session");
         h.assertTrue(
-                restored.executionCoordinator().current().isEmpty(), "resource search must not resume automatically");
+                after.spentTicks() >= before.spentTicks(),
+                "the retry must keep the spent budget instead of starting again: before=" + before.spentTicks()
+                        + " after=" + after.spentTicks());
         h.assertTrue(
-                sessions.size() == 1 && sessions.getFirst().phase() == SearchSession.Phase.INTERRUPTED,
-                "search ledger must record the interruption and keep its spent budget");
+                report.restored().stream().anyMatch(line -> line.contains("retried after restart")),
+                report.restored().toString());
+        resumed.tick(new TaskContext(restored, h.getLevel()));
+        h.assertTrue(
+                !resumed.resultSummary().contains("resumed after restart"),
+                "the factory retry is not an exact resume: " + resumed.resultSummary());
+        restored.executionCoordinator().stop("test cleanup");
         h.succeed();
     }
 
@@ -519,9 +774,9 @@ public final class ResourceSearchTests {
                 companion
                         .executionCoordinator()
                         .current()
-                        .map(task -> task.type().equals("search_resource") && task.saveData() == null)
+                        .map(task -> task.type().equals("search_resource") && task.saveData() != null)
                         .orElse(false),
-                "the active cave search should not have a resumable checkpoint");
+                "the active cave search must carry a resumable checkpoint");
         companion.executionCoordinator().stop("test cleanup");
         h.succeed();
     }

@@ -45,6 +45,12 @@ public final class ResourceSearchDriver implements Task {
     private final String requestedHeading;
     private final CaveEntranceObservation caveEntrance;
     private final SearchHint hint;
+    /** A resumed trip keeps the origin it started from; a fresh one starts where the companion stands. */
+    private final Pos baseOrigin;
+    /** A restart interrupted a walk home: go straight there instead of planning another leg. */
+    private final boolean resumeReturn;
+
+    private final String recoveryNote;
     private final SearchPlanner planner = new SearchPlanner();
     private final long startTravel;
     private final long startTicks;
@@ -140,6 +146,38 @@ public final class ResourceSearchDriver implements Task {
             SearchHint hint,
             boolean initialFound,
             ExploreTaskFactory exploreTaskFactory) {
+        this(
+                session,
+                target,
+                profile,
+                radius,
+                expedition,
+                selectedStrategy,
+                requestedHeading,
+                caveEntrance,
+                hint,
+                initialFound,
+                exploreTaskFactory,
+                null,
+                false,
+                "");
+    }
+
+    public ResourceSearchDriver(
+            SearchSession session,
+            TargetKind target,
+            ResourceSearchProfile profile,
+            int radius,
+            boolean expedition,
+            ResourceSearchProfile.Strategy selectedStrategy,
+            String requestedHeading,
+            CaveEntranceObservation caveEntrance,
+            SearchHint hint,
+            boolean initialFound,
+            ExploreTaskFactory exploreTaskFactory,
+            Pos baseOrigin,
+            boolean resumeReturn,
+            String recoveryNote) {
         this.session = session;
         this.target = target;
         this.profile = profile;
@@ -150,11 +188,14 @@ public final class ResourceSearchDriver implements Task {
         this.caveEntrance = caveEntrance;
         this.hint = hint;
         this.exploreTaskFactory = exploreTaskFactory;
+        this.baseOrigin = baseOrigin;
+        this.resumeReturn = resumeReturn;
+        this.recoveryNote = recoveryNote == null ? "" : recoveryNote;
         var snapshot = session.snapshot();
         this.startTravel = Math.round(snapshot.spentTravelBlocks());
         this.startTicks = snapshot.spentTicks();
         this.startExcavation = snapshot.excavationBlocks();
-        this.found = initialFound;
+        this.found = initialFound || snapshot.discovered();
     }
 
     @Override
@@ -174,11 +215,20 @@ public final class ResourceSearchDriver implements Task {
 
     @Override
     public void start(TaskContext context) {
-        origin = current(context);
+        boolean resumed = baseOrigin != null;
+        origin = resumed ? baseOrigin : current(context);
         originDimension = context.level().dimension().identifier().toString();
         historicalEvidence = historicalEvidence(context);
-        lastPosition = origin;
-        session.advance(input(context, null, SearchSession.LegOutcome.NONE, false, 0));
+        lastPosition = current(context);
+        // A resumed session already sits in the phase it must continue; advancing it here with no frontier
+        // would look like "no frontier remains" and finish a valid trip by mistake.
+        if (!resumed) session.advance(input(context, null, SearchSession.LegOutcome.NONE, false, 0));
+        if (resumeReturn) {
+            returning = true;
+            if (distance(current(context), origin) > 2) journey = returnJourney(context);
+            summary = diagnostic("returning to the search origin after the restart");
+            return;
+        }
         if (selectedStrategy == ResourceSearchProfile.Strategy.SURFACE) {
             localWaitTicks = 0;
             context.observations().observer(context.companion()).scheduleSweep(logicalTick(context));
@@ -198,18 +248,20 @@ public final class ResourceSearchDriver implements Task {
                         ResourceSearchProfile.Strategy.CAVE,
                         1,
                         Math.max(1, Math.round(distance(origin, interior) * 2)));
-                session.advance(new SearchSession.Input(
-                        logicalTick(context),
-                        caveEntrance.dimension(),
-                        origin,
-                        true,
-                        false,
-                        SearchSession.LegOutcome.NONE,
-                        activeFrontier,
-                        0,
-                        0,
-                        0,
-                        activeFrontier.estimatedTravelTicks()));
+                if (!resumed) {
+                    session.advance(new SearchSession.Input(
+                            logicalTick(context),
+                            caveEntrance.dimension(),
+                            origin,
+                            true,
+                            false,
+                            SearchSession.LegOutcome.NONE,
+                            activeFrontier,
+                            0,
+                            0,
+                            0,
+                            activeFrontier.estimatedTravelTicks()));
+                }
                 journey = new ResourceJourney(
                         context,
                         caveEntrance.dimension(),
@@ -219,19 +271,6 @@ public final class ResourceSearchDriver implements Task {
                         expedition);
             }
         } else if (selectedStrategy == ResourceSearchProfile.Strategy.MINE) {
-            SearchPlanner.Frontier initial = frontier(origin.x(), origin.y(), origin.z());
-            session.advance(new SearchSession.Input(
-                    logicalTick(context),
-                    context.level().dimension().identifier().toString(),
-                    origin,
-                    true,
-                    false,
-                    SearchSession.LegOutcome.NONE,
-                    initial,
-                    0,
-                    0,
-                    0,
-                    0));
             int remainingExcavation = Math.max(
                     0,
                     session.snapshot().limits().excavationBlocks()
@@ -240,13 +279,29 @@ public final class ResourceSearchDriver implements Task {
                 startupFailure = "search excavation budget is already spent";
                 session.interrupt();
             } else {
+                if (!resumed) {
+                    SearchPlanner.Frontier initial = frontier(origin.x(), origin.y(), origin.z());
+                    session.advance(new SearchSession.Input(
+                            logicalTick(context),
+                            context.level().dimension().identifier().toString(),
+                            origin,
+                            true,
+                            false,
+                            SearchSession.LegOutcome.NONE,
+                            initial,
+                            0,
+                            0,
+                            0,
+                            0));
+                }
                 Set<String> blockIds = target instanceof TargetKind.BlockFamily family ? family.blockIds() : Set.of();
                 String block = blockIds.stream().sorted().findFirst().orElse(target.label());
+                Pos from = current(context);
                 miningSearch = exploreTaskFactory.create(
                         block,
                         true,
                         profile.shallowStone()
-                                ? origin.y() - 8
+                                ? from.y() - 8
                                 : profile.targetY().orElse(context.level().getMinY() + 16),
                         session.snapshot().limits().radius(),
                         remainingExcavation,
@@ -331,6 +386,12 @@ public final class ResourceSearchDriver implements Task {
     private TaskStatus advance(TaskContext context, Pos position, boolean budgetReturn) {
         if (startupFailure != null) {
             return fail(context, startupFailure);
+        }
+        if (returning && journey == null) {
+            // A resumed walk home that starts at the base has no leg to tick; finish it instead of waiting forever.
+            if (distance(position, origin) <= 2) return finishReturn(context);
+            journey = returnJourney(context);
+            return TaskStatus.RUNNING;
         }
         if (!returning && awaitingArrival) {
             context.observations().observer(context.companion()).scheduleSweep(logicalTick(context));
@@ -763,7 +824,8 @@ public final class ResourceSearchDriver implements Task {
                 + Math.round(snapshot.limits().travelBlocks())
                 + " blocks (" + Math.round(remainingTravel) + " left); excavation="
                 + snapshot.excavationBlocks() + "/" + snapshot.limits().excavationBlocks()
-                + " blocks (" + remainingExcavation + " left); " + reason;
+                + " blocks (" + remainingExcavation + " left); "
+                + (recoveryNote.isEmpty() ? "" : recoveryNote + "; ") + reason;
         return value.length() <= 600 ? value : value.substring(0, 597) + "...";
     }
 

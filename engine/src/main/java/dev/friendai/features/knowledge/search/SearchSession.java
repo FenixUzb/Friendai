@@ -82,7 +82,40 @@ public final class SearchSession {
             double spentTravelBlocks,
             long spentTicks,
             int excavationBlocks,
-            int blockedLegs) {}
+            int blockedLegs,
+            boolean discovered,
+            Phase interruptedFrom) {
+        /** A row written before the reload marker existed: nothing was found and nothing can be resumed. */
+        public Snapshot(
+                UUID id,
+                String dimension,
+                String goal,
+                Pos origin,
+                Limits limits,
+                Phase phase,
+                long startedTick,
+                long lastTick,
+                double spentTravelBlocks,
+                long spentTicks,
+                int excavationBlocks,
+                int blockedLegs) {
+            this(
+                    id,
+                    dimension,
+                    goal,
+                    origin,
+                    limits,
+                    phase,
+                    startedTick,
+                    lastTick,
+                    spentTravelBlocks,
+                    spentTicks,
+                    excavationBlocks,
+                    blockedLegs,
+                    false,
+                    null);
+        }
+    }
 
     private final UUID id;
     private final String dimension, goal;
@@ -98,6 +131,11 @@ public final class SearchSession {
 
     private int excavationBlocks;
     private int blockedLegs;
+    /** The target was found by confirmed evidence; persisted so a walk home survives a reload. */
+    private boolean discovered;
+    /** The live phase a reload interrupted, or null for a deliberate stop; never resumed when null. */
+    private Phase interruptedFrom;
+
     private Runnable onChange;
 
     public SearchSession(UUID id, String dimension, String goal, Pos origin, Limits limits, long tick) {
@@ -126,6 +164,8 @@ public final class SearchSession {
         restored.spentTicks = snapshot.spentTicks();
         restored.excavationBlocks = snapshot.excavationBlocks();
         restored.blockedLegs = snapshot.blockedLegs();
+        restored.discovered = snapshot.discovered();
+        restored.interruptedFrom = snapshot.interruptedFrom();
         return restored;
     }
 
@@ -159,6 +199,7 @@ public final class SearchSession {
         spentTravelBlocks += input.travelBlocks();
         excavationBlocks += input.excavationBlocks();
         if (input.discovered()) {
+            discovered = true;
             phase = Phase.RETURN;
             return decision(Reason.DISCOVERED, null);
         }
@@ -207,9 +248,29 @@ public final class SearchSession {
         return decision(Reason.CONTINUE, null);
     }
 
+    /** A deliberate stop or a local finish: terminal, and never resumable from a checkpoint. */
     public synchronized void interrupt() {
+        interrupt(false);
+    }
+
+    /**
+     * A reload interrupted this live session. The phase it was interrupted from is kept, so the same trip can be
+     * resumed from a checkpoint with its spent budget instead of being cancelled.
+     */
+    public synchronized void interruptForReload() {
+        interrupt(true);
+    }
+
+    private void interrupt(boolean resumable) {
+        if (phase == Phase.COMPLETE || phase == Phase.FAILED || phase == Phase.INTERRUPTED) return;
+        if (resumable) interruptedFrom = phase;
         phase = Phase.INTERRUPTED;
         changed();
+    }
+
+    /** Whether a checkpoint may resume this session exactly, with its spent budget. */
+    public synchronized boolean resumable() {
+        return phase == Phase.INTERRUPTED && interruptedFrom != null;
     }
 
     /** Accounts for one task tick of travel and excavation without forcing a planner phase transition. */
@@ -245,6 +306,7 @@ public final class SearchSession {
         if (phase != Phase.INTERRUPTED) return;
         if (now < 0) throw new IllegalArgumentException("tick must not be negative");
         phase = Phase.CHOOSE_FRONTIER;
+        interruptedFrom = null;
         lastTick = now;
         startedTick = Math.max(0, now - spentTicks);
         lastAccountedTick = Long.MIN_VALUE;
@@ -253,15 +315,23 @@ public final class SearchSession {
 
     /**
      * Resumes after a world reload: spent counters stay untouched, a return trip keeps walking home, and every
-     * other live phase re-plans from the current position. A finished or failed session stays finished.
+     * other live phase re-plans from the current position. A finished or failed session stays finished, and a
+     * session stopped on purpose is not reopened.
      */
     public synchronized void resumeAfterReload(long now) {
         if (now < 0) throw new IllegalArgumentException("tick must not be negative");
+        if (phase == Phase.INTERRUPTED) {
+            if (interruptedFrom == null) return;
+            phase = interruptedFrom == Phase.RETURN ? Phase.RETURN : Phase.CHOOSE_FRONTIER;
+            interruptedFrom = null;
+        } else if (phase == Phase.COMPLETE || phase == Phase.FAILED) {
+            return;
+        } else if (phase != Phase.RETURN) {
+            phase = Phase.CHOOSE_FRONTIER;
+        }
         lastTick = Math.max(lastTick, now);
         startedTick = Math.max(0, now - spentTicks);
         lastAccountedTick = Long.MIN_VALUE;
-        if (phase == Phase.COMPLETE || phase == Phase.FAILED) return;
-        if (phase != Phase.RETURN) phase = Phase.CHOOSE_FRONTIER;
         changed();
     }
 
@@ -278,7 +348,13 @@ public final class SearchSession {
                 spentTravelBlocks,
                 spentTicks,
                 excavationBlocks,
-                blockedLegs);
+                blockedLegs,
+                discovered,
+                interruptedFrom);
+    }
+
+    public synchronized boolean discovered() {
+        return discovered;
     }
 
     public synchronized boolean terminal() {

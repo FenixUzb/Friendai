@@ -193,12 +193,24 @@ public final class TaskRestoreRegistry {
         return restorer.restore(saved, new TaskContext(null, level, null, null, null));
     }
 
+    /**
+     * A search hidden inside an acquire step still has no safe checkpoint: an explore obtain is cancelled rather
+     * than resumed by guesswork. The search tools themselves are handled by {@link #recoverableSearch(Job)}.
+     */
     public boolean interruptedSearch(Job job) {
-        if (job.tool().equals("search_resource")
+        return explores(job) && (job.tool().equals("obtain_item") || job.tool().equals("obtain_items"));
+    }
+
+    /**
+     * The resource search tools rebuild after a restart: from their contributed checkpoint when one was saved, or
+     * from the job arguments as a bounded retry when the save predates that checkpoint. Both paths re-resolve the
+     * caller and re-check the search's own readiness, access and return conditions before any leg starts.
+     */
+    public boolean recoverableSearch(Job job) {
+        return job.tool().equals("search_resource")
                 || job.tool().equals("find_target")
                 || job.tool().equals("find_structure")
-                || job.tool().equals("search_structure")) return true;
-        return explores(job) && (job.tool().equals("obtain_item") || job.tool().equals("obtain_items"));
+                || job.tool().equals("search_structure");
     }
 
     /** An interrupted search is not resumed by guesswork: the job's own explore flag says it may look far away. */

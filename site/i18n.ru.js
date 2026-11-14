@@ -256,7 +256,8 @@ const RU = {
   "Frontier search": "Поиск по границе",
   "Biome edges, water, hazards and trails.": "Границы биомов, вода, опасности и следы.",
   "Search budget": "Бюджет поиска",
-  "Gives up sensibly.": "Вовремя сдаётся.",
+  "Gives up sensibly; a restart resumes the same trip with the budget it already spent.":
+    "Вовремя сдаётся; после перезапуска тот же поход продолжается с уже потраченным бюджетом.",
 
   /* ---- Trading ---- */
   "Trading": "Торговля",

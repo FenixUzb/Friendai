@@ -8,6 +8,7 @@ import dev.friendai.entity.CompanionLifeData;
 import dev.friendai.entity.ExpeditionChunkHorizon;
 import dev.friendai.execution.settings.ResourceSearchSettings;
 import dev.friendai.execution.settings.TaskRuntimeSettings;
+import dev.friendai.execution.tool.Caller;
 import dev.friendai.features.creative.CreativeAction;
 import dev.friendai.features.creative.CreativeActionContext;
 import dev.friendai.features.knowledge.ResourceKnowledge;
@@ -253,6 +254,14 @@ public record TaskContext(
 
     public CompanionSessions sessions() {
         return runtime().sessions();
+    }
+
+    /**
+     * Re-resolves a saved actor's current access. A checkpoint stores only a principal UUID; the access level is
+     * always derived from the owner and trust data that exists now.
+     */
+    public Caller currentCaller(UUID principal) {
+        return runtime().sessions().currentCaller(companion, principal);
     }
     /** Trading authority for an owner, without exposing the session service to feature adapters. */
     public TradeAuthority tradeAuthorityFor(UUID owner) {

@@ -15,6 +15,8 @@ import dev.friendai.execution.tool.ToolResult;
 import dev.friendai.features.acquisition.minecraft.ResourceSearchTaskFactory;
 import dev.friendai.features.acquisition.minecraft.search.ResourceResolver;
 import dev.friendai.features.acquisition.minecraft.search.SearchTargets;
+import dev.friendai.features.acquisition.minecraft.task.SearchResourceCheckpoints;
+import dev.friendai.features.acquisition.minecraft.task.SearchResourceTask;
 import dev.friendai.features.knowledge.ResourceKnowledgeText;
 import dev.friendai.features.knowledge.ResourceQuery;
 import dev.friendai.features.knowledge.minecraft.LandmarkScanner;
@@ -448,14 +450,14 @@ public final class ResourceTools implements FeatureToolContributor {
         return new TaskContext(companion, (ServerLevel) companion.level());
     }
 
-    private static void registerSearchTask(
+    private void registerSearchTask(
             FeatureToolRegistry registry,
             String name,
             String description,
             JsonObject schema,
             TaskToolDefinition.Factory factory,
             TaskToolDefinition.CallerFactory callerFactory) {
-        registry.registerTask(new TaskToolDefinition(
+        TaskToolDefinition definition = new TaskToolDefinition(
                 name,
                 description,
                 schema,
@@ -466,7 +468,15 @@ public final class ResourceTools implements FeatureToolContributor {
                 TaskToolDefinition.QueueTraits.DEFAULT,
                 true,
                 true,
-                metadata(name)));
+                metadata(name));
+        // The four search tools all produce one task type, so its checkpoint decoder is contributed exactly once;
+        // the registry rejects a second definition claiming the same type.
+        if (SearchResourceTask.TYPE.equals(name)) {
+            definition = definition.withCheckpoint(
+                    SearchResourceTask.TYPE,
+                    (state, context) -> SearchResourceCheckpoints.search(state, context, taskFactory));
+        }
+        registry.registerTask(definition);
     }
 
     private static void registerTool(
