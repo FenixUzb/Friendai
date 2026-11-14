@@ -597,8 +597,9 @@ public class ToolTests {
         ToolResult r = run(tools(c), "find_blocks", "{\"block\":\"minecraft:iron_block\",\"limit\":2}");
         h.assertTrue(!r.error(), "error: " + r.content());
         h.assertTrue(
-                r.content().startsWith("2 observed/remembered minecraft:iron_block nearest first: "),
+                r.content().startsWith("2 minecraft:iron_block nearest first (2 observed, 0 remembered): "),
                 "content was " + r.content());
+        h.assertTrue(r.content().contains("observed now"), "evidence is not named: " + r.content());
         String nearest = coords(h.absolutePos(new BlockPos(5, 2, 2))) + " (";
         String second = coords(h.absolutePos(new BlockPos(9, 2, 2))) + " (";
         String cut = coords(h.absolutePos(new BlockPos(12, 2, 2))) + " (";

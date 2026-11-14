@@ -15,6 +15,7 @@ import dev.friendai.agent.llm.model.Usage;
 import dev.friendai.agent.llm.stream.SpeechStreamBuffer;
 import dev.friendai.agent.llm.stream.StreamDelta;
 import dev.friendai.agent.llm.stream.StreamingLlmGateway;
+import dev.friendai.execution.tool.ToolResult;
 import dev.friendai.foundation.text.UserMessage;
 import dev.friendai.testutil.FakeGateway;
 import dev.friendai.testutil.FakeToolExecutor;
@@ -286,6 +287,28 @@ class CompanionBrainStreamTest {
     }
 
     @Test
+    void anActionTurnReleasesNoEarlyFrameBeforeAdmission() {
+        StreamingGateway gateway = new StreamingGateway();
+        gateway.steps.add(new Step(
+                List.of(new StreamDelta.Text("Queued."), new StreamDelta.Done()),
+                FakeGateway.calls("Queued.", FakeGateway.call("q1", "queue_add"))));
+        gateway.steps.add(new Step(
+                List.of(new StreamDelta.Text("I could not queue it."), new StreamDelta.Done()),
+                reply("I could not queue it.")));
+        FakeToolExecutor tools = new FakeToolExecutor();
+        tools.results.put("queue_add", new ArrayDeque<>(List.of(ToolResult.error("unknown tool 'teleport'"))));
+        RecordingSpeaker speaker = new RecordingSpeaker();
+
+        brain(gateway, tools, speaker).post(said("mine 3 stone"));
+
+        assertEquals(List.of("queue_add"), tools.executed);
+        assertTrue(
+                speaker.streamed.stream().noneMatch(frame -> frame.text().contains("Queued.")),
+                "an unadmitted start claim is never streamed: " + speaker.streamed);
+        assertEquals(List.of("I could not queue it."), speaker.said, "the grounded answer speaks once");
+    }
+
+    @Test
     void streamedSpeechIsOrderedAndTheFullReplyIsRecordedOnce() {
         StreamingGateway gateway = new StreamingGateway();
         gateway.steps.add(new Step(
@@ -318,8 +341,8 @@ class CompanionBrainStreamTest {
         RecordingSpeaker speaker = new RecordingSpeaker();
         CompanionBrain brain = brain(gateway, tools, speaker);
 
-        brain.post(new BrainEvent.PlayerSaid(OWNER, "Steve", "one", BrainEvent.Source.CHAT));
-        brain.post(new BrainEvent.PlayerSaid(OWNER, "Steve", "two", BrainEvent.Source.CHAT));
+        brain.post(new BrainEvent.PlayerSaid(OWNER, "Steve", "how are you?", BrainEvent.Source.CHAT));
+        brain.post(new BrainEvent.PlayerSaid(OWNER, "Steve", "what is new?", BrainEvent.Source.CHAT));
 
         assertEquals(4, speaker.streamed.size(), speaker.streamed.toString());
         for (int i = 0; i < speaker.streamed.size(); i++) {

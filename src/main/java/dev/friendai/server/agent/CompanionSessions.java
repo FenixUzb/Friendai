@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.friendai.FriendaiMod;
 import dev.friendai.agent.goal.GoalService;
+import dev.friendai.agent.llm.model.Message;
 import dev.friendai.agent.llm.model.ToolCall;
 import dev.friendai.agent.llm.model.ToolSpec;
 import dev.friendai.agent.prompt.ContinuityPrompt;
@@ -47,8 +48,10 @@ import dev.friendai.features.memory.minecraft.tool.TrustAccess;
 import dev.friendai.features.memory.retrieval.MemoryRetrieval;
 import dev.friendai.features.memory.retrieval.RetrievalCache;
 import dev.friendai.features.memory.transcript.TranscriptBook;
+import dev.friendai.features.memory.transcript.TranscriptEntry;
 import dev.friendai.features.memory.transcript.TranscriptLimits;
 import dev.friendai.features.memory.transcript.TranscriptObserver;
+import dev.friendai.features.memory.transcript.TranscriptPolicy;
 import dev.friendai.features.placements.minecraft.PlacedService;
 import dev.friendai.features.places.PlaceCandidate;
 import dev.friendai.features.places.minecraft.PlaceService;
@@ -863,6 +866,27 @@ public final class CompanionSessions implements AutoCloseable, QueueToolAccess, 
         }
     }
 
+    /**
+     * The delivered lines a recreated conversation may start from: this caller's own rows in the owner's transcript,
+     * newest first, inside the transcript's retention window. The transcript's own policy decides visibility — the
+     * owner reads everything, a trusted player their own rows, a guest nothing — and this method narrows every
+     * caller to their own UUID, so one principal's text never enters another principal's history. The transcript is
+     * per world, so another world has nothing to restore.
+     */
+    private List<Message> recentConversation(UUID owner, Caller caller, int limit) {
+        if (caller == null || caller.uuid() == null || config == null || limit < 1) {
+            return List.of();
+        }
+        if (!TranscriptPolicy.canRead(owner, caller, caller.uuid())) {
+            return List.of();
+        }
+        TranscriptLimits limits = config.memory.transcriptLimits();
+        long now = System.currentTimeMillis();
+        long since = limits.retentionMillis() > 0 ? now - limits.retentionMillis() : 0L;
+        List<TranscriptEntry> rows = transcripts.book(owner).query(caller.uuid(), since, 0, limit, true);
+        return RecentConversation.messages(rows, limit);
+    }
+
     /** The memory block, the continuity block and the tone line, each only when it has text. */
     private static String joinBlocks(String... blocks) {
         StringBuilder out = new StringBuilder();
@@ -964,6 +988,7 @@ public final class CompanionSessions implements AutoCloseable, QueueToolAccess, 
                 },
                 toolCatalog);
         brain.setTradingTurnPort(session.tradingAuthority());
+        brain.setRecentConversationSource((caller, limit) -> recentConversation(owner, caller, limit));
         brain.setTradingPromptSource((caller, request) -> {
             if (caller.access() != AccessLevel.OWNER
                     || !owner.equals(caller.uuid())

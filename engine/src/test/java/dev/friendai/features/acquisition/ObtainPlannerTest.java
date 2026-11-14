@@ -797,4 +797,111 @@ class ObtainPlannerTest {
         assertEquals(1, mines.size(), plan.steps().toString());
         assertTrue(((ObtainStep.Mine) mines.get(0)).count() >= 2, plan.steps().toString());
     }
+
+    private static final String DEEPSLATE = "minecraft:deepslate";
+    private static final String COBBLED_DEEPSLATE = "minecraft:cobbled_deepslate";
+
+    /** A stone-tool recipe whose material slot accepts two valid members, as the vanilla tag does. */
+    private static FakeRecipeBook bookWithTwoStoneMaterials() {
+        Ingredient materials = Ingredient.tag("#minecraft:stone_tool_materials", COBBLED_DEEPSLATE, COBBLESTONE);
+        return new FakeRecipeBook()
+                .add(new Recipe(
+                        "test:stone_pickaxe",
+                        STONE_PICKAXE,
+                        1,
+                        List.of(materials, materials, materials, Ingredient.of(STICK), Ingredient.of(STICK)),
+                        Station.CRAFTING_TABLE));
+    }
+
+    private static FakeSourceBook sourcesWithTwoStoneMaterials() {
+        ToolNeed woodenPickaxe = new ToolNeed(ToolKind.PICKAXE, Tier.WOOD);
+        return new FakeSourceBook()
+                .add(COBBLED_DEEPSLATE, new Source.Mine(DEEPSLATE, woodenPickaxe, 1, false, -16))
+                .add(COBBLESTONE, new Source.Mine(STONE, woodenPickaxe, 1, false, 0))
+                .tool(woodenPickaxe, WOODEN_PICKAXE)
+                .toolOf(WOODEN_PICKAXE, woodenPickaxe);
+    }
+
+    private static WorldFacts twoStoneWorld(Map<String, Integer> attempts) {
+        return new WorldFacts(
+                        Map.of(DEEPSLATE, 8, STONE, 8),
+                        Map.of(),
+                        Map.of(),
+                        Map.of(),
+                        Set.of(Station.CRAFTING_TABLE.noun()),
+                        false,
+                        true)
+                .withAttemptedSources(attempts);
+    }
+
+    private static ObtainPlan twoStonePlan(WorldFacts facts) {
+        return ObtainPlanner.plan(
+                STONE_PICKAXE,
+                1,
+                Map.of(STICK, 2, WOODEN_PICKAXE, 1),
+                bookWithTwoStoneMaterials(),
+                sourcesWithTwoStoneMaterials(),
+                facts);
+    }
+
+    @Test
+    void aFailedStoneMaterialYieldsToAnotherValidMember() {
+        ObtainPlan untried = twoStonePlan(twoStoneWorld(Map.of()));
+        assertTrue(untried.ok(), untried.missing().toString());
+        assertEquals(
+                DEEPSLATE,
+                untried.steps().stream()
+                        .filter(ObtainStep.Mine.class::isInstance)
+                        .map(ObtainStep.Mine.class::cast)
+                        .findFirst()
+                        .orElseThrow()
+                        .block(),
+                "the fixture must prefer the first member while it is untried: " + untried.steps());
+
+        ObtainPlan afterOneFailure = twoStonePlan(twoStoneWorld(Map.of(DEEPSLATE, 1)));
+
+        assertTrue(afterOneFailure.ok(), afterOneFailure.missing().toString());
+        assertTrue(
+                afterOneFailure.steps().stream()
+                        .filter(ObtainStep.Mine.class::isInstance)
+                        .map(ObtainStep.Mine.class::cast)
+                        .noneMatch(mine -> mine.block().equals(DEEPSLATE)),
+                "one failure must make the alternative member cheaper: " + afterOneFailure.steps());
+        assertEquals(
+                STONE,
+                afterOneFailure.steps().stream()
+                        .filter(ObtainStep.Mine.class::isInstance)
+                        .map(ObtainStep.Mine.class::cast)
+                        .findFirst()
+                        .orElseThrow()
+                        .block());
+    }
+
+    @Test
+    void aTwiceFailedSoleSourceStaysPlannable() {
+        WorldFacts facts = new WorldFacts(
+                        Map.of(DEEPSLATE, 8),
+                        Map.of(),
+                        Map.of(),
+                        Map.of(),
+                        Set.of(Station.CRAFTING_TABLE.noun()),
+                        false,
+                        true)
+                .withAttemptedSources(Map.of(DEEPSLATE, 2));
+        ObtainPlan plan = ObtainPlanner.plan(
+                STONE_PICKAXE,
+                1,
+                Map.of(STICK, 2, WOODEN_PICKAXE, 1),
+                bookWithTwoStoneMaterials(),
+                sourcesWithTwoStoneMaterials(),
+                facts);
+
+        assertTrue(plan.ok(), plan.missing().toString());
+        assertTrue(
+                plan.steps().stream()
+                        .filter(ObtainStep.Mine.class::isInstance)
+                        .map(ObtainStep.Mine.class::cast)
+                        .anyMatch(mine -> mine.block().equals(DEEPSLATE)),
+                "a failed source that is the only route must stay plannable: " + plan.steps());
+    }
 }

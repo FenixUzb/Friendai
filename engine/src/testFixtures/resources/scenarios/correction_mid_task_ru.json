@@ -1,0 +1,29 @@
+{
+  "name": "correction_mid_task_ru",
+  "access": "owner",
+  "language": "ru",
+  "playerSays": "Нет, не железо — добудь пять угля.",
+  "replies": [
+    {
+      "text": "",
+      "tools": [
+        "mine_blocks"
+      ]
+    },
+    {
+      "text": "Переключился на пять угля.",
+      "tools": []
+    }
+  ],
+  "expect": {
+    "maxRequests": 2,
+    "toolsCalled": [
+      "mine_blocks"
+    ],
+    "maxRepeatedToolCalls": 0,
+    "maxFalseConfirmations": 0,
+    "spokenContains": [
+      "пять угля"
+    ]
+  }
+}

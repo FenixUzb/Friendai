@@ -9,11 +9,10 @@
   "replies": [
     {"text": "", "tools": ["set_goal"]},
     {"text": "", "tools": ["queue_add"]},
-    {"text": "", "tools": ["queue_add"]},
-    {"text": "Queued the corrected plan: mine stone, then craft the tools.", "tools": []}
+    {"text": "", "tools": ["queue_add"]}
   ],
   "expect": {
-    "maxRequests": 4,
+    "maxRequests": 3,
     "plannerConsulted": 0,
     "plansApplied": 0,
     "toolsCalled": ["set_goal", "queue_add"],

@@ -22,8 +22,6 @@ import net.minecraft.world.entity.LivingEntity;
  * the memory book, which is flushed by the tick pipeline like every other owner record.
  */
 public final class HappeningFeed {
-    /** When each player left, so a return can say how long they were gone; cleared on the next join. */
-    private static final java.util.Map<UUID, Long> awaySince = new java.util.concurrent.ConcurrentHashMap<>();
     /** A return shorter than this is not worth a line. */
     private static final long RETURN_AFTER_MILLIS = 30L * 60L * 1_000L;
 
@@ -35,8 +33,10 @@ public final class HappeningFeed {
         ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register((player, from, to) -> dimension(player, to));
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
                 ServerRuntimeRegistry.find(server).ifPresent(runtime -> joined(runtime, handler.getPlayer())));
-        ServerPlayConnectionEvents.DISCONNECT.register(
-                (handler, server) -> awaySince.put(handler.getPlayer().getUUID(), System.currentTimeMillis()));
+        // Return evidence belongs to the server the player left; another world's runtime never sees it.
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> ServerRuntimeRegistry.find(server)
+                .ifPresent(
+                        runtime -> runtime.awayBook().left(handler.getPlayer().getUUID(), System.currentTimeMillis())));
     }
 
     private static void afterDeath(LivingEntity victim, DamageSource source) {
@@ -127,10 +127,9 @@ public final class HappeningFeed {
     }
 
     private static void joined(ServerRuntime runtime, ServerPlayer player) {
-        Long left = awaySince.remove(player.getUUID());
-        long away = left == null ? 0L : System.currentTimeMillis() - left;
+        long away = runtime.awayBook().returned(player.getUUID(), System.currentTimeMillis());
         if (away < RETURN_AFTER_MILLIS) {
-            // A quick reconnect is not news; only a real absence is worth a line.
+            // A quick reconnect, an unknown leave or an expired one is not news; only a real absence is worth a line.
             return;
         }
         long minutes = away / 60_000L;

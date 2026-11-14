@@ -118,6 +118,17 @@ public final class MinecraftObtainSubtaskFactory
     }
 
     @Override
+    public Task restore(
+            dev.friendai.features.knowledge.search.TargetKind fixedTarget,
+            String requestedStrategy,
+            String scope,
+            String heading,
+            Caller caller,
+            UUID sessionId) {
+        return new SearchResourceTask(fixedTarget, requestedStrategy, scope, heading, caller, this, sessionId);
+    }
+
+    @Override
     public MiningTask create(String block, boolean down, int depthY, int radius, int maxBlocks, int maxTicks) {
         ExploreTask task = new ExploreTask(blockMatcher(block), down, depthY, radius, maxBlocks, maxTicks);
         return new MiningTask() {

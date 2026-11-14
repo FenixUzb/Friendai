@@ -10,6 +10,7 @@ import dev.friendai.agent.autonomy.Shift;
 import dev.friendai.agent.autonomy.ShiftRecord;
 import dev.friendai.agent.autonomy.ShiftStopWhen;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class CompanionSpeechPolicyTest {
@@ -21,6 +22,21 @@ class CompanionSpeechPolicyTest {
         assertFalse(CompanionSpeechPolicy.maySpeak(List.of(outcome), false));
         assertTrue(CompanionSpeechPolicy.maySpeak(List.of(outcome), true));
         assertTrue(CompanionSpeechPolicy.maySpeak(List.of(new BrainEvent.IdleNudge()), false));
+    }
+
+    @Test
+    void anIntermediatePlanStepIsQuietAndThePlanTerminalSpeaks() {
+        BrainEvent step = new BrainEvent.TaskFinished(4, 9, 0, "mine_blocks", true, "mined 3", "", Optional.empty());
+        BrainEvent direct = new BrainEvent.TaskFinished(5, 0, 0, "mine_blocks", true, "mined 3", "", Optional.empty());
+        BrainEvent failedStep =
+                new BrainEvent.TaskFinished(6, 9, 0, "mine_blocks", false, "blocked", "", Optional.empty());
+        BrainEvent plan = new BrainEvent.PlanFinished(9, "shelter", true, "built");
+
+        assertFalse(CompanionSpeechPolicy.maySpeak(List.of(step), false), "a plan step is not the outcome");
+        assertTrue(CompanionSpeechPolicy.maySpeak(List.of(direct), false), "a direct task speaks once");
+        assertTrue(CompanionSpeechPolicy.maySpeak(List.of(failedStep), false), "a blocked step needs its owner");
+        assertTrue(CompanionSpeechPolicy.maySpeak(List.of(plan), false), "the plan's terminal result speaks");
+        assertTrue(CompanionSpeechPolicy.maySpeak(List.of(step), true), "a player line always earns a reply");
     }
 
     @Test

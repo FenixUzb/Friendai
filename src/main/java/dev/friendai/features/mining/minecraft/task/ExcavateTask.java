@@ -52,6 +52,7 @@ public final class ExcavateTask implements Task {
     private static final int MAX_FALLBACK_DESCENTS = 3;
 
     private final ExcavationSpec spec;
+    private final int requestedCount;
     private final List<Pos> order;
     private int nextIndex;
     private final ExcavationProgress progress;
@@ -74,11 +75,25 @@ public final class ExcavateTask implements Task {
     private int completionIndex;
 
     public ExcavateTask(ExcavationSpec spec) {
-        this(spec, 0, new ExcavationProgress(), 0);
+        this(spec, spec.count());
+    }
+
+    /**
+     * @param requestedCount the count the caller asked for before {@link ExcavationSpec#of} capped it to the region;
+     *     shown once in {@link #describe()} so a reduced request is visible, never persisted
+     */
+    public ExcavateTask(ExcavationSpec spec, int requestedCount) {
+        this(spec, requestedCount, 0, new ExcavationProgress(), 0);
     }
 
     public ExcavateTask(ExcavationSpec spec, int nextIndex, ExcavationProgress progress, int fallbackDescents) {
+        this(spec, spec.count(), nextIndex, progress, fallbackDescents);
+    }
+
+    private ExcavateTask(
+            ExcavationSpec spec, int requestedCount, int nextIndex, ExcavationProgress progress, int fallbackDescents) {
         this.spec = spec;
+        this.requestedCount = Math.max(requestedCount, spec.count());
         this.order = spec.geometry().cells();
         this.nextIndex = Math.max(0, Math.min(nextIndex, order.size()));
         this.progress = progress;
@@ -214,9 +229,13 @@ public final class ExcavateTask implements Task {
                     return feed(c);
                 case FAILED:
                     UserMessage failure = session.failure();
+                    String detail = session.failureDetail();
                     session.stop(c);
                     session = null;
                     String reason = failure == null ? "unknown" : failureText(failure);
+                    if (!detail.isEmpty()) {
+                        reason = reason + " (" + detail + ")";
+                    }
                     progress.markRefused(reason);
                     if ("friendai.mining.inventory_full".equals(failure == null ? "" : failure.key())) {
                         return finish(
@@ -659,7 +678,7 @@ public final class ExcavateTask implements Task {
 
     @Override
     public String describe() {
-        return ExcavationText.describe(spec);
+        return ExcavationText.describe(spec, requestedCount);
     }
 
     @Override

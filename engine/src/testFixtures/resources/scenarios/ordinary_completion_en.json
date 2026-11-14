@@ -1,0 +1,28 @@
+{
+  "name": "ordinary_completion_en",
+  "access": "owner",
+  "playerSays": "Mine three coal.",
+  "replies": [
+    {
+      "text": "",
+      "tools": [
+        "mine_blocks"
+      ]
+    },
+    {
+      "text": "Done: three coal.",
+      "tools": []
+    }
+  ],
+  "expect": {
+    "maxRequests": 2,
+    "toolsCalled": [
+      "mine_blocks"
+    ],
+    "maxRepeatedToolCalls": 0,
+    "maxFalseConfirmations": 0,
+    "spokenContains": [
+      "Done: three coal"
+    ]
+  }
+}

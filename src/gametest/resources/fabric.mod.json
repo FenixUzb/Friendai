@@ -119,7 +119,8 @@
 			"dev.friendai.test.MetricsSoakTests",
 			"dev.friendai.test.TaskFaceTests",
 			"dev.friendai.test.PauseWorkTests",
-			"dev.friendai.test.LoggingTests"
+			"dev.friendai.test.LoggingTests",
+			"dev.friendai.test.TickBudgetTests"
 		]
 	},
 	"depends": {

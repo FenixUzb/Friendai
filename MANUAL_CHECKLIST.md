@@ -201,6 +201,7 @@ Things automated tests cannot cover. Tick an item only after you have actually d
 ## Multiplayer
 
 - [ ] LAN with two clients: each player has their own companion; addressing by name reaches your own companion when it is within 32 blocks, otherwise the nearest other companion within that radius.
+- [ ] Two clients open the companion menu at once while both companions work nearby: each menu still refreshes about every half second, the server tick stays smooth, and closing one menu does not stall the other.
 - [ ] A guest next to another player's companion chats with it; asking it to act is politely declined.
 - [ ] `/friendai trust <guest>`: the guest's request now runs; `/friendai untrust` takes effect on the next message.
 - [ ] `/friendai trusted` and the trust messages read correctly in English and Russian.
@@ -576,3 +577,29 @@ These checks need a real provider and the GUI; the automated tests use a scripte
 - [ ] `/friendai logs prune` removes old files and never the active one; `/friendai logs export` writes a bundle whose `summary.txt` contains the `logs:` path.
 - [ ] Set the level to `normal`, let a turn and a task run, and confirm the files contain no prompt, reply or tool-result bodies; switch to `detailed` and confirm they appear; check that configured API keys are `***` in both.
 - [ ] After a failed task ask "what happened?": the companion uses `logs_search` and reports ids and causes instead of guessing.
+
+## Grounded speech (TODO 84)
+
+- [ ] Ask for work that will be refused (for example a block you are not allowed to break): no "on it" or other start claim precedes the refusal, and the next line says what happened.
+- [ ] With an OpenAI-compatible streaming provider, ask a casual question and confirm the first sentence is heard before the answer finishes; then give an action order and confirm nothing about starting is heard before the result.
+- [ ] Run a two-step plan and confirm the owner hears one line at the plan's end rather than one per successful step; a failed or blocked step still speaks.
+- [ ] Correct an order mid-task and answer a companion question: the correction is acknowledged once and the question is not repeated after it is answered.
+
+These need a real provider, a microphone or a live world; the automated suite used a scripted model.
+
+## Request budget and plan acknowledgement (TODO 85)
+
+- [ ] With a small local model (or a profile whose model the table does not know), talk for a long session with many tool results: the companion keeps answering, earlier finished exchanges fall out of context, and the current order is never lost.
+- [ ] Send one enormous chat line on that profile: the companion answers with a single "request too large" line and no provider error appears in the log.
+- [ ] Ask for a plan-worthy order and stay silent: the plan is acknowledged once and work starts without a second model round trip; a question or a mixed "how are you? also dig here" still gets its own reply.
+
+These need a real provider and a long session; the automated suite used scripted models.
+
+## Recent conversation across a reload (TODO 86)
+
+- [ ] Talk to the companion, then restart the server (or dismiss and re-summon it) and ask a follow-up that only makes sense with the previous exchange ("and the other one?", "where were we?"): it answers from the last few lines you actually heard.
+- [ ] Open the memory tab and clear the conversation, then ask the same follow-up: the cleared lines are unknown to it, and a fresh conversation starts.
+- [ ] Join as a trusted player and then as a guest after an owner conversation: neither hears the owner's lines, and a guest's own earlier lines are not restored.
+- [ ] Load a second world in singleplayer: the first world's conversation is not mentioned there.
+
+These need a live world and two players; the automated suite used a scripted model and a live transcript book.

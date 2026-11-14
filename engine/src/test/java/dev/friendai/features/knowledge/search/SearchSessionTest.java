@@ -265,7 +265,115 @@ class SearchSessionTest {
                 0,
                 0));
         assertEquals(SearchSession.Phase.COMPLETE, returning.snapshot().phase());
+
         returning.resumeAfterReload(40);
         assertEquals(SearchSession.Phase.COMPLETE, returning.snapshot().phase());
+    }
+
+    @Test
+    void reloadInterruptOfAnOutboundLegResumesPlanningWithItsSpend() {
+        SearchSession session = new SearchSession(
+                UUID.randomUUID(),
+                "minecraft:overworld",
+                "iron",
+                new Pos(0, 64, 0),
+                new SearchSession.Limits(64, 256, 2400, 128),
+                0);
+        session.advance(readyInput(1));
+        var frontier = new SearchPlanner.Frontier(
+                new Pos(16, 64, 0), new Pos(16, 64, 0), ResourceSearchProfile.Strategy.SURFACE, 1, 32);
+        session.advance(new SearchSession.Input(
+                2,
+                "minecraft:overworld",
+                new Pos(0, 64, 0),
+                true,
+                false,
+                SearchSession.LegOutcome.NONE,
+                frontier,
+                0,
+                0,
+                0,
+                32));
+        assertEquals(SearchSession.Phase.TRAVEL, session.snapshot().phase());
+        long spentTicks = session.snapshot().spentTicks();
+        long spentTravel = Math.round(session.snapshot().spentTravelBlocks());
+
+        session.interruptForReload();
+        assertTrue(session.resumable());
+        assertEquals(SearchSession.Phase.INTERRUPTED, session.snapshot().phase());
+        assertEquals(SearchSession.Phase.TRAVEL, session.snapshot().interruptedFrom());
+
+        session.resumeAfterReload(50);
+        assertEquals(SearchSession.Phase.CHOOSE_FRONTIER, session.snapshot().phase());
+        assertEquals(spentTicks, session.snapshot().spentTicks());
+        assertEquals(spentTravel, Math.round(session.snapshot().spentTravelBlocks()));
+        assertEquals(50, session.snapshot().lastTick());
+    }
+
+    @Test
+    void reloadInterruptOfAReturnKeepsWalkingHomeAndItsDiscovery() {
+        SearchSession session = new SearchSession(
+                UUID.randomUUID(),
+                "minecraft:overworld",
+                "iron",
+                new Pos(0, 64, 0),
+                new SearchSession.Limits(64, 256, 2400, 128),
+                0);
+        session.advance(new SearchSession.Input(
+                5,
+                "minecraft:overworld",
+                new Pos(16, 64, 0),
+                true,
+                true,
+                SearchSession.LegOutcome.NONE,
+                null,
+                0,
+                0,
+                0,
+                0));
+        assertEquals(SearchSession.Phase.RETURN, session.snapshot().phase());
+        assertTrue(session.snapshot().discovered());
+        long spentTicks = session.snapshot().spentTicks();
+
+        session.interruptForReload();
+        assertEquals(SearchSession.Phase.RETURN, session.snapshot().interruptedFrom());
+        session.resumeAfterReload(60);
+
+        assertEquals(SearchSession.Phase.RETURN, session.snapshot().phase());
+        assertTrue(session.snapshot().discovered());
+        assertEquals(spentTicks, session.snapshot().spentTicks());
+    }
+
+    @Test
+    void aDeliberateStopIsNeverResumedByACheckpoint() {
+        SearchSession session = new SearchSession(
+                UUID.randomUUID(),
+                "minecraft:overworld",
+                "iron",
+                new Pos(0, 64, 0),
+                new SearchSession.Limits(64, 256, 2400, 128),
+                0);
+        session.advance(readyInput(1));
+        session.interrupt();
+
+        assertFalse(session.resumable());
+        session.resumeAfterReload(20);
+        assertEquals(SearchSession.Phase.INTERRUPTED, session.snapshot().phase());
+        assertEquals(null, session.snapshot().interruptedFrom());
+    }
+
+    private static SearchSession.Input readyInput(long tick) {
+        return new SearchSession.Input(
+                tick,
+                "minecraft:overworld",
+                new Pos(0, 64, 0),
+                true,
+                false,
+                SearchSession.LegOutcome.NONE,
+                null,
+                0,
+                0,
+                0,
+                0);
     }
 }

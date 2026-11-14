@@ -18,7 +18,8 @@ public record WorldFacts(
         boolean dimensionHasOre,
         List<ResourceCandidate> resourceCandidates,
         Set<Long> verifiedSiteIds,
-        Set<Long> excludedSiteIds) {
+        Set<Long> excludedSiteIds,
+        Map<String, Integer> attemptedSources) {
     public WorldFacts(
             Map<String, Integer> blocksNearby,
             Map<String, Integer> mobsNearby,
@@ -37,7 +38,8 @@ public record WorldFacts(
                 dimensionHasOre,
                 List.of(),
                 Set.of(),
-                Set.of());
+                Set.of(),
+                Map.of());
     }
 
     public WorldFacts(
@@ -59,7 +61,33 @@ public record WorldFacts(
                 dimensionHasOre,
                 resourceCandidates,
                 Set.of(),
-                Set.of());
+                Set.of(),
+                Map.of());
+    }
+
+    public WorldFacts(
+            Map<String, Integer> blocksNearby,
+            Map<String, Integer> mobsNearby,
+            Map<String, Integer> containerItems,
+            Map<String, Integer> matureCrops,
+            Set<String> stationsNearby,
+            boolean exploreAllowed,
+            boolean dimensionHasOre,
+            List<ResourceCandidate> resourceCandidates,
+            Set<Long> verifiedSiteIds,
+            Set<Long> excludedSiteIds) {
+        this(
+                blocksNearby,
+                mobsNearby,
+                containerItems,
+                matureCrops,
+                stationsNearby,
+                exploreAllowed,
+                dimensionHasOre,
+                resourceCandidates,
+                verifiedSiteIds,
+                excludedSiteIds,
+                Map.of());
     }
 
     public WorldFacts {
@@ -72,10 +100,27 @@ public record WorldFacts(
         resourceCandidates = resourceCandidates == null ? List.of() : List.copyOf(resourceCandidates);
         verifiedSiteIds = verifiedSiteIds == null ? Set.of() : Set.copyOf(verifiedSiteIds);
         excludedSiteIds = excludedSiteIds == null ? Set.of() : Set.copyOf(excludedSiteIds);
+        attemptedSources = copy(attemptedSources);
     }
 
     public static WorldFacts empty() {
         return new WorldFacts(Map.of(), Map.of(), Map.of(), Map.of(), Set.of(), false, true);
+    }
+
+    /** The same scan facts with the sources an acquisition already failed to reach attached. */
+    public WorldFacts withAttemptedSources(Map<String, Integer> sources) {
+        return new WorldFacts(
+                blocksNearby,
+                mobsNearby,
+                containerItems,
+                matureCrops,
+                stationsNearby,
+                exploreAllowed,
+                dimensionHasOre,
+                resourceCandidates,
+                verifiedSiteIds,
+                excludedSiteIds,
+                sources);
     }
 
     private static Map<String, Integer> copy(Map<String, Integer> source) {

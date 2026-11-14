@@ -34,7 +34,7 @@ class AgentThroughputTest {
         Outcome result = run("invalid_queue_add_args");
         assertEquals(0, result.plannerCalls(), "a rejected queue_add never reaches the planner");
         assertEquals(2, result.count("queue_add"), "the invalid call and the corrected one");
-        assertEquals(4, result.requests(), "every model step of the repair turn was requested");
+        assertEquals(3, result.requests(), "the corrected plan is acknowledged without a fourth round trip");
     }
 
     private static Outcome run(String name) throws IOException {

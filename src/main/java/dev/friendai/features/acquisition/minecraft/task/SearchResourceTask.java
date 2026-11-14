@@ -1,5 +1,7 @@
 package dev.friendai.features.acquisition.minecraft.task;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import dev.friendai.debug.WorkSet;
 import dev.friendai.execution.tool.AccessLevel;
 import dev.friendai.execution.tool.Caller;
@@ -39,6 +41,9 @@ public final class SearchResourceTask implements Task {
     private final String heading;
     private final Caller caller;
     private final ExploreTaskFactory exploreTaskFactory;
+    /** The session a checkpoint named; null for a fresh request. */
+    private final UUID restoreSessionId;
+
     private Task driver;
     private SearchSession session;
     private TargetKind target;
@@ -51,7 +56,7 @@ public final class SearchResourceTask implements Task {
     private boolean rememberedStructure;
 
     public SearchResourceTask(String resource, String requestedStrategy, String scope, String heading, Caller caller) {
-        this(null, resource, requestedStrategy, scope, heading, caller, ExploreTaskFactory.UNAVAILABLE);
+        this(null, resource, requestedStrategy, scope, heading, caller, ExploreTaskFactory.UNAVAILABLE, null);
     }
 
     public SearchResourceTask(
@@ -61,12 +66,12 @@ public final class SearchResourceTask implements Task {
             String heading,
             Caller caller,
             ExploreTaskFactory exploreTaskFactory) {
-        this(null, resource, requestedStrategy, scope, heading, caller, exploreTaskFactory);
+        this(null, resource, requestedStrategy, scope, heading, caller, exploreTaskFactory, null);
     }
 
     public SearchResourceTask(
             TargetKind target, String requestedStrategy, String scope, String heading, Caller caller) {
-        this(target, null, requestedStrategy, scope, heading, caller, ExploreTaskFactory.UNAVAILABLE);
+        this(target, null, requestedStrategy, scope, heading, caller, ExploreTaskFactory.UNAVAILABLE, null);
     }
 
     public SearchResourceTask(
@@ -76,7 +81,19 @@ public final class SearchResourceTask implements Task {
             String heading,
             Caller caller,
             ExploreTaskFactory exploreTaskFactory) {
-        this(target, null, requestedStrategy, scope, heading, caller, exploreTaskFactory);
+        this(target, null, requestedStrategy, scope, heading, caller, exploreTaskFactory, null);
+    }
+
+    /** Rebuilds a checkpointed search that resumes the named session with its remaining budget. */
+    public SearchResourceTask(
+            TargetKind target,
+            String requestedStrategy,
+            String scope,
+            String heading,
+            Caller caller,
+            ExploreTaskFactory exploreTaskFactory,
+            UUID restoreSessionId) {
+        this(target, null, requestedStrategy, scope, heading, caller, exploreTaskFactory, restoreSessionId);
     }
 
     private SearchResourceTask(
@@ -86,7 +103,8 @@ public final class SearchResourceTask implements Task {
             String scope,
             String heading,
             Caller caller,
-            ExploreTaskFactory exploreTaskFactory) {
+            ExploreTaskFactory exploreTaskFactory,
+            UUID restoreSessionId) {
         this.fixedTarget = target;
         this.resource = resource;
         this.requestedStrategy = requestedStrategy == null ? "auto" : requestedStrategy;
@@ -94,6 +112,7 @@ public final class SearchResourceTask implements Task {
         this.heading = heading;
         this.caller = caller;
         this.exploreTaskFactory = exploreTaskFactory;
+        this.restoreSessionId = restoreSessionId;
     }
 
     @Override
@@ -111,7 +130,8 @@ public final class SearchResourceTask implements Task {
         var owner = context.companion().ownerUuid();
         if (owner == null || caller == null || caller.access().ordinal() < AccessLevel.TRUSTED.ordinal())
             throw new IllegalArgumentException("resource search is unavailable to this caller");
-        useStrongholdClue(context, owner);
+        // An eye of ender is spent once per order; a resumed search must not consume another clue.
+        if (restoreSessionId == null) useStrongholdClue(context, owner);
         var policy = context.resourceSearchSettings();
         var ledger = context.ownerKnowledge().searchLedger();
         if (!scope.equals("local") && !scope.equals("expedition"))
@@ -172,11 +192,28 @@ public final class SearchResourceTask implements Task {
         int ticks = expedition ? policy.expeditionTicks() : policy.localTicks();
         int excavationLimit = shallow ? 24 : 128;
         SearchSession.Limits requested = new SearchSession.Limits(radius, radius * 4.0, ticks, excavationLimit);
-        Pos origin = position(context);
-        long logicalTick = context.level().getServer().overworld().getGameTime();
-        session = ledger.acquire(owner, dimension, target.coverageKey(), logicalTick, requested, origin);
-        session.clampLimits(requested);
-        hint = context.searchHints().get(owner, logicalTick).orElse(null);
+        Pos here = position(context);
+        long now = context.level().getServer().overworld().getGameTime();
+        SearchSession resumed = restoreSessionId == null
+                ? null
+                : ledger.resume(restoreSessionId, owner, dimension, target.coverageKey(), now);
+        String recoveryNote;
+        if (resumed != null) {
+            session = resumed;
+            session.clampLimits(requested);
+            recoveryNote = "resumed after restart with its spent budget";
+        } else {
+            session = ledger.acquire(owner, dimension, target.coverageKey(), now, requested, here);
+            session.clampLimits(requested);
+            recoveryNote = restoreSessionId == null
+                    ? ""
+                    : "the interrupted search could not be resumed exactly; continuing under the ordinary budget";
+        }
+        // A resumed trip returns to the base it started from, not to wherever the restart put the companion.
+        Pos base = resumed == null ? null : session.snapshot().origin();
+        boolean resumeReturn = resumed != null && session.snapshot().phase() == SearchSession.Phase.RETURN;
+        radius = Math.min(radius, session.snapshot().limits().radius());
+        hint = context.searchHints().get(owner, now).orElse(null);
         escort = new EscortPolicy(policy.escort());
         driver = new ResourceSearchDriver(
                 session,
@@ -189,7 +226,10 @@ public final class SearchResourceTask implements Task {
                 caveEntrance,
                 hint,
                 false,
-                exploreTaskFactory);
+                exploreTaskFactory,
+                base,
+                resumeReturn,
+                recoveryNote);
         ownerId = owner;
         driver.start(context);
     }
@@ -399,6 +439,69 @@ public final class SearchResourceTask implements Task {
     @Override
     public String resultSummary() {
         return summary;
+    }
+
+    @Override
+    public String saveData() {
+        if (driver == null || session == null || target == null || caller == null || caller.uuid() == null) return null;
+        SearchSession.Snapshot snapshot = session.snapshot();
+        if (snapshot.phase() == SearchSession.Phase.COMPLETE || snapshot.phase() == SearchSession.Phase.FAILED)
+            return null;
+        return new Saved(target, requestedStrategy, scope, heading, caller.uuid(), snapshot.id()).encode();
+    }
+
+    /**
+     * The bounded checkpoint a restart resumes: which search, by which actor, and the exact session whose spent
+     * budget and origin must continue. Deliberately no access level, no journey and no lease: all three are
+     * re-derived from current data before the restored task may act.
+     */
+    public record Saved(
+            TargetKind target, String strategy, String scope, String heading, UUID principal, UUID session) {
+        static final int VERSION = 1;
+        static final int MAX_LENGTH = 8_192;
+
+        String encode() {
+            JsonObject json = new JsonObject();
+            json.addProperty("v", VERSION);
+            json.add("target", target.toJson());
+            json.addProperty("strategy", strategy);
+            json.addProperty("scope", scope);
+            if (heading != null && !heading.isBlank()) json.addProperty("heading", heading);
+            json.addProperty("principal", principal.toString());
+            json.addProperty("session", session.toString());
+            String encoded = json.toString();
+            return encoded.length() <= MAX_LENGTH ? encoded : null;
+        }
+
+        /** Returns empty for malformed, oversized or unknown-version data; the job is then retried from its args. */
+        public static java.util.Optional<Saved> decode(String data) {
+            if (data == null || data.isBlank() || data.length() > MAX_LENGTH) return java.util.Optional.empty();
+            try {
+                JsonObject json = JsonParser.parseString(data).getAsJsonObject();
+                if (!json.has("v") || json.get("v").getAsInt() != VERSION) return java.util.Optional.empty();
+                TargetKind target = TargetKind.parse(json.getAsJsonObject("target"));
+                UUID principal = UUID.fromString(json.get("principal").getAsString());
+                UUID session = UUID.fromString(json.get("session").getAsString());
+                String heading = json.has("heading") && !json.get("heading").isJsonNull()
+                        ? json.get("heading").getAsString()
+                        : null;
+                return java.util.Optional.of(new Saved(
+                        target,
+                        text(json, "strategy", "auto"),
+                        text(json, "scope", "local"),
+                        heading,
+                        principal,
+                        session));
+            } catch (RuntimeException invalid) {
+                return java.util.Optional.empty();
+            }
+        }
+
+        private static String text(JsonObject json, String field, String fallback) {
+            return json.has(field) && !json.get(field).isJsonNull()
+                    ? json.get(field).getAsString()
+                    : fallback;
+        }
     }
 
     private static ResourceSearchProfile profile(TargetKind target, String dimension) {

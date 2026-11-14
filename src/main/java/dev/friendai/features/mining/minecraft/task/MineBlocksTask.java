@@ -650,6 +650,10 @@ public final class MineBlocksTask implements Task {
                 String reason = miningSession.failure() == null
                         ? "the resource became unreachable"
                         : failureText(miningSession.failure());
+                String detail = miningSession.failureDetail();
+                if (!detail.isEmpty()) {
+                    reason = reason + " (" + detail + ")";
+                }
                 summary = "mined " + mined + " of " + count + ", " + reason;
                 yield TaskStatus.FAILED;
             }

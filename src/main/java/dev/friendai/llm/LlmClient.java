@@ -11,6 +11,7 @@ import dev.friendai.agent.llm.model.Message;
 import dev.friendai.agent.llm.model.ToolSpec;
 import dev.friendai.agent.llm.protocol.ProtocolSupport;
 import dev.friendai.agent.llm.protocol.StreamingProtocol;
+import dev.friendai.agent.llm.provider.ContextWindows;
 import dev.friendai.agent.llm.provider.LlmProfile;
 import dev.friendai.agent.llm.provider.ProviderRegistry;
 import dev.friendai.agent.llm.provider.Route;
@@ -38,6 +39,16 @@ public final class LlmClient implements LlmGateway, StreamingLlmGateway {
         this.registry = registry;
         this.profile = profile;
         this.streaming = streaming;
+    }
+
+    @Override
+    public int contextTokens() {
+        return ContextWindows.forModel(profile.provider(), profile.model());
+    }
+
+    @Override
+    public int maxOutputTokens() {
+        return profile.maxTokens();
     }
 
     @Override

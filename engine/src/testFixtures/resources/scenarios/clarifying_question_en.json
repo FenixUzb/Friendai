@@ -1,0 +1,20 @@
+{
+  "name": "clarifying_question_en",
+  "access": "owner",
+  "playerSays": "Bring me some wood.",
+  "replies": [
+    {
+      "text": "How much wood do you need?",
+      "tools": []
+    }
+  ],
+  "expect": {
+    "maxRequests": 1,
+    "maxClarifications": 1,
+    "maxFalseConfirmations": 0,
+    "toolsNotCalled": [
+      "mine_blocks",
+      "queue_add"
+    ]
+  }
+}

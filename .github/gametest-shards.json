@@ -21,7 +21,8 @@
 				"TaskFaceTests",
 				"LoggingTests",
 				"LiveCompanionTests",
-				"LiveUnderstandingTests"
+				"LiveUnderstandingTests",
+				"TickBudgetTests"
 			]
 		},
 		{

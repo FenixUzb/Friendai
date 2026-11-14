@@ -3,6 +3,7 @@ package dev.friendai.world.movement;
 import dev.friendai.entity.CompanionEntity;
 import dev.friendai.foundation.movement.ArrivalPolicy;
 import dev.friendai.foundation.movement.PathSteering;
+import dev.friendai.foundation.movement.StepProgress;
 import dev.friendai.foundation.spatial.BlockList;
 import dev.friendai.foundation.spatial.CellView;
 import dev.friendai.foundation.spatial.CostModel;
@@ -128,11 +129,7 @@ public final class PathExecutor {
     private boolean leaping;
     private double stepStartY;
     private int lowestY;
-    private double progressX;
-    private double progressY;
-    private double progressZ;
-    private int progressTicks;
-    private int nudges;
+    private StepProgress progress;
     private int brokenBlocks;
 
     public PathExecutor(Path path, MaterialPicker materials, PathingConfig config) {
@@ -280,11 +277,8 @@ public final class PathExecutor {
         jumpTicks = 0;
         stepStartY = c.companion().getY();
         lowestY = Math.min(step.from().y(), step.to().y());
-        progressX = c.companion().getX();
-        progressY = c.companion().getY();
-        progressZ = c.companion().getZ();
-        progressTicks = 0;
-        nudges = 0;
+        progress = new StepProgress(step.from(), step.to(), STUCK_WINDOW, STUCK_PROGRESS);
+        progress.reset(c.companion().getX(), c.companion().getY(), c.companion().getZ());
         phase = Phase.CHECK;
     }
 
@@ -516,24 +510,12 @@ public final class PathExecutor {
             double vertical = climbing && !companion.onClimbable() ? velocity.y : Math.max(velocity.y, 0.2);
             companion.setDeltaMovement(climbing ? 0.0 : velocity.x, vertical, climbing ? 0.0 : velocity.z);
         }
-        if (++progressTicks >= STUCK_WINDOW) {
-            double dx = companion.getX() - progressX;
-            double dy = companion.getY() - progressY;
-            double dz = companion.getZ() - progressZ;
-            double moved = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            if (moved < STUCK_PROGRESS) {
-                if (nudges > 0) {
-                    return fail(c);
-                }
-                companion.getJumpControl().jump();
-                nudges = 1;
-            } else {
-                nudges = 0;
+        switch (progress.sample(companion.getX(), companion.getY(), companion.getZ())) {
+            case NUDGE -> companion.getJumpControl().jump();
+            case STALLED -> {
+                return fail(c);
             }
-            progressX = companion.getX();
-            progressY = companion.getY();
-            progressZ = companion.getZ();
-            progressTicks = 0;
+            case MOVING -> {}
         }
         if (step.move() == Move.ASCEND || step.move() == Move.DIG_ASCEND || (step.move() == Move.PILLAR && !jumped)) {
             if (companion.onGround() && needsJump(companion, step, target)) {

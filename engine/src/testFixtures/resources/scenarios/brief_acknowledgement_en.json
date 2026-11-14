@@ -1,0 +1,29 @@
+{
+  "name": "brief_acknowledgement_en",
+  "access": "owner",
+  "playerSays": "Mine three coal.",
+  "replies": [
+    {
+      "text": "On it.",
+      "tools": [
+        "mine_blocks"
+      ]
+    },
+    {
+      "text": "Mined three coal.",
+      "tools": []
+    }
+  ],
+  "expect": {
+    "maxRequests": 2,
+    "toolsCalled": [
+      "mine_blocks"
+    ],
+    "maxRepeatedToolCalls": 0,
+    "maxFalseConfirmations": 0,
+    "spokenContains": [
+      "On it.",
+      "three coal"
+    ]
+  }
+}

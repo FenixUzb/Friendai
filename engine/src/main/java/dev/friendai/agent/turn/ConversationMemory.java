@@ -47,6 +47,23 @@ public final class ConversationMemory {
         return new ArrayList<>(messages);
     }
 
+    /**
+     * Starts the conversation from lines an earlier session delivered. The same whole-turn trim applies, so a
+     * seeded history obeys the rules a live one does: it never exceeds the limit and never starts with a tool
+     * result or an assistant message whose call was cut off.
+     */
+    public void seed(List<Message> initial) {
+        messages.clear();
+        if (initial == null) {
+            return;
+        }
+        for (Message message : initial) {
+            if (message != null) {
+                add(message);
+            }
+        }
+    }
+
     public void clear() {
         messages.clear();
     }

@@ -10,10 +10,14 @@ import dev.friendai.execution.tool.Caller;
 import dev.friendai.execution.tool.SchemaBuilder;
 import dev.friendai.execution.tool.Tool;
 import dev.friendai.execution.tool.ToolResult;
+import dev.friendai.features.mining.MiningEntry;
+import dev.friendai.features.mining.minecraft.mining.ExcavationGuard;
 import dev.friendai.features.mining.minecraft.mining.TreeFinder;
 import dev.friendai.features.mining.tree.TreeSummary;
 import dev.friendai.features.mining.tree.TreeText;
 import dev.friendai.features.places.minecraft.PlaceService;
+import dev.friendai.foundation.spatial.CellView;
+import dev.friendai.foundation.spatial.Pos;
 import dev.friendai.perception.resource.FocusedLook;
 import dev.friendai.perception.resource.ResourceCandidates;
 import dev.friendai.server.execution.tools.FeatureToolContributor;
@@ -100,7 +104,9 @@ public final class BlockInfoTools implements FeatureToolContributor {
         registry.registerTool(
                 instantTool(
                         "find_blocks",
-                        "List directly observed or remembered blocks of a given id or #tag with coordinates. Results are "
+                        "List directly observed or remembered blocks of a given id or #tag with coordinates. Each entry "
+                                + "says whether it is observed now or remembered and how old the sighting is, whether "
+                                + "its chunk is loaded, and whether a stance could start it today. Results are "
                                 + "observations, not a survey of unseen terrain.",
                         SchemaBuilder.object()
                                 .string("block", "Block id like minecraft:iron_ore, or a tag like #minecraft:logs")
@@ -177,14 +183,13 @@ public final class BlockInfoTools implements FeatureToolContributor {
         BlockMatcher matcher = parseBlockMatcher(args.get("block").getAsString());
         int radius = args.has("radius") ? args.get("radius").getAsInt() : mineRadius.getAsInt();
         int limit = args.has("limit") ? args.get("limit").getAsInt() : 5;
-        List<BlockPos> found =
-                resources == null ? List.of() : resources.knownOrVisible(companion, matcher, radius, limit);
+        List<ResourceCandidates.KnownBlock> found =
+                resources == null ? List.of() : resources.knownWithEvidence(companion, matcher, radius, limit);
         if (found.isEmpty()
                 && resources != null
                 && companion.level() instanceof ServerLevel level
                 && FocusedLook.lookFor(level, companion, resources, matcher::test, radius) > 0) {
-            // Nothing seen yet is not nothing there: a deliberate look found it in plain view.
-            found = resources.knownOrVisible(companion, matcher, radius, limit);
+            found = resources.knownWithEvidence(companion, matcher, radius, limit);
         }
         if (found.isEmpty()) {
             // "Near us" is a player's word, not a radius: a block just past the asked radius is still the one they
@@ -203,11 +208,24 @@ public final class BlockInfoTools implements FeatureToolContributor {
             return ToolResult.ok("no " + matcher.label() + " observed or remembered within " + radius
                     + " blocks; use search_resource to search for it, or look_around for a visible exposure");
         }
-        StringBuilder text =
-                new StringBuilder(found.size() + " observed/remembered " + matcher.label() + " nearest first: ");
+        long observed = found.stream()
+                .filter(block -> block.evidence() == ResourceCandidates.Evidence.OBSERVED)
+                .count();
+        StringBuilder text = new StringBuilder(found.size()
+                + " "
+                + matcher.label()
+                + " nearest first ("
+                + observed
+                + " observed, "
+                + (found.size() - observed)
+                + " remembered): ");
         TaskContext context = new TaskContext(companion, (ServerLevel) companion.level());
+        // The same safety rule a path search will apply, probed without walking: a labelled entry is comparable with
+        // what a mining task will actually find when it arrives.
+        CellView view = ExcavationGuard.planningView(context, context.pathingConfig());
         for (int i = 0; i < found.size(); i++) {
-            BlockPos pos = found.get(i);
+            ResourceCandidates.KnownBlock block = found.get(i);
+            BlockPos pos = block.pos();
             if (i > 0) {
                 text.append(", ");
             }
@@ -219,13 +237,39 @@ public final class BlockInfoTools implements FeatureToolContributor {
                     .append(pos.getZ())
                     .append(" (")
                     .append(String.format(Locale.ROOT, "%.1f", distance))
-                    .append(" blocks)");
-            MiningRefusal refusal = MiningRefusal.check(context, pos, false);
-            if (refusal != null) {
-                text.append(" (unmineable: ").append(refusal.cause()).append(')');
+                    .append(" blocks, ")
+                    .append(evidenceText(block));
+            String readiness = readinessText(context, view, block);
+            if (!readiness.isEmpty()) {
+                text.append(", ").append(readiness);
             }
+            text.append(')');
         }
         return ToolResult.ok(text.toString());
+    }
+
+    private static String evidenceText(ResourceCandidates.KnownBlock block) {
+        String when = block.ageTicks() == 0 ? "now" : block.ageTicks() + " ticks ago";
+        return block.evidence() == ResourceCandidates.Evidence.OBSERVED ? "observed " + when : "remembered " + when;
+    }
+
+    /** Whether a listed block can be started from a stance now, or why not. Empty only for a ready target. */
+    private static String readinessText(TaskContext context, CellView view, ResourceCandidates.KnownBlock block) {
+        if (!block.loaded()) {
+            return "chunk not loaded";
+        }
+        BlockPos pos = block.pos();
+        BlockState state = context.level().getBlockState(pos);
+        if (state.isAir()) {
+            return "no longer there";
+        }
+        MiningRefusal refusal = MiningRefusal.check(context, pos, false);
+        if (refusal != null) {
+            return "unmineable: " + refusal.cause();
+        }
+        MiningEntry.Verdict entry =
+                MiningEntry.check(view, new Pos(pos.getX(), pos.getY(), pos.getZ()), Set.of(), false);
+        return entry.ready() ? "stance ready" : entry.label();
     }
 
     private ToolResult describeBlock(CompanionEntity companion, Caller caller, JsonObject args) {
@@ -383,8 +427,15 @@ public final class BlockInfoTools implements FeatureToolContributor {
 
     private static ToolMeta metadata(String name) {
         return switch (name) {
-            case "find_trees", "find_blocks", "describe_block" ->
-                new ToolMeta(name, ToolGroup.INFO, false, "", List.of(), Cost.LOW);
+            case "find_blocks" ->
+                new ToolMeta(
+                        name,
+                        ToolGroup.INFO,
+                        false,
+                        "- Use find_blocks for a read-only question about what is already visible or remembered: it lists the nearest blocks of a kind with the freshness of the evidence and whether a stance can start them, and it never travels. Use search_resource when the material is not in sight and a trip is needed; use mine_blocks, excavate or obtain_item to take it.",
+                        List.of(),
+                        Cost.LOW);
+            case "find_trees", "describe_block" -> new ToolMeta(name, ToolGroup.INFO, false, "", List.of(), Cost.LOW);
             default -> throw new IllegalArgumentException("unknown block information tool: " + name);
         };
     }

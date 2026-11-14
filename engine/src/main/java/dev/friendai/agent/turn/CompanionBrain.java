@@ -4,6 +4,7 @@ import dev.friendai.agent.goal.GoalView;
 import dev.friendai.agent.llm.RequestTelemetry;
 import dev.friendai.agent.llm.model.LlmResponse;
 import dev.friendai.agent.llm.model.Message;
+import dev.friendai.agent.llm.model.Role;
 import dev.friendai.agent.llm.model.StopReason;
 import dev.friendai.agent.llm.model.ToolCall;
 import dev.friendai.agent.llm.model.ToolSpec;
@@ -15,6 +16,8 @@ import dev.friendai.agent.plan.PlanSubject;
 import dev.friendai.agent.plan.PlannerException;
 import dev.friendai.agent.plan.PlannerInput;
 import dev.friendai.agent.recover.FailureHandler;
+import dev.friendai.agent.recover.RecoveryAdvisor;
+import dev.friendai.agent.recover.RecoveryIncidentBook;
 import dev.friendai.agent.route.IntentVocabulary;
 import dev.friendai.agent.route.PlanNeed;
 import dev.friendai.agent.route.PlanningDecision;
@@ -22,6 +25,7 @@ import dev.friendai.agent.route.RouteDecision;
 import dev.friendai.agent.route.RouteSignals;
 import dev.friendai.agent.route.TurnMode;
 import dev.friendai.agent.route.TurnRouter;
+import dev.friendai.agent.tools.Cost;
 import dev.friendai.agent.tools.ToolCatalog;
 import dev.friendai.agent.tools.ToolGroup;
 import dev.friendai.execution.tool.AccessLevel;
@@ -73,6 +77,8 @@ public final class CompanionBrain {
     private static final int MAX_HISTORIES = 32;
     /** Old plan blockers are evicted so repeated queue notifications cannot grow this cooldown map forever. */
     private static final int MAX_AUTHORITY_QUESTION_KEYS = 64;
+    /** Plan tools worth naming when the model's attempts on one incident are shown back to it. */
+    private static final Set<String> PLANNING_TOOLS = Set.of("queue_add", "queue_edit", "plan_patch", "replan_plan");
 
     private final Supplier<Persona> persona;
     private final Supplier<BrainSettings> settings;
@@ -88,6 +94,12 @@ public final class CompanionBrain {
     private final Map<UUID, PrincipalHistory> histories = new LinkedHashMap<>(16, 0.75f, true);
     /** Last model-turn attempt for a blocked action, bounded and keyed by blocker rather than transient job id. */
     private final LinkedHashMap<String, Long> authorityQuestionAt = new LinkedHashMap<>(16, 0.75f, true);
+    /** What one blocked job has already spent on recovery, so a chain of unrelated jobs cannot reset it. */
+    private final RecoveryIncidentBook incidents = new RecoveryIncidentBook(new RecoveryAdvisor());
+
+    private final RepeatedCallGuard repeatedCalls = new RepeatedCallGuard();
+    /** This turn's batch reports a block or a failure, so a spent incident makes it a words-only turn. */
+    private boolean recoveryTurn;
 
     private ConversationMemory memory;
     private UUID activePrincipal;
@@ -97,6 +109,11 @@ public final class CompanionBrain {
     private PlacedSource placedSource = PlacedSource.NONE;
     private PlannerPort plannerPort = PlannerPort.NONE;
     private TradingTurnPort tradingTurnPort = TradingTurnPort.NOOP;
+    /** Delivered lines a principal's conversation starts from when this brain first answers them. */
+    private RecentConversationSource recentConversation = RecentConversationSource.NONE;
+
+    /** A cleared transcript must also leave the live conversation it backed; applied when the turn settles. */
+    private boolean clearConversationOnTurnEnd;
     /** A plan that failed or needs a decision in this turn's batch is the one the goal follows. */
     private boolean ownsTroubledPlan;
     /** What the planner just did; shown once in the next request's Mission block. */
@@ -132,6 +149,7 @@ public final class CompanionBrain {
     private int requestIdGeneration = -1;
     private int step;
     private TurnKind turnKind = TurnKind.PLAYER;
+    private boolean playerOnlyBatch = true;
     private long turnSeq;
     /** The event that opened the running turn, so a silent answer can be replaced by a line the mod knows. */
     private BrainEvent turnEvent;
@@ -237,6 +255,9 @@ public final class CompanionBrain {
     }
 
     public void post(BrainEvent e) {
+        // Recorded before the drops below: a blockage the authority cooldown keeps out of the queue still belongs
+        // to the incident it names, and a cancellation still ends one.
+        feedIncidents(e);
         if (!CompanionSpeechPolicy.needsModelTurn(e)) {
             observe(o -> o.onEventDropped(e, "cancellation retained in task history"));
             return;
@@ -264,6 +285,42 @@ public final class CompanionBrain {
             authorityQuestionAt.remove(authorityQuestionAt.keySet().iterator().next());
         }
         return true;
+    }
+
+    /**
+     * One outcome, recorded once at settlement: a blocked job opens or charges its incident, a stand-alone failure is
+     * a remedy of the open one, and success, a repair, a cancellation or the owner's own line ends it.
+     */
+    private void feedIncidents(BrainEvent event) {
+        switch (event) {
+            case BrainEvent.PlanBlocked blocked ->
+                incidents.blocked(
+                        blocked.planId(), blocked.jobId(), blocked.toolName(), blocked.reason(), blocked.extra());
+            case BrainEvent.Replan replan -> incidents.repaired(replan.planId());
+            case BrainEvent.TaskFinished task -> {
+                if (task.success()) {
+                    incidents.succeeded(task.planId());
+                } else if (FailureHandler.isCancellation(task.summary())) {
+                    incidents.cancelled();
+                } else {
+                    incidents.failed(task.planId(), task.toolName(), task.summary(), task.extra());
+                }
+            }
+            case BrainEvent.PlanFinished plan -> incidents.settled(plan.planId());
+            case BrainEvent.TaskCancelled ignored -> incidents.cancelled();
+            case BrainEvent.PlayerSaid said -> {
+                if (said.playerUuid().equals(access.owner())) incidents.ownerSpoke();
+            }
+            default -> {}
+        }
+    }
+
+    /** Events that describe a blocked or failed attempt rather than routine news. */
+    private static boolean isIncidentReport(BrainEvent event) {
+        return event instanceof BrainEvent.PlanBlocked
+                || (event instanceof BrainEvent.TaskFinished task
+                        && !task.success()
+                        && !FailureHandler.isCancellation(task.summary()));
     }
 
     /**
@@ -312,6 +369,8 @@ public final class CompanionBrain {
         skillSession = SkillTurnSession.NONE;
         activePrincipal = null;
         queue.clear();
+        incidents.cancelled();
+        recoveryTurn = false;
         streamInFlight = false;
         if (thinking) {
             thinking = false;
@@ -392,6 +451,30 @@ public final class CompanionBrain {
 
     public void setPlannerPort(PlannerPort plannerPort) {
         this.plannerPort = java.util.Objects.requireNonNull(plannerPort);
+    }
+
+    /**
+     * Where a recreated principal conversation may start from. Consulted once per principal, when its history is
+     * created; {@link RecentConversationSource#NONE} leaves every conversation to start empty.
+     */
+    public void setRecentConversationSource(RecentConversationSource source) {
+        this.recentConversation = source == null ? RecentConversationSource.NONE : source;
+    }
+
+    /**
+     * Forgets every live principal conversation. Called after the transcript was cleared, so neither the text still
+     * in memory nor a restored seed can bring the cleared exchange back. A turn already running is forgotten when it
+     * ends; a queued turn then starts empty. Facts and other memory stores are not touched.
+     */
+    public void clearConversationHistory() {
+        for (PrincipalHistory history : histories.values()) {
+            history.memory.clear();
+        }
+        if (thinking) {
+            clearConversationOnTurnEnd = true;
+        } else {
+            memory.clear();
+        }
     }
 
     public void setTradingTurnPort(TradingTurnPort tradingTurnPort) {
@@ -499,7 +582,9 @@ public final class CompanionBrain {
         PrincipalHistory history = histories.get(principal);
         if (history == null) {
             evictHistorySlot();
-            history = new PrincipalHistory(new ConversationMemory(historyMessages), level);
+            ConversationMemory fresh = new ConversationMemory(historyMessages);
+            seedRecentConversation(fresh, principal, level);
+            history = new PrincipalHistory(fresh, level);
             histories.put(principal, history);
         } else if (history.access != level) {
             // A trust change must not carry text or tool output across the authorization boundary.
@@ -508,6 +593,49 @@ public final class CompanionBrain {
         }
         memory = history.memory;
         activePrincipal = principal;
+    }
+
+    /**
+     * Starts a principal's conversation from the delivered lines an earlier session left behind, so a follow-up
+     * after the companion was recreated can refer to the exchange before it. Only a player line and a companion
+     * line that was actually spoken become history — never a tool call or a tool result — and the conversation must
+     * start at a player line. A guest's conversation is never restored, a failing source costs only the continuity,
+     * and a source that returns anything else is ignored line by line.
+     */
+    private void seedRecentConversation(ConversationMemory fresh, UUID principal, AccessLevel level) {
+        if (level == AccessLevel.GUEST) {
+            return;
+        }
+        List<Message> recent;
+        try {
+            recent = recentConversation.recent(
+                    new Caller(principal, "", level), RecentConversationSource.BUDGET_MESSAGES);
+        } catch (RuntimeException e) {
+            LOGGER.debug("Recent conversation unavailable", e);
+            return;
+        }
+        if (recent == null || recent.isEmpty()) {
+            return;
+        }
+        List<Message> delivered = new ArrayList<>(recent.size());
+        for (Message message : recent) {
+            if (message == null || message.text().isBlank()) {
+                continue;
+            }
+            if (message.role() == Role.USER) {
+                delivered.add(Message.user(message.text()));
+            } else if (message.role() == Role.ASSISTANT && message.toolCalls().isEmpty()) {
+                delivered.add(Message.assistant(message.text(), List.of()));
+            }
+        }
+        int start = 0;
+        while (start < delivered.size() && delivered.get(start).role() != Role.USER) {
+            start++;
+        }
+        if (start == delivered.size()) {
+            return;
+        }
+        fresh.seed(delivered.subList(start, delivered.size()));
     }
 
     /** Drops the least recently used guest conversation; the owner and the active turn are never evicted. */
@@ -561,8 +689,16 @@ public final class CompanionBrain {
             }
         }
         turnKind = turnPlayerTexts.isEmpty() ? TurnKind.EVENT : TurnKind.PLAYER;
+        // A batch that is nothing but player lines is a conversation or an order; a failure or a world notice mixed
+        // into it still deserves the model's own answer.
+        playerOnlyBatch = batch.stream().allMatch(event -> event instanceof BrainEvent.PlayerSaid);
         long startedTurn = ++turnSeq;
+        repeatedCalls.clear();
         turnEvent = batch.get(0);
+        // A spent incident pauses only the turn that reports its own block or failure; unrelated news keeps its
+        // tools and its own work.
+        recoveryTurn = batch.stream().anyMatch(CompanionBrain::isIncidentReport);
+        boolean recoveryPaused = recoveryTurn && incidents.paused();
         observe(o -> o.onTurnStart(startedTurn));
         AccessLevel level = access.accessOf(principal);
         beginHistory(principal, level);
@@ -655,12 +791,23 @@ public final class CompanionBrain {
         thinking = true;
         speakSafely("thinking", () -> speaker.thinking(true));
         String lines = batch.stream().map(event -> event.toPromptLine(level)).collect(Collectors.joining("\n"));
+        if (recoveryPaused) {
+            // The blocker line belongs to the same message as the failure it explains: the model reads both, and
+            // this turn has no tools to act on either.
+            lines = lines + "\n" + incidents.modelLine();
+        }
         for (BrainEvent event : batch) {
             observe(o -> o.onEvent(event));
         }
         memory.add(Message.user(lines));
         step = 0;
         plannerNote = "";
+        if (recoveryPaused) {
+            // No repair is safe any more: asking the planner again would spend another request on the same block.
+            observe(o -> o.onPlannerAttempt(new PlannerAttempt(null, 1, "fallback", "recovery-spent", 0L, 0L)));
+            requestStep(generation);
+            return;
+        }
         // A plan-worthy owner order, an unmet active goal and a failed plan are planned before the model answers.
         // A free-time shift is planned by its driver, not by the chat turn.
         PlanningDecision planning = decision.planning();
@@ -734,7 +881,12 @@ public final class CompanionBrain {
         });
         if (streamedTurn && earlySequence > 0) closeStreamQuietly();
         for (BrainEvent event : outcomes) observe(o -> o.onEvent(event));
-        memory.add(Message.user(outcomes.stream().map(BrainEvent::toPromptLine).collect(Collectors.joining("\n"))));
+        recoveryTurn = true;
+        String outcomeLines = outcomes.stream().map(BrainEvent::toPromptLine).collect(Collectors.joining("\n"));
+        if (incidents.paused()) {
+            outcomeLines = outcomeLines + "\n" + incidents.modelLine();
+        }
+        memory.add(Message.user(outcomeLines));
         visibleGroups.addAll(ToolCatalog.recoveryGroups());
         for (BrainEvent.TaskFinished task : outcomes) {
             catalog.meta(task.toolName()).ifPresent(meta -> visibleGroups.add(meta.group()));
@@ -753,11 +905,13 @@ public final class CompanionBrain {
      */
     private void plan(int gen, PlanSubject subject, String failure) {
         Optional<PlannerInput> input;
+        long troubledPlan = subject instanceof PlanSubject.TroubledPlan trouble ? trouble.planId() : 0L;
         try {
             Optional<PlannerPort.Refusal> refusal = plannerPort.preflight(subject, turnCaller);
             if (refusal.isPresent()) {
                 PlannerPort.Refusal rejected = refusal.get();
                 observe(o -> o.onPlannerAttempt(new PlannerAttempt(subject, 1, "fallback", rejected.code(), 0L, 0L)));
+                noPlannerProgress(troubledPlan);
                 plannerNote = rejected.guidance();
                 requestStep(gen);
                 return;
@@ -807,6 +961,7 @@ public final class CompanionBrain {
                 observe(o -> o.onPlannerAttempt(new PlannerAttempt(subject, 1, "failed", code.name(), durationMs, 0L)));
                 String reason = fallbackReason(cause);
                 observe(o -> o.onPlannerAttempt(new PlannerAttempt(subject, 1, "fallback", reason, durationMs, 0L)));
+                noPlannerProgress(troubledPlan);
                 plannerNote = "no plan was drafted (" + code + "); plan the next step yourself";
             } else {
                 ToolResult applied;
@@ -817,9 +972,13 @@ public final class CompanionBrain {
                 }
                 long planId = applied.error() ? 0L : planIdIn(applied.content());
                 if (applied.error()) {
+                    noPlannerProgress(troubledPlan);
                     observe(o ->
                             o.onPlannerAttempt(new PlannerAttempt(subject, 1, "fallback", "rejected", durationMs, 0L)));
                 } else {
+                    // A repair or a replacement plan is progress on the incident it serves, so its budget starts
+                    // again even though the queue still has work to do.
+                    if (troubledPlan > 0) incidents.repaired(troubledPlan);
                     observe(o ->
                             o.onPlannerAttempt(new PlannerAttempt(subject, 1, "delivered", "", durationMs, planId)));
                 }
@@ -833,6 +992,13 @@ public final class CompanionBrain {
             }
             requestStep(gen);
         }));
+    }
+
+    /** A consultation that produced no plan is a spent remedy on the plan it was meant to repair. */
+    private void noPlannerProgress(long planId) {
+        if (planId > 0) {
+            incidents.noProgress(planId);
+        }
     }
 
     /** One telemetry scope per logical gateway invocation, carrying the turn and generation that started it. */
@@ -857,18 +1023,44 @@ public final class CompanionBrain {
                     .filter(spec -> !spec.name().equals("manage_skill") || teachingContext != null)
                     .toList();
             Set<ToolGroup> groups = agentSettings.get().toolRouting() ? visibleGroups : EnumSet.allOf(ToolGroup.class);
+            // A spent incident is answered in words: the failure line already names the blocker and the decision
+            // the owner has to make, and another task would only restart the chain.
+            boolean wordsOnly = socialTurn || (recoveryTurn && incidents.paused());
             List<ToolSpec> sent =
-                    socialTurn ? List.of() : catalog.filter(specs, groups, decision.mode() == TurnMode.CHAT);
+                    wordsOnly ? List.of() : catalog.filter(specs, groups, decision.mode() == TurnMode.CHAT);
             // ReplyGuard sanitizes internal names across the full registry, even when routing hid a schema.
-            turnToolNames = socialTurn
+            turnToolNames = wordsOnly
                     ? java.util.Set.of()
                     : specs.stream().map(ToolSpec::name).collect(Collectors.toUnmodifiableSet());
             offeredTools = sent.stream().map(ToolSpec::name).collect(Collectors.toUnmodifiableSet());
             String system = buildSystemPrompt(plannerNote);
             plannerNote = "";
-            java.util.List<dev.friendai.agent.llm.model.Message> history = memory.snapshot();
-            observe(o -> o.onRequest(system, history, sent));
             LlmGateway active = gateway.get();
+            // System, history and schemas share one bounded budget: a long tool-result history or a large catalog
+            // must never overflow the provider and fail after a paid round trip.
+            RequestBudget.Fit fitted = RequestBudget.fit(
+                    system,
+                    memory.snapshot(),
+                    sent,
+                    active.contextTokens(),
+                    active.maxOutputTokens(),
+                    name -> catalog.meta(name).map(meta -> meta.core()).orElse(true));
+            if (fitted instanceof RequestBudget.Refusal refusal) {
+                LOGGER.warn(
+                        "Request did not fit: {} tokens over a {} token budget", refusal.tokens(), refusal.budget());
+                observe(o -> o.onTurnEnd(turnSeq, "error"));
+                speakSafely(
+                        "request too large",
+                        () -> speaker.error(UserMessage.of(
+                                "friendai.agent.request_too_large", refusal.tokens(), refusal.budget())));
+                endTurn();
+                return;
+            }
+            RequestBudget.Fitted fit = (RequestBudget.Fitted) fitted;
+            String prompt = fit.system();
+            java.util.List<dev.friendai.agent.llm.model.Message> fittedHistory = fit.history();
+            List<ToolSpec> fittedTools = fit.tools();
+            observe(o -> o.onRequest(prompt, fittedHistory, fittedTools));
             RequestTelemetry telemetry = telemetryFor(gen);
             requestIdForGeneration = telemetry.requestId();
             requestIdGeneration = gen;
@@ -885,9 +1077,9 @@ public final class CompanionBrain {
                 speechStream = ++streamSeq;
                 long stream = speechStream;
                 CompletableFuture<LlmResponse> raw = streaming.completeStreaming(
-                        system,
-                        history,
-                        sent,
+                        prompt,
+                        fittedHistory,
+                        fittedTools,
                         delta -> {
                             accumulator.accept(delta);
                             scheduler.execute(() -> releaseEarly(gen, stream, accumulator));
@@ -898,7 +1090,7 @@ public final class CompanionBrain {
                 future = raw.thenApply(response -> completeFromStream(accumulator, response));
             } else {
                 streamInFlight = false;
-                future = active.complete(system, history, sent, telemetry);
+                future = active.complete(prompt, fittedHistory, fittedTools, telemetry);
                 requestFuture = future;
             }
         } catch (RuntimeException e) {
@@ -921,6 +1113,7 @@ public final class CompanionBrain {
                 || !thinking
                 || !turnSpeechAllowed
                 || hasPendingFailure()
+                || decision.mode() != TurnMode.CHAT
                 || speechPolicy == null
                 || !streamedTurn
                 || turnCaller == null) {
@@ -1062,24 +1255,23 @@ public final class CompanionBrain {
         }
         String spoken = null;
         if (!raw.isBlank() && turnSpeechAllowed) {
-            Optional<String> guarded = ReplyGuard.filter(raw, coordinatesAllowed(), recentSpeech(), turnToolNames);
-            if (guarded.isPresent()) {
-                spoken = guarded.get();
-                deliverSpeech(spoken, raw);
-                rememberSpoken(spoken);
-                String heard = spoken;
-                observe(o -> o.onReply(turnCaller, heard));
-                long delivered = turnSeq;
-                observe(o -> o.onTurnEnd(delivered, "delivered"));
-            }
+            spoken = ReplyGuard.filter(raw, coordinatesAllowed(), recentSpeech(), turnToolNames)
+                    .orElse(null);
         }
-        List<ToolCall> calls = response.toolCalls();
+        // A words-only turn has no schema to call: a call the provider typed anyway would start the very work the
+        // turn exists to stop, so it is not accepted and not remembered as an answered call.
+        boolean wordsOnly = socialTurn || (recoveryTurn && incidents.paused());
+        List<ToolCall> calls = wordsOnly ? List.of() : response.toolCalls();
         if (!raw.isBlank() || !calls.isEmpty()) {
             String remembered = spoken != null ? spoken : (raw.isBlank() ? raw : ReplyGuard.SILENT);
             memory.add(Message.assistant(remembered, calls));
         }
         if (calls.isEmpty()) {
+            if (spoken != null) {
+                deliverTurnReply(spoken, raw);
+            }
             answerIdleGoal(spoken);
+            answerPausedRecovery(spoken);
             endTurn();
             return;
         }
@@ -1087,21 +1279,32 @@ public final class CompanionBrain {
         boolean activityChosen = false;
         boolean anyCallFailed = false;
         boolean queueMutatedBesidesAdd = false;
+        boolean onlyQueueAdd = true;
         for (ToolCall call : calls) {
             ToolResult result;
             observe(o -> o.onToolCall(call));
             Optional<ToolGroup> revealed = revealHiddenGroup(call.name());
-            try {
-                if ("trade_item".equals(call.name())
-                        && (decision.mode() == TurnMode.CHAT
-                                || !decision.groups().contains(ToolGroup.TRADING))) {
-                    result = ToolResult.error("trading is not available for this request");
-                } else {
-                    result = REQUEST_TOOLS.equals(call.name()) ? requestTools(call) : tools.execute(call, turnCaller);
+            noteAttempt(call.name());
+            Optional<ToolResult> reused = repeatedCalls.blocked(call);
+            if (reused.isPresent()) {
+                result = reused.get();
+                LOGGER.debug("Reused the recorded failure of an identical {} call", call.name());
+            } else {
+                try {
+                    if ("trade_item".equals(call.name())
+                            && (decision.mode() == TurnMode.CHAT
+                                    || !decision.groups().contains(ToolGroup.TRADING))) {
+                        result = ToolResult.error("trading is not available for this request");
+                    } else {
+                        result = REQUEST_TOOLS.equals(call.name())
+                                ? requestTools(call)
+                                : tools.execute(call, turnCaller);
+                    }
+                } catch (RuntimeException e) {
+                    LOGGER.warn("Tool {} threw", call.name(), e);
+                    result = ToolResult.error("Tool " + call.name() + " failed: " + e.getMessage());
                 }
-            } catch (RuntimeException e) {
-                LOGGER.warn("Tool {} threw", call.name(), e);
-                result = ToolResult.error("Tool " + call.name() + " failed: " + e.getMessage());
+                repeatedCalls.record(call, result);
             }
             if (result.error() && revealed.isPresent()) {
                 result = ToolResult.error(result.content() + " The "
@@ -1115,9 +1318,15 @@ public final class CompanionBrain {
             queuedByModel |= !result.error() && "queue_add".equals(call.name());
             activityChosen |= !result.error() && CHOOSE_ACTIVITY.equals(call.name());
             anyCallFailed |= result.error();
+            onlyQueueAdd &= "queue_add".equals(call.name());
             // An edit or patch after the add changes the work the reply just described, so its result must be read.
             queueMutatedBesidesAdd |=
                     !result.error() && ("queue_edit".equals(call.name()) || "plan_patch".equals(call.name()));
+        }
+        // Every call was admitted, so the held text describes work that really started; a refusal is never narrated
+        // by the response that produced it, because the next step has the real result and can answer truthfully.
+        if (spoken != null && !anyCallFailed) {
+            deliverTurnReply(spoken, raw);
         }
         if (activityChosen) {
             // Free time's choice is the whole answer; the planner does the rest, so the turn costs one request.
@@ -1130,12 +1339,41 @@ public final class CompanionBrain {
             endTurn();
             return;
         }
+        if (queuedByModel
+                && !anyCallFailed
+                && !queueMutatedBesidesAdd
+                && spoken == null
+                && onlyQueueAdd
+                && turnKind == TurnKind.PLAYER
+                && playerOnlyBatch
+                && decision.mode() != TurnMode.CHAT) {
+            // The plan is committed and carries its own work, so a second request would only restate the same fact.
+            // The owner hears the acknowledgement now and the task events report the outcome.
+            speakSafely("plan queued", () -> speaker.say(UserMessage.of("friendai.agent.plan_queued")));
+            long delivered = turnSeq;
+            observe(o -> o.onTurnEnd(delivered, "delivered"));
+            endTurn();
+            return;
+        }
         if (queuedByModel && !anyCallFailed && !queueMutatedBesidesAdd && spoken == null && isRecoveryTurn()) {
             // A replacement plan is the useful outcome of an autonomous recovery; do not ask the model to narrate it.
             endTurn();
             return;
         }
+        // Any refused call, or work that is only starting, means this text cannot be trusted yet: the owner hears the
+        // next response, which has the real tool results in hand. A failure is never narrated from the response that
+        // produced it.
         requestStep(gen);
+    }
+
+    /** Speaks a reply that the turn has grounded in admitted work or in a completed step. */
+    private void deliverTurnReply(String spoken, String raw) {
+        deliverSpeech(spoken, raw);
+        rememberSpoken(spoken);
+        String heard = spoken;
+        observe(o -> o.onReply(turnCaller, heard));
+        long delivered = turnSeq;
+        observe(o -> o.onTurnEnd(delivered, "delivered"));
     }
 
     private boolean isRecoveryTurn() {
@@ -1276,9 +1514,48 @@ public final class CompanionBrain {
         observe(o -> o.onTurnEnd(turnSeq, "delivered"));
     }
 
+    /**
+     * One blocked job may already have spent several remedies. A call is worth naming back to the model when it is
+     * work rather than a cheap query, so the pause line lists what was actually tried instead of every read.
+     */
+    private void noteAttempt(String tool) {
+        if (PLANNING_TOOLS.contains(tool)) {
+            incidents.attempted(tool);
+            return;
+        }
+        var meta = catalog.meta(tool);
+        if (meta.isEmpty() || meta.get().cost() != Cost.LOW) {
+            incidents.attempted(tool);
+        }
+    }
+
+    /**
+     * A paused recovery turn exists to tell the owner which decision is needed. When the model answers silently the
+     * owner would see nothing, so the mod says the typed blocker instead of leaving a companion that only failed.
+     */
+    private void answerPausedRecovery(String spoken) {
+        if (spoken != null || !recoveryTurn || !incidents.paused()) {
+            return;
+        }
+        String detail = incidents.detail();
+        if (detail.isBlank()) {
+            return;
+        }
+        speakSafely(
+                "paused recovery", () -> speaker.say(UserMessage.of("friendai.companion.recovery_blocked", detail)));
+        observe(o -> o.onTurnEnd(turnSeq, "delivered"));
+    }
+
     private void endTurn() {
         teachingContext = null;
         thinking = false;
+        if (clearConversationOnTurnEnd) {
+            clearConversationOnTurnEnd = false;
+            for (PrincipalHistory history : histories.values()) {
+                history.memory.clear();
+            }
+            memory.clear();
+        }
         streamInFlight = false;
         requestFuture = null;
         hasFinishedTurn = true;

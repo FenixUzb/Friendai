@@ -65,7 +65,7 @@ public final class MiningSafety {
                 || target.equals(stance.support())
                 || protectedSupports.contains(target)
                 || !safeNode(view, stance)
-                || !safeTarget(view, stance, target)) {
+                || (!safeTarget(view, target) || buriesStance(view, stance, target))) {
             return false;
         }
         if (target.y() == stance.y() - 1
@@ -91,7 +91,7 @@ public final class MiningSafety {
                 || protectedSupports.contains(target)
                 || !view.at(stance.support()).supports()
                 || view.at(stance.support()).kind() == Cell.Kind.UNLOADED
-                || !safeTarget(view, stance, target)) {
+                || (!safeTarget(view, target) || buriesStance(view, stance, target))) {
             return false;
         }
         if (target.y() == stance.y() - 1
@@ -108,12 +108,8 @@ public final class MiningSafety {
         return true;
     }
 
-    /**
-     * Whether breaking the target is safe from this stance. A cactus, a berry bush or a magma block is a hazard to
-     * stand in or against, not to break from reach: the move generator already keeps the stance off its neighbours,
-     * so such a target stays a target. Lava, water and an unloaded cell are never one.
-     */
-    private static boolean safeTarget(CellView view, Node stance, Pos target) {
+    /** Checks target hazards independently of the stance. */
+    static boolean safeTarget(CellView view, Pos target) {
         Cell targetCell = view.at(target);
         if (targetCell.kind() == Cell.Kind.UNLOADED
                 || targetCell.kind() == Cell.Kind.WATER
@@ -128,7 +124,7 @@ public final class MiningSafety {
                 return false;
             }
         }
-        return !buriesStance(view, stance, target);
+        return true;
     }
 
     /**
@@ -193,7 +189,8 @@ public final class MiningSafety {
         return feet.kind() != Cell.Kind.WATER && feet.free() && head.kind() != Cell.Kind.WATER && head.free();
     }
 
-    private static boolean safeNode(CellView view, Node node) {
+    /** Package-private so {@link MiningEntry} names a standable stance without a second copy of the rule. */
+    static boolean safeNode(CellView view, Node node) {
         Cell feet = view.at(node.pos());
         Cell head = view.at(node.head());
         Cell support = view.at(node.support());

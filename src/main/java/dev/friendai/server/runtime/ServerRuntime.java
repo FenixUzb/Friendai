@@ -20,6 +20,7 @@ import dev.friendai.features.trading.minecraft.trading.MerchantLeases;
 import dev.friendai.features.trading.minecraft.trading.PiglinBarterAdapter;
 import dev.friendai.features.trading.minecraft.trading.TradeSessionGuard;
 import dev.friendai.features.trading.minecraft.trading.TraderObserver;
+import dev.friendai.foundation.social.AwayBook;
 import dev.friendai.infrastructure.config.ServerConfig;
 import dev.friendai.infrastructure.persistence.appearance.SkinStore;
 import dev.friendai.infrastructure.persistence.goals.GoalStore;
@@ -65,6 +66,9 @@ public final class ServerRuntime implements AutoCloseable {
     private final MovementDebugStream movementDebugStream;
     private final MemoryViewStream memoryViewStream;
     private final PlaceViewStream placeViewStream;
+    /** When this server's players left, so a genuine return can be mentioned once; dropped with the runtime. */
+    private final AwayBook awayBook = new AwayBook();
+
     private boolean acceptingWork = true;
     private boolean closed;
 
@@ -120,8 +124,14 @@ public final class ServerRuntime implements AutoCloseable {
     public void onEntityUnloaded(Entity entity) {
         if (entity instanceof CompanionEntity companion) {
             services.observations().unregister(companion);
+            services.resources().forget(companion);
             companions.unregister(companion);
         }
+    }
+
+    /** This server's return evidence; a leave recorded by another server is deliberately invisible here. */
+    public AwayBook awayBook() {
+        return awayBook;
     }
 
     /** Applies owner-join data on the server thread. */
@@ -150,6 +160,9 @@ public final class ServerRuntime implements AutoCloseable {
         memoryViewStream.onDisconnect(this, player);
         SkillsViewStream.onDisconnect(player);
         placeViewStream.onDisconnect(this, player);
+        // A suspended companion cannot walk the leg it leased, so the owner's absence releases that ticket now
+        // instead of leaving a loaded chunk behind until the lease expires.
+        chunkLoader().expeditionHorizon().release(player.getUUID());
         if (acceptingWork) services.sessions().onOwnerLeft(player.getUUID());
     }
 
@@ -266,6 +279,11 @@ public final class ServerRuntime implements AutoCloseable {
 
     public CompanionChunkLoader chunkLoader() {
         return services.chunkLoader();
+    }
+
+    /** The shared owner-record writer a task may use for its own coalesced checkpoints. */
+    public dev.friendai.infrastructure.persistence.OwnerStoreWriter storeWriter() {
+        return services.storeWriter();
     }
 
     public TaskPersistenceCoordinator taskPersistence() {

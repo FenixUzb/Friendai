@@ -10,6 +10,7 @@ import dev.friendai.features.knowledge.ResourceKnowledge;
 import dev.friendai.features.knowledge.ResourceObservation;
 import dev.friendai.features.knowledge.ResourceQuery;
 import dev.friendai.features.knowledge.ResourceSite;
+import dev.friendai.features.knowledge.TransientBook;
 import dev.friendai.foundation.spatial.Pos;
 import dev.friendai.infrastructure.persistence.knowledge.KnowledgeStore;
 import dev.friendai.world.block.BlockMatcher;
@@ -38,6 +39,8 @@ public final class ResourceCandidates {
     public static final long RECENT_EVIDENCE_TICKS = 200;
 
     private static final int MAX_RECENT_OBSERVATIONS = 2_048;
+    /** Bounds the transient books even when an unload callback is missed; least recently seen companions go first. */
+    private static final int MAX_TRANSIENT_COMPANIONS = 32;
 
     public enum Verification {
         PENDING,
@@ -47,11 +50,27 @@ public final class ResourceCandidates {
         UNLOADED
     }
 
+    /** Where a listed block came from: this session's revalidated sight, or the durable owner book. */
+    public enum Evidence {
+        OBSERVED,
+        REMEMBERED
+    }
+
+    /**
+     * One listed block with the evidence behind it.
+     *
+     * @param ageTicks how long ago the block was last seen
+     * @param loaded whether its chunk is loaded now, so the block can be read again
+     */
+    public record KnownBlock(BlockPos pos, String blockId, Evidence evidence, long ageTicks, boolean loaded) {}
+
     private final KnowledgeStore knowledge;
     /** Recent sight is attached to the observing entity; only durable history is owner scoped. */
-    private final Map<UUID, ObservationWindow> recent = new HashMap<>();
+    private final TransientBook<ObservationWindow> recent = new TransientBook<>(MAX_TRANSIENT_COMPANIONS);
 
-    private final Map<UUID, List<ScopedCaveEntrance>> observedCaveEntrances = new HashMap<>();
+    private final TransientBook<List<ScopedCaveEntrance>> observedCaveEntrances =
+            new TransientBook<>(MAX_TRANSIENT_COMPANIONS);
+
     private ObservationScheduler observations;
 
     public ResourceCandidates(KnowledgeStore knowledge) {
@@ -62,12 +81,22 @@ public final class ResourceCandidates {
         this.observations = observations;
     }
 
+    /**
+     * Releases the transient evidence of a companion that is unloading or being removed. The owner's knowledge book is
+     * untouched: only what this session saw around the entity goes away.
+     */
+    public void forget(CompanionEntity companion) {
+        if (companion == null) return;
+        recent.forget(companion.getUUID());
+        observedCaveEntrances.forget(companion.getUUID());
+    }
+
     public void observe(CompanionEntity companion, ResourceObservation observation) {
         UUID owner = companion.ownerUuid();
         if (owner != null) knowledge.book(owner).observe(observation, observation.blockId());
         recent.computeIfAbsent(
                         companion.getUUID(),
-                        ignored -> new ObservationWindow(MAX_RECENT_OBSERVATIONS, RECENT_EVIDENCE_TICKS))
+                        () -> new ObservationWindow(MAX_RECENT_OBSERVATIONS, RECENT_EVIDENCE_TICKS))
                 .record(observation);
     }
 
@@ -78,8 +107,7 @@ public final class ResourceCandidates {
                 || !(companion.level() instanceof ServerLevel level)
                 || !entrance.dimension().equals(level.dimension().identifier().toString())) return;
         long now = logicalTick(level);
-        List<ScopedCaveEntrance> entries =
-                observedCaveEntrances.computeIfAbsent(companion.getUUID(), ignored -> new ArrayList<>());
+        List<ScopedCaveEntrance> entries = observedCaveEntrances.computeIfAbsent(companion.getUUID(), ArrayList::new);
         entries.removeIf(entry -> !entry.owner().equals(owner)
                 || now - entry.entrance().observedTick() > CAVE_ENTRANCE_TTL
                 || sameOpening(entry.entrance(), entrance));
@@ -101,6 +129,10 @@ public final class ResourceCandidates {
         if (entries == null) return List.of();
         entries.removeIf(entry ->
                 now < entry.entrance().observedTick() || now - entry.entrance().observedTick() > CAVE_ENTRANCE_TTL);
+        if (entries.isEmpty()) {
+            observedCaveEntrances.forget(companion.getUUID());
+            return List.of();
+        }
         return entries.stream()
                 .filter(entry -> entry.owner().equals(owner))
                 .map(ScopedCaveEntrance::entrance)
@@ -278,6 +310,55 @@ public final class ResourceCandidates {
             positions.addAll(remembered(companion, matcher, radius, limit - positions.size()));
         return positions.stream()
                 .sorted(Comparator.comparingDouble(pos -> companion.position().distanceToSqr(Vec3.atCenterOf(pos))))
+                .limit(limit)
+                .toList();
+    }
+
+    /**
+     * The same list as {@link #knownOrVisible}, each entry carrying where its evidence came from and how old it is.
+     * Sight wins a position it shares with the book, because a revalidated block is a stronger claim than a record,
+     * and a remembered position outside a loaded chunk says so instead of pretending it can be looked at again.
+     */
+    public List<KnownBlock> knownWithEvidence(CompanionEntity companion, BlockMatcher matcher, int radius, int limit) {
+        if (matcher == null || limit < 1 || radius < 0 || !(companion.level() instanceof ServerLevel level)) {
+            return List.of();
+        }
+        long now = logicalTick(level);
+        Map<BlockPos, KnownBlock> found = new java.util.LinkedHashMap<>();
+        for (ResourceObservation observation : confirmedRecent(companion, radius)) {
+            if (!matches(matcher, observation.blockId())) continue;
+            var at = observation.location().pos();
+            BlockPos pos = new BlockPos(at.x(), at.y(), at.z());
+            found.putIfAbsent(
+                    pos,
+                    new KnownBlock(
+                            pos,
+                            observation.blockId(),
+                            Evidence.OBSERVED,
+                            Math.max(0, now - observation.observedTick()),
+                            true));
+        }
+        if (companion.ownerUuid() != null) {
+            String dimension = level.dimension().identifier().toString();
+            double radiusSquared = (double) radius * radius;
+            for (var record : knowledge.book(companion.ownerUuid()).snapshot().records()) {
+                if (!record.dimension().equals(dimension) || !matches(matcher, record.blockId())) continue;
+                BlockPos pos = new BlockPos(record.x(), record.y(), record.z());
+                if (found.containsKey(pos) || companion.position().distanceToSqr(Vec3.atCenterOf(pos)) > radiusSquared)
+                    continue;
+                found.put(
+                        pos,
+                        new KnownBlock(
+                                pos,
+                                record.blockId(),
+                                Evidence.REMEMBERED,
+                                Math.max(0, now - record.lastSeen()),
+                                level.hasChunkAt(pos)));
+            }
+        }
+        return found.values().stream()
+                .sorted(Comparator.comparingDouble(
+                        entry -> companion.position().distanceToSqr(Vec3.atCenterOf(entry.pos()))))
                 .limit(limit)
                 .toList();
     }

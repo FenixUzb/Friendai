@@ -245,7 +245,7 @@ class CompanionBrainPlannerTest {
     }
 
     @Test
-    void aPlanQueuedInAnEarlierStepSuppressesThePlanner() {
+    void aPlanQueuedEarlyEndsTheTurnWithoutThePlanner() {
         JsonObject goalArgsWithPlan7 = new JsonObject();
         goalArgsWithPlan7.addProperty("text", "mine some stone");
         goalArgsWithPlan7.addProperty("plan", 7);
@@ -258,7 +258,8 @@ class CompanionBrainPlannerTest {
         brain.post(said("mine some stone"));
 
         assertTrue(port.failures.isEmpty(), "the turn already queued its plan");
-        assertEquals(3, gateway.requests.size());
+        assertEquals(1, gateway.requests.size(), "the committed queue result acknowledges the order");
+        assertEquals("friendai.agent.plan_queued", speaker.messages.getFirst().key());
     }
 
     @Test
