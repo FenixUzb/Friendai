@@ -155,7 +155,7 @@ The first build downloads Minecraft and takes minutes; later builds take seconds
 | `build.gradle`, `engine/build.gradle`, `settings.gradle`, `gradle.properties` | Loom + engine setup, dependencies, and all versions including `mod_version`. |
 | `gradle/` | Wrapper. |
 | `.gitattributes`, `.editorconfig` | Line endings and editor defaults: text files are stored and checked out with LF, `*.bat`/`*.cmd` with CRLF, and Markdown keeps trailing spaces. Do not change them to "fix" a Windows checkout; a CRLF rewrite makes the whole tree look modified. |
-| `scripts/` | Maintenance scripts: `check-docs.sh` (guide links, anchors and table shape, run in CI), `check-release.sh`, `run-gametest-shard.sh`, `setup-branch-protection.sh`. |
+| `scripts/` | Maintenance scripts: `check-docs.sh` (guide links, anchors and table shape, run in CI), `check-release.sh` and `release-notes.sh` (release verification and notes), `run-gametest-shard.sh`, `setup-branch-protection.sh`. |
 | `.github/workflows/` | CI: unit tests, GameTests, build, commit lint, release. |
 | `.githooks/` | Local `commit-msg` hook mirroring commitlint. Enable with `git config core.hooksPath .githooks`. |
 | `docs/superpowers/{specs,plans}/` | Local design specs and implementation plans. **Git-ignored**; read for context, never commit. |
@@ -201,7 +201,7 @@ Most of this guide exists so that an agent can act without interrupting the main
 | Renaming or removing a tool, command, config key, translation key or network operation that already ships | Breaks saved plans, user configs or older clients. |
 | Editing a file that holds another session's uncommitted work, or undoing anything you did not write | The other session cannot see that its work was taken. |
 | Skipping a `TODO.md` item as harmful, or implementing a reduced version of it | The skip note and the report are the ask; nobody approved a different scope. |
-| Merging a pull request, tagging a release, enabling auto-merge, publishing anywhere | Outward-facing and hard to undo; the maintainer's call every time. |
+| Merging a pull request, manually tagging or publishing a release, enabling auto-merge, publishing elsewhere | Outward-facing and hard to undo; the maintainer's call every time. |
 | Adding a second queue, store, registry, event log or turn loop beside the existing one | An architecture decision belongs to the maintainer; propose it instead of building it. |
 | Anything the permission layer, a sandbox or a hook blocked | A refusal is the answer. Never retry it another way, in another session or through another tool. |
 
@@ -249,7 +249,7 @@ A full run is about 9 minutes of GameTests plus the unit suite, so an agent does
   - GameTests of the area, only if the change touches the game layer: one class glob per run, e.g. `./gradlew runGameTest -Dfabric-api.gametest.filter='friendai-gametest:<class>_tests_*'` (`BuildTests` → `build_tests_*`, `FarmingTests` → `farming_tests_*`). Name the class(es) you added or whose behavior you changed; a new skill's GameTest class counts.
   - Always run `LangFilesTest` when you touched a language file.
 - **Do not** run `./gradlew build`, `check` or the unfiltered `runGameTest` merely to "be safe" before a commit or a task report. A full GameTest run is justified only for a game-layer change that one filtered class cannot cover, and the report says why it was run.
-- **At merge to `main`** the full gate runs: CI (`.github/workflows/ci.yml`) runs all unit tests and all GameTests on every pull request, merge-queue entry and push to `main`, and `CI gate` is the required check. A local full run is the maintainer's call (before tagging a release), not an agent's default.
+- **At merge to `main`** the full gate runs: CI (`.github/workflows/ci.yml`) runs all unit tests and all GameTests on every pull request, merge-queue entry and push to `main`, and `CI gate` is the required check. A local full run is the maintainer's call, not an agent's default.
   - The GameTests run as a matrix of shards, and `scripts/run-gametest-shard.sh` boots **one class per server** inside its shard, so a red run names the failing class and a class that only passes beside a particular neighbour cannot hide. The shard map is `.github/gametest-shards.json`; `./gradlew verifyGametestShards` fails when a registered class is missing, listed twice or unknown, and `CI gate` runs it before any shard starts.
   - `.github/workflows/nightly.yml` runs the whole suite in one server every night, which is the only place cross-shard state and batch timing can show up. A shard-only red is a signal about that shard, not a reason to widen your own test scope.
 - In the task report, state which group you ran and its real result, and say plainly that the full suite was left to CI. A failure in an unrelated test on the full run is CI's finding to triage, not a reason to widen your own scope.
@@ -594,18 +594,20 @@ Bump it as part of any change that alters the shipped mod, by the size of the ch
 - While the major version is `0` (pre-1.0), breaking changes bump MINOR instead of MAJOR. Moving to `1.0.0` is the maintainer's decision; never do it on your own.
 - One bump per task/PR, sized by the largest change in it, not one per commit. Put it in the same commit as the change, or in a final `chore: bump version to X.Y.Z` commit.
 - Changing a persisted schema: bump its format version and the mod version. Configuration upgrades require an explicit tested `ConfigStores` transition and a backup; unsupported config versions and older owner/world record formats remain untouched.
-- Do not create tags or releases yourself; tagging `vX.Y.Z` is the maintainer's call. Tell them when the version is ready to release.
+- A version bump merged to `main` authorizes the CI release for that version. Agents need separate maintainer authorization for manual tags or releases.
 - When unsure between two sizes, pick the larger one and say why in the final message.
 
-**Release checklist (maintainer).** `main` is green, `mod_version` is the version to ship and its `CHANGELOG.md` section is
-written. Run `./gradlew assemble` and then `scripts/check-release.sh vX.Y.Z`: it checks the version format, the tag, the
-jar name, the `fabric.mod.json` inside the jar and any sidecar checksum, and prints the SHA-256. Then tag the commit
-(`git tag vX.Y.Z && git push origin vX.Y.Z`); the tag pushes `.github/workflows/release.yml`, which refuses a tag that
-does not match `mod_version`, a commit that is not on `origin/main`, or a commit without a green CI run, builds with
-`./gradlew clean build`, verifies the artifact and publishes one jar plus `friendai-X.Y.Z.jar.sha256`. To exercise the
-pipeline without publishing, dispatch the workflow manually with a tag and `dry_run: true`: it builds, verifies and
-uploads the jar as an artifact only. The workflow never creates a tag and never edits `gradle.properties`; a version bump
-is a normal commit on `main`.
+**Release checklist (maintainer).** Merge the `mod_version` bump and a nonempty `CHANGELOG.md` section for that version
+into `main` together. After `CI gate` passes on that push, CI calls `.github/workflows/release.yml` with the built jar.
+It verifies the jar against `mod_version`, pins `vX.Y.Z` to the tested commit, and publishes the jar, its SHA-256
+sidecar and the version's changelog notes to GitHub Releases. A conflicting tag stops the run. A published release
+for the same tag is left intact. Retry a transient failure from its original CI run. If the changelog needs a
+correction, merge it with a new version bump or manually tag the corrected commit after its CI passes.
+
+The release workflow also accepts existing tags pushed by the maintainer and manual dispatches with an existing tag.
+Explicit publication requires a successful `main` push CI run for the tagged commit. A manual dispatch with
+`dry_run: true` builds, verifies and uploads the release files as a workflow artifact. For a local artifact check,
+run `scripts/check-release.sh vX.Y.Z` after `./gradlew assemble`.
 
 ## Changelog
 
