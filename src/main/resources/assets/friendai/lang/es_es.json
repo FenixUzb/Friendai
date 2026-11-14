@@ -33,6 +33,8 @@
   "friendai.companion.too_far": "Tu compañero está demasiado lejos para oírte.",
   "friendai.companion.goal_blocked": "Estoy atascado con \"%s\": no hay nada en cola y necesito tu decisión.",
   "friendai.companion.recovery_blocked": "No puedo superar esto: %s. Dime qué debo cambiar.",
+  "friendai.agent.plan_queued": "Hecho: el plan está en cola y te contaré cómo va.",
+  "friendai.agent.request_too_large": "La solicitud es demasiado grande para el modelo (%s tokens por encima de un límite de %s). Acorta el mensaje o vacía el chat.",
 
   "friendai.command.stopped": "Detenido.",
   "friendai.local_order.follow": "Te sigo.",

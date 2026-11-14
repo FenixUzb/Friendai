@@ -586,3 +586,11 @@ These checks need a real provider and the GUI; the automated tests use a scripte
 - [ ] Correct an order mid-task and answer a companion question: the correction is acknowledged once and the question is not repeated after it is answered.
 
 These need a real provider, a microphone or a live world; the automated suite used a scripted model.
+
+## Request budget and plan acknowledgement (TODO 85)
+
+- [ ] With a small local model (or a profile whose model the table does not know), talk for a long session with many tool results: the companion keeps answering, earlier finished exchanges fall out of context, and the current order is never lost.
+- [ ] Send one enormous chat line on that profile: the companion answers with a single "request too large" line and no provider error appears in the log.
+- [ ] Ask for a plan-worthy order and stay silent: the plan is acknowledged once and work starts without a second model round trip; a question or a mixed "how are you? also dig here" still gets its own reply.
+
+These need a real provider and a long session; the automated suite used scripted models.

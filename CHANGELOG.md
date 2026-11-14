@@ -6,6 +6,13 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ## [Unreleased]
 
+## [0.217.0] - 2026-11-14
+
+### Changed
+
+- A request can no longer overflow the model: the system prompt, the recent conversation and the tool descriptions now share one conservative budget, the oldest finished exchanges and optional tool groups give way first, and a request that still cannot fit is answered with one clear line instead of a failed network call.
+- A plan the companion queues without saying anything is acknowledged once and starts immediately, without an extra round trip to the model.
+
 ## [0.216.1] - 2026-11-14
 
 ### Fixed

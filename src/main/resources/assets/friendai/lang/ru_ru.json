@@ -33,6 +33,8 @@
   "friendai.companion.too_far": "Компаньон слишком далеко, чтобы вас услышать.",
   "friendai.companion.goal_blocked": "Я застрял на «%s»: в очереди ничего нет, нужно твоё решение.",
   "friendai.companion.recovery_blocked": "Я не могу это преодолеть: %s. Скажи, что мне изменить.",
+  "friendai.agent.plan_queued": "Хорошо, план в очереди — расскажу, как всё пройдёт.",
+  "friendai.agent.request_too_large": "Запрос слишком велик для модели (%s токенов сверх лимита %s). Сократи сообщение или очисти чат.",
 
   "friendai.command.stopped": "Остановился.",
   "friendai.local_order.follow": "Иду за тобой.",

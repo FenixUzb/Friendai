@@ -66,14 +66,16 @@ class CompanionBrainOneShotTest {
     }
 
     @Test
-    void blankTextWithASuccessfulPlanStillGetsAReply() {
+    void aTextlessCommittedPlanAcknowledgesWithoutASecondRequest() {
         gateway.enqueue(calls("", call("q1", "queue_add")));
-        gateway.enqueue(text("Queued."));
 
         brain.post(said("mine 3 stone"));
 
-        assertEquals(2, gateway.requests.size(), "a silent acknowledgement is not an answer");
-        assertEquals(List.of("Queued."), speaker.said);
+        assertEquals(1, gateway.requests.size(), "the committed queue result is the acknowledgement");
+        assertTrue(speaker.said.isEmpty(), "the composed line is translated by the speaker");
+        assertEquals(1, speaker.messages.size(), speaker.messages.toString());
+        assertEquals("friendai.agent.plan_queued", speaker.messages.getFirst().key());
+        assertFalse(brain.isThinking());
     }
 
     @Test
@@ -115,19 +117,20 @@ class CompanionBrainOneShotTest {
     }
 
     @Test
-    void filteredTextWithASuccessfulPlanStillGetsAReply() {
+    void filteredTextBesideACommittedPlanStillAcknowledges() {
         List<String> unanswerable =
                 List.of("[silent]", "<tool_calls><invoke name=\"queue_add\"></invoke></tool_calls>", "task #42");
 
         for (String text : unanswerable) {
             setUp();
             gateway.enqueue(calls(text, call("q1", "queue_add")));
-            gateway.enqueue(text("Queued it."));
 
             brain.post(said("mine 3 stone"));
 
-            assertEquals(2, gateway.requests.size(), "a reply the guard removes is not an answer: " + text);
-            assertEquals(List.of("Queued it."), speaker.said, text);
+            assertEquals(1, gateway.requests.size(), "the committed queue result is the answer: " + text);
+            assertTrue(speaker.said.isEmpty(), "the guard removed the model text: " + text);
+            assertEquals(
+                    "friendai.agent.plan_queued", speaker.messages.getFirst().key(), text);
         }
     }
 

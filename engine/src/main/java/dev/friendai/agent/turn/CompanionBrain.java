@@ -143,6 +143,7 @@ public final class CompanionBrain {
     private int requestIdGeneration = -1;
     private int step;
     private TurnKind turnKind = TurnKind.PLAYER;
+    private boolean playerOnlyBatch = true;
     private long turnSeq;
     /** The event that opened the running turn, so a silent answer can be replaced by a line the mod knows. */
     private BrainEvent turnEvent;
@@ -610,6 +611,9 @@ public final class CompanionBrain {
             }
         }
         turnKind = turnPlayerTexts.isEmpty() ? TurnKind.EVENT : TurnKind.PLAYER;
+        // A batch that is nothing but player lines is a conversation or an order; a failure or a world notice mixed
+        // into it still deserves the model's own answer.
+        playerOnlyBatch = batch.stream().allMatch(event -> event instanceof BrainEvent.PlayerSaid);
         long startedTurn = ++turnSeq;
         repeatedCalls.clear();
         turnEvent = batch.get(0);
@@ -952,9 +956,32 @@ public final class CompanionBrain {
                     : specs.stream().map(ToolSpec::name).collect(Collectors.toUnmodifiableSet());
             String system = buildSystemPrompt(plannerNote);
             plannerNote = "";
-            java.util.List<dev.friendai.agent.llm.model.Message> history = memory.snapshot();
-            observe(o -> o.onRequest(system, history, sent));
             LlmGateway active = gateway.get();
+            // System, history and schemas share one bounded budget: a long tool-result history or a large catalog
+            // must never overflow the provider and fail after a paid round trip.
+            RequestBudget.Fit fitted = RequestBudget.fit(
+                    system,
+                    memory.snapshot(),
+                    sent,
+                    active.contextTokens(),
+                    active.maxOutputTokens(),
+                    name -> catalog.meta(name).map(meta -> meta.core()).orElse(true));
+            if (fitted instanceof RequestBudget.Refusal refusal) {
+                LOGGER.warn(
+                        "Request did not fit: {} tokens over a {} token budget", refusal.tokens(), refusal.budget());
+                observe(o -> o.onTurnEnd(turnSeq, "error"));
+                speakSafely(
+                        "request too large",
+                        () -> speaker.error(UserMessage.of(
+                                "friendai.agent.request_too_large", refusal.tokens(), refusal.budget())));
+                endTurn();
+                return;
+            }
+            RequestBudget.Fitted fit = (RequestBudget.Fitted) fitted;
+            String prompt = fit.system();
+            java.util.List<dev.friendai.agent.llm.model.Message> fittedHistory = fit.history();
+            List<ToolSpec> fittedTools = fit.tools();
+            observe(o -> o.onRequest(prompt, fittedHistory, fittedTools));
             RequestTelemetry telemetry = telemetryFor(gen);
             requestIdForGeneration = telemetry.requestId();
             requestIdGeneration = gen;
@@ -971,9 +998,9 @@ public final class CompanionBrain {
                 speechStream = ++streamSeq;
                 long stream = speechStream;
                 CompletableFuture<LlmResponse> raw = streaming.completeStreaming(
-                        system,
-                        history,
-                        sent,
+                        prompt,
+                        fittedHistory,
+                        fittedTools,
                         delta -> {
                             accumulator.accept(delta);
                             scheduler.execute(() -> releaseEarly(gen, stream, accumulator));
@@ -984,7 +1011,7 @@ public final class CompanionBrain {
                 future = raw.thenApply(response -> completeFromStream(accumulator, response));
             } else {
                 streamInFlight = false;
-                future = active.complete(system, history, sent, telemetry);
+                future = active.complete(prompt, fittedHistory, fittedTools, telemetry);
                 requestFuture = future;
             }
         } catch (RuntimeException e) {
@@ -1173,6 +1200,7 @@ public final class CompanionBrain {
         boolean activityChosen = false;
         boolean anyCallFailed = false;
         boolean queueMutatedBesidesAdd = false;
+        boolean onlyQueueAdd = true;
         for (ToolCall call : calls) {
             ToolResult result;
             observe(o -> o.onToolCall(call));
@@ -1204,6 +1232,7 @@ public final class CompanionBrain {
             queuedByModel |= !result.error() && "queue_add".equals(call.name());
             activityChosen |= !result.error() && CHOOSE_ACTIVITY.equals(call.name());
             anyCallFailed |= result.error();
+            onlyQueueAdd &= "queue_add".equals(call.name());
             // An edit or patch after the add changes the work the reply just described, so its result must be read.
             queueMutatedBesidesAdd |=
                     !result.error() && ("queue_edit".equals(call.name()) || "plan_patch".equals(call.name()));
@@ -1221,6 +1250,22 @@ public final class CompanionBrain {
         if (queuedByModel && !anyCallFailed && !queueMutatedBesidesAdd && spoken != null && !spoken.isBlank()) {
             // A guarded reply exists and this response did not subsequently invalidate the queued work: the owner has
             // the answer, queue_add validated the plan and started it, and another request would only re-read the id.
+            endTurn();
+            return;
+        }
+        if (queuedByModel
+                && !anyCallFailed
+                && !queueMutatedBesidesAdd
+                && spoken == null
+                && onlyQueueAdd
+                && turnKind == TurnKind.PLAYER
+                && playerOnlyBatch
+                && decision.mode() != TurnMode.CHAT) {
+            // The plan is committed and carries its own work, so a second request would only restate the same fact.
+            // The owner hears the acknowledgement now and the task events report the outcome.
+            speakSafely("plan queued", () -> speaker.say(UserMessage.of("friendai.agent.plan_queued")));
+            long delivered = turnSeq;
+            observe(o -> o.onTurnEnd(delivered, "delivered"));
             endTurn();
             return;
         }
