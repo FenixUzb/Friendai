@@ -20,6 +20,7 @@ import dev.friendai.features.trading.minecraft.trading.MerchantLeases;
 import dev.friendai.features.trading.minecraft.trading.PiglinBarterAdapter;
 import dev.friendai.features.trading.minecraft.trading.TradeSessionGuard;
 import dev.friendai.features.trading.minecraft.trading.TraderObserver;
+import dev.friendai.foundation.social.AwayBook;
 import dev.friendai.infrastructure.config.ServerConfig;
 import dev.friendai.infrastructure.persistence.appearance.SkinStore;
 import dev.friendai.infrastructure.persistence.goals.GoalStore;
@@ -65,6 +66,9 @@ public final class ServerRuntime implements AutoCloseable {
     private final MovementDebugStream movementDebugStream;
     private final MemoryViewStream memoryViewStream;
     private final PlaceViewStream placeViewStream;
+    /** When this server's players left, so a genuine return can be mentioned once; dropped with the runtime. */
+    private final AwayBook awayBook = new AwayBook();
+
     private boolean acceptingWork = true;
     private boolean closed;
 
@@ -120,8 +124,14 @@ public final class ServerRuntime implements AutoCloseable {
     public void onEntityUnloaded(Entity entity) {
         if (entity instanceof CompanionEntity companion) {
             services.observations().unregister(companion);
+            services.resources().forget(companion);
             companions.unregister(companion);
         }
+    }
+
+    /** This server's return evidence; a leave recorded by another server is deliberately invisible here. */
+    public AwayBook awayBook() {
+        return awayBook;
     }
 
     /** Applies owner-join data on the server thread. */

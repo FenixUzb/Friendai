@@ -6,6 +6,12 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ## [Unreleased]
 
+## [0.214.1] - 2026-11-14
+
+### Fixed
+
+- The companion no longer confuses worlds: a "welcome back" line is said only in the world the owner actually left, and a dismissed or reloaded companion stops holding on to the surroundings it saw last session.
+
 ## [0.214.0] - 2026-11-14
 
 ### Changed
