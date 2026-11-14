@@ -32,6 +32,7 @@
   "friendai.companion.died": "%s 死了。再次召唤：/friendai summon",
   "friendai.companion.too_far": "你的伙伴离得太远，听不到你说话。",
   "friendai.companion.goal_blocked": "我卡住“%s”了：队列里什么都没有，需要你来决定。",
+  "friendai.companion.recovery_blocked": "我无法解决这个问题：%s。请告诉我该改变什么。",
 
   "friendai.command.stopped": "已停止。",
   "friendai.local_order.follow": "正在跟随你。",

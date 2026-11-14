@@ -32,6 +32,7 @@
   "friendai.companion.died": "%s ha muerto. Invócalo de nuevo: /friendai summon",
   "friendai.companion.too_far": "Tu compañero está demasiado lejos para oírte.",
   "friendai.companion.goal_blocked": "Estoy atascado con \"%s\": no hay nada en cola y necesito tu decisión.",
+  "friendai.companion.recovery_blocked": "No puedo superar esto: %s. Dime qué debo cambiar.",
 
   "friendai.command.stopped": "Detenido.",
   "friendai.local_order.follow": "Te sigo.",

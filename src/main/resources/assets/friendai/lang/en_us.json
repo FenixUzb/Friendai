@@ -32,6 +32,7 @@
   "friendai.companion.died": "%s died. Summon again: /friendai summon",
   "friendai.companion.too_far": "Your companion is too far away to hear you.",
   "friendai.companion.goal_blocked": "I'm stuck on \"%s\": nothing is queued and I need your decision.",
+  "friendai.companion.recovery_blocked": "I can't get past this: %s. Tell me what to change.",
 
   "friendai.command.stopped": "Stopped.",
   "friendai.local_order.follow": "Following you.",

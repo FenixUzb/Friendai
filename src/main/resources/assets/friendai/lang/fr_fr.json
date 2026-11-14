@@ -32,6 +32,7 @@
   "friendai.companion.died": "%s est mort. Invoquez-le à nouveau : /friendai summon",
   "friendai.companion.too_far": "Votre compagnon est trop loin pour vous entendre.",
   "friendai.companion.goal_blocked": "Je suis bloqué sur « %s » : rien n'est en file et j'ai besoin de ta décision.",
+  "friendai.companion.recovery_blocked": "Je n'arrive pas à dépasser ceci : %s. Dis-moi quoi changer.",
 
   "friendai.command.stopped": "Arrêté.",
   "friendai.local_order.follow": "Je vous suis.",

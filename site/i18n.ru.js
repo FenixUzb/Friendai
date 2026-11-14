@@ -507,7 +507,7 @@ const RU = {
   "Detects whether the companion is addressed.": "Определяет, обращаются ли к компаньону.",
   "Own companion in hearing range, else the nearest other whose owner is online.": "Свой компаньон в зоне слышимости, иначе ближайший другой, чей владелец в сети.",
   "CompanionBrain": "CompanionBrain",
-  "The per-owner agent loop. One principal per turn; late replies are dropped by a generation counter.": "Цикл агента для каждого владельца. Один принципал на ход; запоздалые ответы отбрасывает счётчик поколений.",
+  "The per-owner agent loop. One principal per turn; late replies are dropped by a generation counter. A blocked job that fails three times without a new fact pauses the turn that carries it and asks the owner, instead of starting unrelated work.": "Цикл агента для каждого владельца. Один принципал на ход; запоздалые ответы отбрасывает счётчик поколений. Заблокированная работа, трижды сорвавшаяся без новых фактов, приостанавливает свой ход и спрашивает владельца, вместо того чтобы начинать постороннюю работу.",
   "TurnRouter": "TurnRouter",
   "Picks chat, action, goal, recovery or event, and which tool groups are visible; PlanningPolicy then names what a plan-worthy turn is about.": "Выбирает режим: чат, действие, цель, восстановление или событие, и какие группы инструментов видны; затем PlanningPolicy решает, о чём стоит планировать.",
   "Planner": "Планировщик",

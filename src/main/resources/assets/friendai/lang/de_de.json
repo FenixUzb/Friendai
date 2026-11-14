@@ -32,6 +32,7 @@
   "friendai.companion.died": "%s ist gestorben. Erneut beschwören: /friendai summon",
   "friendai.companion.too_far": "Dein Gefährte ist zu weit weg, um dich zu hören.",
   "friendai.companion.goal_blocked": "Ich hänge bei \"%s\" fest: Es ist nichts eingeplant und ich brauche deine Entscheidung.",
+  "friendai.companion.recovery_blocked": "Ich komme hier nicht weiter: %s. Sag mir, was ich ändern soll.",
 
   "friendai.command.stopped": "Gestoppt.",
   "friendai.local_order.follow": "Ich folge dir.",

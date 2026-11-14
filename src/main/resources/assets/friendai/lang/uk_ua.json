@@ -32,6 +32,7 @@
   "friendai.companion.died": "%s загинув. Викличте знову: /friendai summon",
   "friendai.companion.too_far": "Ваш компаньйон надто далеко, щоб вас почути.",
   "friendai.companion.goal_blocked": "Я застряг на «%s»: у черзі нічого немає, потрібне твоє рішення.",
+  "friendai.companion.recovery_blocked": "Я не можу це подолати: %s. Скажи, що мені змінити.",
 
   "friendai.command.stopped": "Зупинено.",
   "friendai.local_order.follow": "Іду за вами.",

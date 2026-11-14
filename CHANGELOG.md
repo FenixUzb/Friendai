@@ -6,6 +6,12 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ## [Unreleased]
 
+## [0.214.4] - 2026-11-14
+
+### Fixed
+
+- A blocked job can no longer spawn a chain of unrelated jobs. After three failed attempts without a new fact the companion stops starting work for it, says in one line what blocks it and asks the owner for a decision; a changed world fact, an applied repair or the owner's own answer lets it try again.
+
 ## [0.214.3] - 2026-11-14
 
 ### Fixed
