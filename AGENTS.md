@@ -605,7 +605,7 @@ for the same tag is left intact. Retry a transient failure from its original CI 
 correction, merge it with a new version bump or manually tag the corrected commit after its CI passes.
 
 The release workflow also accepts existing tags pushed by the maintainer and manual dispatches with an existing tag.
-Explicit publication requires a successful `main` push CI run for the tagged commit. A manual dispatch with
+Explicit publication requires a successful `CI gate` from a `main` push for the tagged commit. A manual dispatch with
 `dry_run: true` builds, verifies and uploads the release files as a workflow artifact. For a local artifact check,
 run `scripts/check-release.sh vX.Y.Z` after `./gradlew assemble`.
 
