@@ -1851,12 +1851,12 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(maxTicks = 400, environment = "friendai-gametest:pathing_two_block_gap")
     public void goToRunsOverATwoBlockGap(GameTestHelper h) {
         int base = 284;
         GameTestSupport.platformAt(h, base, 16);
         trench(h, base, 8, 2);
-        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, base + 1, 8);
+        CompanionEntity c = platformWalker(h, base, 2, 8);
         Outcome out = new Outcome();
         walkTo(c, h, out, 13.5, base + 1, 8.5);
         h.succeedWhen(() -> {
