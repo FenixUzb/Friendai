@@ -289,6 +289,10 @@ public final class Scaffold {
         // A path can hand off while the companion is still descending from a step.
         // Use the landing cell as the base so the next jump only has to clear one block.
         if (!companion.onGround()) {
+            if (pillarTicks == 0 && companion.blockPosition().getY() < y && !canScaffold(context)) {
+                failure = materialFailure();
+                return State.FAILED;
+            }
             if (++pillarTicks <= JUMP_TIMEOUT) return State.CLIMBING;
             resetPillar();
             failure = "couldn't land before starting the scaffold climb";
