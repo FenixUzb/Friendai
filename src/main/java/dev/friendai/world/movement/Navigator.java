@@ -5,6 +5,7 @@ import dev.friendai.foundation.spatial.BlockList;
 import dev.friendai.foundation.spatial.CostModel;
 import dev.friendai.foundation.spatial.GoalPoint;
 import dev.friendai.foundation.spatial.MaterialReserve;
+import dev.friendai.foundation.spatial.MoveGenerator;
 import dev.friendai.foundation.spatial.Node;
 import dev.friendai.foundation.spatial.Path;
 import dev.friendai.foundation.spatial.PathGoal;
@@ -44,6 +45,8 @@ public final class Navigator {
     private static final int REPLAN_LIMIT = 3;
     /** How many times one goal may send the companion out to gather before giving up. */
     private static final int GATHER_ROUNDS = 2;
+    /** A ground route can wait through a fall from build height, but must still finish over the void. */
+    private static final int LANDING_WAIT_LIMIT = 120;
 
     private static final double PROGRESS = 1.0;
     /** How many leading steps of a new route may be skipped when the companion has already walked past them. */
@@ -70,6 +73,9 @@ public final class Navigator {
     private PathExecutor executor;
     private State state = State.SEARCHING;
     private long searchNanos;
+    /** Ticks awaiting solid ground, or -1 when a search can start immediately. */
+    private int landingWaitTicks = -1;
+
     private int failedPlans;
     private double bestHeuristic = Double.POSITIVE_INFINITY;
     /** Whether the running search is the material probe (2.5), which ignores the inventory. */
@@ -240,6 +246,15 @@ public final class Navigator {
         if (stopped || state == State.ARRIVED || state == State.UNREACHABLE) {
             return state;
         }
+        if (landingWaitTicks >= 0) {
+            if (hasFooting()) {
+                startSearch();
+            } else if (executor == null && ++landingWaitTicks >= LANDING_WAIT_LIMIT) {
+                landingWaitTicks = -1;
+                state = State.UNREACHABLE;
+                return state;
+            }
+        }
         if (search != null) {
             stepSearch(c);
             // The result of this tick's search is newer than the route it replaced: a stale executor tick must not
@@ -271,6 +286,7 @@ public final class Navigator {
         }
         probing = false;
         search = null;
+        landingWaitTicks = -1;
         stopped = true;
         state = State.SEARCHING;
         companion.getNavigation().stop();
@@ -539,14 +555,26 @@ public final class Navigator {
 
     private void startSearch() {
         PathingConfig settings = config();
+        Node start = node();
+        LevelCellView view = new LevelCellView(companion, settings, CostModel.DEFAULTS, breakList);
+        // An unsupported dry start cannot generate a route. A grounded spawn may have support before its first tick.
+        if (!hasFooting() && !MoveGenerator.standable(view, start)) {
+            search = null;
+            landingWaitTicks = Math.max(landingWaitTicks, 0);
+            return;
+        }
+        landingWaitTicks = -1;
         MaterialPicker materials = materials(settings);
         int placeable = mayPlace ? Math.min(maxPlaceable, materials.count(companion.inventory())) : 0;
         double price = mayPlace ? materials.cheapestPrice(companion.inventory()) : 0.0;
-        LevelCellView view = new LevelCellView(companion, settings, CostModel.DEFAULTS, breakList);
         SearchOptions options = new SearchOptions(
                 settings.maxNodes(), PathingConfig.SEARCH_RANGE, placeable, price, companion.canSprint());
         searchNanos = 0;
-        search = new PathSearch(view, CostModel.DEFAULTS, goal, node(), options);
+        search = new PathSearch(view, CostModel.DEFAULTS, goal, start, options);
+    }
+
+    private boolean hasFooting() {
+        return companion.onGround() || companion.isInWater() || companion.onClimbable();
     }
 
     private boolean goalHolds() {

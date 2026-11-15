@@ -98,6 +98,25 @@ public class NavigatorStateTests {
     }
 
     @GameTest(maxTicks = 400)
+    public void startsARouteAfterLanding(GameTestHelper h) {
+        int floor = 290;
+        GameTestSupport.platformAt(h, floor, 16);
+        CompanionEntity companion = walker(h, 2, floor + 1, 8);
+        Vec3 airborne = h.absoluteVec(new Vec3(2, floor + 12, 8));
+        companion.teleportTo(airborne.x, airborne.y, airborne.z);
+        Vec3 goal = h.absoluteVec(new Vec3(12.5, floor + 1, 8.5));
+        TaskContext context = new TaskContext(companion, h.getLevel());
+        Navigator navigator = new Navigator(context, false);
+        navigator.setGoal(new GoalPoint(goal.x, goal.y, goal.z, 0.5, 0.5));
+
+        h.succeedWhen(() -> {
+            Navigator.State state = navigator.tick(context);
+            h.assertTrue(state == Navigator.State.ARRIVED, "navigation: " + state + " " + navigator.lastSearch());
+            h.assertTrue(companion.position().distanceTo(goal) <= 1.0, "arrived away from the goal");
+        });
+    }
+
+    @GameTest(maxTicks = 400)
     public void aDirectlyDrivenRouteStillSprintsIntoALeap(GameTestHelper h) {
         int base = 240;
         GameTestSupport.platformAt(h, base, 16);

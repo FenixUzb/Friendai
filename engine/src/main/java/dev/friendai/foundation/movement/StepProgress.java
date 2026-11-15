@@ -26,8 +26,8 @@ public final class StepProgress {
     private final double originY;
     private final double originZ;
     private final double axisX;
+    private final double axisY;
     private final double axisZ;
-    private final boolean vertical;
     private final int windowTicks;
     private final double minimum;
 
@@ -51,8 +51,9 @@ public final class StepProgress {
         double dx = to.x() - from.x();
         double dz = to.z() - from.z();
         double horizontal = Math.hypot(dx, dz);
-        this.vertical = horizontal < 1.0e-6;
+        boolean vertical = horizontal < 1.0e-6;
         this.axisX = vertical ? 0.0 : dx / horizontal;
+        this.axisY = vertical ? (to.y() < from.y() ? -1.0 : 1.0) : 0.0;
         this.axisZ = vertical ? 0.0 : dz / horizontal;
         this.originX = from.x() + 0.5;
         this.originY = from.y();
@@ -92,6 +93,6 @@ public final class StepProgress {
 
     /** Distance along the step from its start cell's centre line; negative behind the start. */
     public double forwardAt(double x, double y, double z) {
-        return vertical ? y - originY : (x - originX) * axisX + (z - originZ) * axisZ;
+        return (x - originX) * axisX + (y - originY) * axisY + (z - originZ) * axisZ;
     }
 }

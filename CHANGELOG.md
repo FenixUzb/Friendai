@@ -6,6 +6,12 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ## [Unreleased]
 
+## [0.220.2] - 2026-11-15
+
+### Fixed
+
+- The companion waits to land before plotting a walking route, turns toward its first step before walking and keeps moving through vertical descents.
+
 ## [0.220.1] - 2026-11-15
 
 ### Changed

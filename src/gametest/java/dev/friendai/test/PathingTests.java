@@ -304,7 +304,7 @@ public class PathingTests {
 
     @GameTest(maxTicks = 500)
     public void shallowWaterIsWadedNotSwum(GameTestHelper h) {
-        int floor = 240;
+        int floor = 32;
         GameTestSupport.platformAt(h, floor, 14);
         for (int x = 5; x <= 9; x++) {
             for (int z = 1; z <= 5; z++) {
@@ -317,7 +317,9 @@ public class PathingTests {
         boolean[] swam = {false};
         h.onEachTick(() -> swam[0] |= c.isInWater() && c.getPose() == Pose.SWIMMING);
         h.succeedWhen(() -> {
-            h.assertTrue(out.status == TaskStatus.SUCCESS, "did not cross the shallow pond: " + out.why());
+            h.assertTrue(
+                    out.status == TaskStatus.SUCCESS,
+                    "did not cross the shallow pond: " + out.why() + " at " + c.position());
             h.assertFalse(swam[0], "a one-block pond is waded upright, not swum");
         });
     }
@@ -500,12 +502,15 @@ public class PathingTests {
 
     @GameTest(maxTicks = 1600)
     public void minesWholeLogColumn(GameTestHelper h) {
-        GameTestSupport.platform(h, 16);
-        for (int y = 2; y <= 9; y++) {
+        int floor = 22;
+        GameTestSupport.platformAt(h, floor, 16);
+        for (int y = floor + 1; y <= floor + 8; y++) {
             h.setBlock(new BlockPos(8, y, 8), Blocks.CHERRY_LOG);
         }
-        CompanionEntity c = walker(h, 2, 2, 2);
-        for (int y = 2; y <= 9; y++) {
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, floor + 1, 2);
+        c.setPathBounds(
+                new AABB(h.absoluteVec(new Vec3(-1, floor - 2, -1)), h.absoluteVec(new Vec3(17, floor + 11, 17))));
+        for (int y = floor + 1; y <= floor + 8; y++) {
             h.assertTrue(
                     GameTestSupport.observeVisible(h, c, h.absolutePos(new BlockPos(8, y, 8))),
                     "log at y=" + y + " should be directly visible");
@@ -518,9 +523,11 @@ public class PathingTests {
         c.executionCoordinator().setEventSink(out);
         c.executionCoordinator().start(task, "mine_blocks");
         h.succeedWhen(() -> {
-            h.assertTrue(out.status == TaskStatus.SUCCESS, "mine_blocks did not finish: " + out.why());
+            h.assertTrue(
+                    out.status == TaskStatus.SUCCESS,
+                    "mine_blocks did not finish: " + out.why() + " at " + c.position() + " " + task.debugStatus());
             int left = 0;
-            for (int y = 2; y <= 9; y++) {
+            for (int y = floor + 1; y <= floor + 8; y++) {
                 if (h.getLevel()
                         .getBlockState(h.absolutePos(new BlockPos(8, y, 8)))
                         .is(Blocks.CHERRY_LOG)) {
@@ -809,7 +816,7 @@ public class PathingTests {
     @GameTest(maxTicks = 3000, environment = "friendai-gametest:pathing_long_approach")
     public void approachCrossesThreeHundredBlocksWithoutTeleporting(GameTestHelper h) {
         int floor = 240;
-        GameTestSupport.platformAt(h, floor, 312);
+        GameTestSupport.corridor(h, floor, 312, 10);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2.0, floor + 1, 4.5);
         owner.setOnGround(true);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, floor + 1, 4);
@@ -843,13 +850,13 @@ public class PathingTests {
 
     @GameTest(maxTicks = 3000, environment = "friendai-gametest:pathing_long_crossing")
     public void goToCrossesThreeHundredBlocksWithoutTeleporting(GameTestHelper h) {
-        int floor = 200;
-        GameTestSupport.platformAt(h, floor, 312);
-        ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2.0, floor + 1, 4.5);
+        int floor = 70;
+        GameTestSupport.corridor(h, floor, 312, 24);
+        ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2.0, floor + 1, 12.5);
         owner.setOnGround(true);
-        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, floor + 1, 4);
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, floor + 1, 12);
         c.setOwner(owner.getUUID());
-        Vec3 target = h.absoluteVec(new Vec3(302.5, floor + 1, 4.5));
+        Vec3 target = h.absoluteVec(new Vec3(302.5, floor + 1, 12.5));
         Outcome out = new Outcome();
         c.executionCoordinator().setEventSink(out);
         c.executionCoordinator().start(new GoToTask(target), "go_to");
@@ -873,7 +880,8 @@ public class PathingTests {
                             + c.position() + " target " + target);
             h.assertTrue(
                     c.position().distanceTo(target) <= 2.0,
-                    "still " + c.position().distanceTo(target) + " blocks from the 300-block target");
+                    "still " + c.position().distanceTo(target) + " blocks from the 300-block target at " + c.position()
+                            + ", " + active.debugStatus());
         });
     }
 
@@ -967,7 +975,7 @@ public class PathingTests {
     @GameTest(maxTicks = 3000)
     public void followsThreeHundredBlocksWithoutTeleporting(GameTestHelper h) {
         int floor = 300;
-        GameTestSupport.platformAt(h, floor, 312);
+        GameTestSupport.corridor(h, floor, 312, 10);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 302.0, floor + 1, 4.5);
         owner.setOnGround(true);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, floor + 1, 4);
@@ -1705,6 +1713,8 @@ public class PathingTests {
         int base = 260;
         GameTestSupport.platformAt(h, base, 56);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, base + 1, 20);
+        c.setYRot(90.0f);
+        c.setYHeadRot(90.0f);
         Vec3 target = h.absoluteVec(new Vec3(42.5, base + 1, 20.5));
         TaskContext context = new TaskContext(c, h.getLevel());
         Navigator navigator = new Navigator(context);
@@ -1970,7 +1980,7 @@ public class PathingTests {
 
     @GameTest(maxTicks = 400)
     public void goToLeapsDownOverAWideGap(GameTestHelper h) {
-        int base = 170;
+        int base = 54;
         GameTestSupport.platformAt(h, base, 16);
         trench(h, base, 8, 4);
         // The near side stands three blocks higher than the far one, and the long fall stretches the leap across.

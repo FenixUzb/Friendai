@@ -478,6 +478,13 @@ public final class PathExecutor {
                 PathSteering.yaw(path.steps(), index, companion.getX(), companion.getZ(), companion.getYRot(), holding);
         companion.facing().travelYaw(yaw);
         double radians = Math.toRadians(yaw);
+        double speed = MOVE_SPEED;
+        if (companion.onGround()) {
+            // A running body slides on after it turns; brake at corners and let a body facing away turn in place.
+            speed = PathSteering.readyToWalk(step, companion.getX(), companion.getZ(), yaw)
+                    ? PathSteering.speed(path.steps(), index, companion.getX(), companion.getZ())
+                    : 0.0;
+        }
         companion
                 .getMoveControl()
                 .setWantedPosition(
@@ -486,10 +493,7 @@ public final class PathExecutor {
                         // would make the mob's own step-up logic hop early, short of the take-off point.
                         step.move() == Move.JUMP_GAP ? companion.getY() : target.y(),
                         companion.getZ() + Math.cos(radians),
-                        // A running body slides on after it turns, so it arrives at a corner already slowed.
-                        companion.onGround()
-                                ? PathSteering.speed(path.steps(), index, companion.getX(), companion.getZ())
-                                : MOVE_SPEED);
+                        speed);
         boolean up = step.to().y() > step.from().y();
         if (companion.isInWater()) {
             double dx = step.to().x() + 0.5 - companion.getX();
