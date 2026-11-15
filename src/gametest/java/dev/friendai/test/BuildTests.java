@@ -2223,6 +2223,30 @@ public class BuildTests {
         });
     }
 
+    @GameTest(maxTicks = 300)
+    public void scaffoldCleanupContinuesPastAProtectedSupport(GameTestHelper h) {
+        int floor = 170;
+        GameTestSupport.platformAt(h, floor, 8);
+        BlockPos protectedSupport = new BlockPos(3, floor + 1, 2);
+        BlockPos otherSupport = new BlockPos(4, floor + 1, 2);
+        h.setBlock(protectedSupport, Blocks.DIRT);
+        h.setBlock(otherSupport, Blocks.DIRT);
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, floor + 1, 2);
+        companion.hands().overrideProtection(h.absolutePos(protectedSupport)::equals);
+        Scaffold scaffold = new Scaffold(companion);
+        scaffold.adopt(List.of(h.absolutePos(protectedSupport), h.absolutePos(otherSupport)));
+        Scaffold.State[] state = {Scaffold.State.CLIMBING};
+
+        h.succeedWhen(() -> {
+            if (state[0] == Scaffold.State.CLIMBING) {
+                state[0] = scaffold.removeAll();
+            }
+            h.assertTrue(state[0] == Scaffold.State.FAILED, "waiting for cleanup to report the protection failure");
+            h.assertTrue(h.getBlockState(protectedSupport).is(Blocks.DIRT), "protected scaffolding was removed");
+            h.assertTrue(h.getBlockState(otherSupport).isAir(), "cleanup stopped before the unprotected support");
+        });
+    }
+
     /** The lowest dirt or cobblestone block in the test area, or null. */
     private static BlockPos lowestScaffold(GameTestHelper h, int size, int fromY, int toY) {
         for (int y = fromY; y <= toY; y++) {

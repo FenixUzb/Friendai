@@ -12,6 +12,7 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 - The companion waits to land before plotting a walking route, turns toward its first step before walking and keeps moving through vertical descents.
 - The companion centres itself over the supporting block before jumping to place scaffolding, so it can start the climb from the edge of a ledge.
+- If a scaffold block is protected or unreachable, the companion still removes the other scaffold blocks it can reach and reports any that remain.
 
 ## [0.220.1] - 2026-11-15
 

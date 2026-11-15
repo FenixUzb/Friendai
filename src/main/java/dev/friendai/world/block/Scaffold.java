@@ -451,12 +451,13 @@ public final class Scaffold {
      * Breaks every block this scaffold placed, highest first. The block breaker walks within reach of each block.
      * Returns
      * {@link State#CLIMBING} while a block is being broken, {@link State#READY} when none is left, and
-     * {@link State#FAILED} when one cannot be reached or is protected. A block that no longer holds what the
-     * scaffold placed is left alone.
+     * {@link State#FAILED} after attempting all supports if any cannot be removed. Blocks that no longer hold
+     * the scaffold material are skipped.
      */
     public State removeAll() {
         ServerLevel level = level();
         if (removal == null) {
+            failure = "";
             removal = new ArrayList<>(placed);
             removal.sort(Comparator.comparingInt((BlockPos pos) -> pos.getY()).reversed());
             removalIndex = 0;
@@ -474,26 +475,19 @@ public final class Scaffold {
                         removalIndex++;
                     }
                     case UNREACHABLE -> {
-                        breaker = null;
-                        failure = "couldn't reach scaffold at " + coords(removal.get(removalIndex));
-                        return State.FAILED;
+                        return skipBlockedSupport("couldn't reach scaffold at " + coords(removal.get(removalIndex)));
                     }
                     case PROTECTED -> {
                         String why = breaker.reason(BlockBreaker.State.PROTECTED);
-                        breaker = null;
                         BlockPos blocked = removal.get(removalIndex);
                         if (!companion.hands().canInteract(blocked)
                                 || level.getBlockState(blocked).getDestroySpeed(level, blocked) < 0) {
-                            failure = why;
-                        } else {
-                            failure = "scaffold breaker was blocked at " + coords(blocked);
+                            return skipBlockedSupport(why);
                         }
-                        return State.FAILED;
+                        return skipBlockedSupport("scaffold breaker was blocked at " + coords(blocked));
                     }
                     case OUT_OF_SIGHT -> {
-                        breaker = null;
-                        failure = "scaffold is out of sight at " + coords(removal.get(removalIndex));
-                        return State.FAILED;
+                        return skipBlockedSupport("scaffold is out of sight at " + coords(removal.get(removalIndex)));
                     }
                 }
                 continue;
@@ -507,7 +501,16 @@ public final class Scaffold {
             // is worse, so this breaker does not require line of sight.
             breaker = new BlockBreaker(pos, Scaffold::isScaffold, false, true);
         }
-        return State.READY;
+        return failure.isEmpty() ? State.READY : State.FAILED;
+    }
+
+    private State skipBlockedSupport(String reason) {
+        if (failure.isEmpty()) {
+            failure = reason;
+        }
+        breaker = null;
+        removalIndex++;
+        return State.CLIMBING;
     }
 
     /** How many of the placed blocks still hold the scaffold material. */
