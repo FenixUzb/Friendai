@@ -143,7 +143,7 @@ public class ServerConfig {
          */
         public int plannerRetries = 2;
 
-        public int plannerTimeoutSec = 20;
+        public int plannerTimeoutSec = 40;
         /** auto plans complex or explicit orders and troubled plans; off never asks; always asks for every order. */
         public String plannerMode = "auto";
     }
