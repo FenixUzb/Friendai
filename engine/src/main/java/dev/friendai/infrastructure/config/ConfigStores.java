@@ -69,8 +69,8 @@ public final class ConfigStores {
     }
 
     /**
-     * Adds the planner mode and moves the planner timeout from its old 60 s default to 20 s. Every stored 60 is
-     * rewritten, because the file cannot tell the old default from a deliberate 60; a missing key takes the new
+     * Adds the planner mode and moves the planner timeout from its old 60 s default to the current one. Every stored
+     * 60 is rewritten, because the file cannot tell the old default from a deliberate 60; a missing key takes the new
      * default from the field initializer.
      */
     private static void plannerModeAndTimeout(JsonObject json) {
@@ -81,7 +81,7 @@ public final class ConfigStores {
                 && timeout.isJsonPrimitive()
                 && timeout.getAsJsonPrimitive().isNumber()
                 && timeout.getAsInt() == 60) {
-            agent.addProperty("plannerTimeoutSec", 20);
+            agent.addProperty("plannerTimeoutSec", 40);
         }
     }
 

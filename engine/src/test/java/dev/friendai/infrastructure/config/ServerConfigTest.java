@@ -313,7 +313,7 @@ class ServerConfigTest {
         assertEquals(3, c.agent.maxReplans);
         assertEquals(30, c.agent.goalTickSec);
         assertEquals(24_000, c.agent.promptBudget);
-        assertEquals(20, c.agent.plannerTimeoutSec);
+        assertEquals(40, c.agent.plannerTimeoutSec);
         assertEquals("auto", c.agent.plannerMode);
         assertEquals(null, c.agent.planner);
         assertEquals(2, c.agent.plannerRetries);

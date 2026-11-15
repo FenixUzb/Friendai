@@ -257,7 +257,7 @@ final class SettingsCategorySections {
                 .option(Option.<Integer>createBuilder()
                         .name(tr("friendai.config.agent.planner_timeout_sec"))
                         .description(OptionDescription.of(tr("friendai.config.agent.planner_timeout_sec.tooltip")))
-                        .binding(20, () -> agent.plannerTimeoutSec, value -> agent.plannerTimeoutSec = value)
+                        .binding(40, () -> agent.plannerTimeoutSec, value -> agent.plannerTimeoutSec = value)
                         .controller(option ->
                                 IntegerFieldControllerBuilder.create(option).range(5, 120))
                         .build())

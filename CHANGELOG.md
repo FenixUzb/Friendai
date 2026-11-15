@@ -6,6 +6,16 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ## [Unreleased]
 
+## [0.220.1] - 2026-11-15
+
+### Changed
+
+- The planner gets 40 seconds per call instead of 20, so a slower planning model can finish instead of leaving the companion to its fallback.
+
+### Fixed
+
+- A planner call that runs past its timeout is retried like any other transient provider fault instead of ending the shift on the first timeout, and the companion says the planner did not answer in time instead of telling you to check the API key.
+
 ## [0.220.0] - 2026-11-14
 
 ### Added
