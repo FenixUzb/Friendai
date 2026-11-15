@@ -16,7 +16,7 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ### Fixed
 
-- The companion waits to land before jumping onto scaffolding, so a tower build can continue after approaching the pillar over a step.
+- The companion waits to land before jumping onto scaffolding, so a tower build can continue after approaching the pillar over a step. If a scaffold occupies a planned cell directly under its feet, it checks the landing before taking the scaffold down.
 
 - The companion now notices dead bushes, flowers, saplings and other thin plants its eyes pass over, so "take the bushes we are standing on" finds them instead of answering that there are none nearby. A plant behind a wall stays unseen.
 - An idle companion near a villager or wandering trader it cannot reach no longer walks to it every ten seconds and no longer interrupts the conversation to report it; it checks each trader's offers at most once every five minutes, quietly.
