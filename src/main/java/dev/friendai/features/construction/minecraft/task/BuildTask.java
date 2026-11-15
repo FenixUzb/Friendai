@@ -793,6 +793,12 @@ public final class BuildTask implements Task {
                 advance(c);
                 continue;
             }
+            // An adopted or temporary support underfoot needs the safe scaffold descent, not an ordinary break.
+            if (scaffold.placed().contains(currentPos)
+                    && c.companion().blockPosition().below().equals(currentPos)
+                    && scaffold.descendTo(c, currentPos.getY()) == Scaffold.State.CLIMBING) {
+                return TaskStatus.RUNNING;
+            }
             // Our own block that is not the planned one: take it back before filling the cell.
             if (ownsCell(currentPos) && !world.isAir() && !world.canBeReplaced()) {
                 if (takeBack == null) {
@@ -1668,7 +1674,7 @@ public final class BuildTask implements Task {
 
     private BlueprintStore checkpoints(TaskContext c) {
         if (checkpoints == null) {
-            checkpoints = BlueprintStore.forLevel(c.level(), c.storeWriter());
+            checkpoints = BlueprintStore.forLevel(c.level(), c.checkpointWriter());
         }
         return checkpoints;
     }

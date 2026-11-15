@@ -34,6 +34,7 @@ import dev.friendai.features.acquisition.minecraft.search.DropIndex;
 import dev.friendai.features.acquisition.minecraft.search.WorldScan;
 import dev.friendai.features.acquisition.minecraft.task.BatchObtainTask;
 import dev.friendai.features.acquisition.minecraft.task.ObtainTask;
+import dev.friendai.features.acquisition.minecraft.task.StackSpace;
 import dev.friendai.features.crafting.CraftPlanner;
 import dev.friendai.features.crafting.minecraft.RecipeIndex;
 import dev.friendai.features.crafting.minecraft.Stations;
@@ -53,7 +54,9 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -158,7 +161,7 @@ public class ObtainTests {
         return step;
     }
 
-    @GameTest(maxTicks = 16000)
+    @GameTest(maxTicks = 16000, environment = "friendai-gametest:obtain_scripted_kit")
     public void scriptedForestKitUsesOneBatchAndFourStrictTransfers(GameTestHelper h) {
         ResourceWorkFixture.BirchKit fixture = ResourceWorkFixture.birchKit(h, 80, 2);
         ResourceWorkFixture.removeDeliveryObstruction(h, fixture);
@@ -348,13 +351,15 @@ public class ObtainTests {
                 }
                 List<String> requestLines = gateway.requestLastUserLines();
                 List<Integer> toolResultCounts = gateway.requestToolResultCounts();
-                if (gateway.requests() != 3
-                        || toolResultCounts.size() < 2
-                        || toolResultCounts.get(1) != 1
+                // A fast plan can finish before the tool-result reply is composed: the queue_add result and the
+                // plan-finished event then share one request, so the last reply is either the second or the third.
+                if ((gateway.requests() != 2 && gateway.requests() != 3)
+                        || toolResultCounts.size() != gateway.requests()
+                        || toolResultCounts.getLast() != 1
                         || !requestLines.getLast().startsWith("[event] plan #")) {
-                    throw new IllegalStateException("expected one plan call, one tool-result reply and one final "
-                            + "plan event; got requests=" + gateway.requests() + ", toolResults=" + toolResultCounts
-                            + ", last user lines=" + requestLines);
+                    throw new IllegalStateException("expected one plan call, the queue_add result and one final "
+                            + "plan event in the last reply; got requests=" + gateway.requests()
+                            + ", toolResults=" + toolResultCounts + ", last user lines=" + requestLines);
                 }
                 h.assertValueEqual(firstPickupTick[0] >= 0, true, "a delivered tool was actually picked up");
                 h.assertTrue(
@@ -690,7 +695,7 @@ public class ObtainTests {
                 for (int y = 199; y <= 200; y++) h.setBlock(x, y, z, Blocks.DIRT);
             }
         }
-        var owner = GameTestSupport.mockPlayerAt(h, 10, 201, 10);
+        var owner = GameTestSupport.mockPlayerAt(h, 8, 201, 12);
         // Seed one station
         h.setBlock(8, 201, 10, Blocks.CRAFTING_TABLE);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 10, 201, 10);
@@ -764,7 +769,7 @@ public class ObtainTests {
                                 == dev.friendai.features.knowledge.ResourceObservation.EvidenceSource.ADJACENT_BREAK);
     }
 
-    @GameTest(maxTicks = 18000)
+    @GameTest(maxTicks = 18000, environment = "friendai-gametest:obtain_buried_tool_set")
     public void callerObtainsAndDeliversStoneToolSetFromBuriedStone(GameTestHelper h) {
         GameTestSupport.platformAt(h, 200, 24);
         for (int x = 0; x < 24; x++) {
@@ -773,7 +778,7 @@ public class ObtainTests {
                 for (int y = 199; y <= 200; y++) h.setBlock(x, y, z, Blocks.DIRT);
             }
         }
-        var owner = GameTestSupport.mockPlayerAt(h, 10, 201, 10);
+        var owner = GameTestSupport.mockPlayerAt(h, 8, 201, 12);
         h.setBlock(8, 201, 10, Blocks.CRAFTING_TABLE);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 10, 201, 10);
         companion.setOwner(owner.getUUID());
@@ -985,6 +990,12 @@ public class ObtainTests {
         runner.setEventSink(result);
         runner.start(task, "obtain_item");
         return runner;
+    }
+
+    /** How many of the item the companion carries right now. */
+    private static int carried(CompanionEntity companion, String itemId) {
+        return dev.friendai.task.inventory.InventoryOps.count(
+                companion.inventory(), ItemMatcher.parse(itemId).orElseThrow());
     }
 
     private static ExecutionCoordinator batch(CompanionEntity c, Result result, BatchObtainTask task) {
@@ -1748,14 +1759,194 @@ public class ObtainTests {
         });
     }
 
+    /** Room is measured on the real stacks: compatibility follows components, and only a fully consumed stack frees. */
+    @GameTest
+    public void stackSpaceCountsOnlyCompatibleRoomAndRealFreedSlots(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        Container bag = c.inventory();
+        h.assertValueEqual(StackSpace.freeRoom(bag, "minecraft:cobblestone"), 0, "an empty bag has no room");
+        bag.setItem(0, new ItemStack(Items.COBBLESTONE, 63));
+        h.assertValueEqual(StackSpace.freeRoom(bag, "minecraft:cobblestone"), 1, "a 63 stack takes one more");
+        ItemStack renamed = new ItemStack(Items.COBBLESTONE, 63);
+        renamed.set(DataComponents.CUSTOM_NAME, Component.literal("Special"));
+        bag.setItem(1, renamed);
+        h.assertValueEqual(
+                StackSpace.freeRoom(bag, "minecraft:cobblestone"),
+                1,
+                "a stack with different components is no room for a plain one");
+        bag.setItem(2, new ItemStack(Items.OAK_LOG));
+        h.assertValueEqual(StackSpace.emptiedSlots(bag, "minecraft:oak_log", 1), 1, "the only log frees its slot");
+        bag.setItem(3, new ItemStack(Items.BIRCH_LOG, 64));
+        h.assertValueEqual(
+                StackSpace.emptiedSlots(bag, "minecraft:birch_log", 1), 0, "one log out of 64 frees no slot");
+        h.assertValueEqual(
+                StackSpace.emptiedSlots(bag, "minecraft:birch_log", 64), 1, "the whole stack frees its slot");
+        h.assertValueEqual(StackSpace.maxStack("minecraft:iron_pickaxe"), 1, "a tool has its own stack limit");
+        h.assertValueEqual(StackSpace.maxStack("minecraft:cobblestone"), 64, "cobblestone stacks to 64");
+        h.succeed();
+    }
+
+    /**
+     * Every slot is full, one of them with 63 cobblestone: the last cobblestone of a 64 request fills that stack, so
+     * the work starts without a chest and without moving anything the owner is carrying.
+     */
+    @GameTest(maxTicks = 800)
+    public void aCompatiblePartialStackTakesTheLastItemWithoutMovingAnything(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        BlockPos stone = new BlockPos(4, 2, 2);
+        h.setBlock(stone, Blocks.STONE);
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        var owner = GameTestSupport.mockPlayerAt(h, 6, 2, 2);
+        companion.setOwner(owner.getUUID());
+        CompanionManager.get(h.getLevel().getServer()).register(companion);
+        companion.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.WOODEN_PICKAXE));
+        for (int slot = 0; slot < companion.inventory().getContainerSize(); slot++) {
+            companion.inventory().setItem(slot, new ItemStack(Items.DIRT, 64));
+        }
+        companion.inventory().setItem(0, new ItemStack(Items.COBBLESTONE, 63));
+        h.assertTrue(
+                GameTestSupport.observeVisible(h, companion, h.absolutePos(stone)),
+                "the stone source should be visible with a full bag");
+        Result result = new Result();
+        ExecutionCoordinator runner = obtain(companion, result, obtainTask("minecraft:cobblestone", 64, false, true));
+
+        h.succeedWhen(() -> {
+            if (h.getBlockState(stone).is(Blocks.STONE)) {
+                GameTestSupport.observeVisible(h, companion, h.absolutePos(stone));
+            }
+            runner.tick();
+            h.assertTrue(result.status != null, "the obtain should finish");
+            h.assertTrue(result.status == TaskStatus.SUCCESS, result.status + ": " + result.summary);
+            h.assertValueEqual(carried(companion, "minecraft:cobblestone"), 64, "the last cobblestone was collected");
+            h.assertValueEqual(carried(companion, "minecraft:dirt"), 26 * 64, "nothing the owner carried was moved");
+        });
+    }
+
+    /** A craft consumes its ingredient before its result arrives, so its own slot pays for the result. */
+    @GameTest(maxTicks = 800)
+    public void aCraftThatConsumesItsIngredientSlotRunsWithAFullBag(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        var owner = GameTestSupport.mockPlayerAt(h, 6, 2, 2);
+        companion.setOwner(owner.getUUID());
+        CompanionManager.get(h.getLevel().getServer()).register(companion);
+        for (int slot = 0; slot < companion.inventory().getContainerSize(); slot++) {
+            companion.inventory().setItem(slot, new ItemStack(Items.DIRT, 64));
+        }
+        companion.inventory().setItem(0, new ItemStack(Items.OAK_LOG));
+        Result result = new Result();
+        ExecutionCoordinator runner = obtain(companion, result, obtainTask("minecraft:oak_planks", 4, false, true));
+
+        h.succeedWhen(() -> {
+            runner.tick();
+            h.assertTrue(result.status != null, "the obtain should finish");
+            h.assertTrue(result.status == TaskStatus.SUCCESS, result.status + ": " + result.summary);
+            h.assertValueEqual(carried(companion, "minecraft:oak_planks"), 4, "four planks were crafted");
+            h.assertValueEqual(carried(companion, "minecraft:oak_log"), 0, "the log paid for them");
+            h.assertValueEqual(carried(companion, "minecraft:dirt"), 26 * 64, "nothing else was touched");
+        });
+    }
+
+    /** One missing slot moves one stack, not the whole bag, and the request completes from the chest. */
+    @GameTest(maxTicks = 2400)
+    public void oneNeededSlotMovesOneStackNotTheWholeBag(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        BlockPos chestPos = new BlockPos(4, 2, 2);
+        h.setBlock(chestPos, Blocks.CHEST);
+        Container chest = (Container) h.getLevel().getBlockEntity(h.absolutePos(chestPos));
+        chest.setItem(0, new ItemStack(Items.COBBLESTONE, 4));
+        chest.setChanged();
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        var owner = GameTestSupport.mockPlayerAt(h, 6, 2, 2);
+        companion.setOwner(owner.getUUID());
+        CompanionManager.get(h.getLevel().getServer()).register(companion);
+        for (int slot = 0; slot < companion.inventory().getContainerSize(); slot++) {
+            companion.inventory().setItem(slot, new ItemStack(Items.DIRT, 64));
+        }
+        companion.inventory().setItem(0, new ItemStack(Items.COBBLESTONE, 64));
+        h.assertTrue(
+                GameTestSupport.observeVisible(h, companion, h.absolutePos(chestPos)), "the chest should be visible");
+        Result result = new Result();
+        ExecutionCoordinator runner = new ExecutionCoordinator(companion, () -> 1600, () -> false);
+        runner.setEventSink(result);
+        // Container contents are remembered evidence: the companion has to open the chest once before the planner
+        // can use what is inside it.
+        runner.start(new CheckContainerTask(h.absolutePos(chestPos)), "check_container");
+        int[] phase = {0};
+
+        h.succeedWhen(() -> {
+            GameTestSupport.observeVisible(h, companion, h.absolutePos(chestPos));
+            runner.tick();
+            if (phase[0] == 0) {
+                h.assertTrue(
+                        result.status == TaskStatus.SUCCESS,
+                        "the chest was not checked: " + result.status + " " + result.summary);
+                phase[0] = 1;
+                result.status = null;
+                result.summary = null;
+                runner.start(obtainTask("minecraft:cobblestone", 68, true, false), "obtain_item");
+            } else {
+                h.assertTrue(result.status != null, "the obtain should finish");
+                h.assertTrue(result.status == TaskStatus.SUCCESS, result.status + ": " + result.summary);
+                h.assertValueEqual(carried(companion, "minecraft:cobblestone"), 68, "the four chest items were taken");
+                h.assertValueEqual(carried(companion, "minecraft:dirt"), 25 * 64, "exactly one dirt stack moved");
+                h.assertValueEqual(
+                        dev.friendai.task.inventory.InventoryOps.count(
+                                chest,
+                                dev.friendai.task.inventory.ItemMatcher.parse("minecraft:dirt")
+                                        .orElseThrow()),
+                        64,
+                        "the chest received exactly the one stack the step needed");
+            }
+            h.assertTrue(phase[0] == 1 && result.status != null, "still working");
+        });
+    }
+
+    /** A full stack of the requested item is still full: the request stops honestly instead of starting work. */
+    @GameTest(maxTicks = 400)
+    public void aFullSameItemStackCannotTakeOneMore(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        BlockPos stone = new BlockPos(4, 2, 2);
+        h.setBlock(stone, Blocks.STONE);
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        var owner = GameTestSupport.mockPlayerAt(h, 6, 2, 2);
+        companion.setOwner(owner.getUUID());
+        CompanionManager.get(h.getLevel().getServer()).register(companion);
+        companion.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.WOODEN_PICKAXE));
+        for (int slot = 0; slot < companion.inventory().getContainerSize(); slot++) {
+            companion.inventory().setItem(slot, new ItemStack(Items.DIRT, 64));
+        }
+        companion.inventory().setItem(0, new ItemStack(Items.COBBLESTONE, 64));
+        h.assertTrue(
+                GameTestSupport.observeVisible(h, companion, h.absolutePos(stone)),
+                "the stone source should be visible with a full bag");
+        Result result = new Result();
+        ExecutionCoordinator runner = obtain(companion, result, obtainTask("minecraft:cobblestone", 65, false, true));
+
+        h.succeedWhen(() -> {
+            runner.tick();
+            h.assertTrue(result.status != null, "the obtain should stop");
+            h.assertTrue(result.status == TaskStatus.FAILED, result.status + ": " + result.summary);
+            h.assertTrue(result.summary.contains("my inventory is full"), "summary was " + result.summary);
+            h.assertValueEqual(carried(companion, "minecraft:cobblestone"), 64, "the carried stack is intact");
+            h.assertValueEqual(carried(companion, "minecraft:dirt"), 26 * 64, "nothing was lost or moved");
+        });
+    }
+
     /**
      * The impossible half of the stone-tool order: the wood is reachable, the stone is not, and exploring is off. The
      * batch gathers the wood first and then stops on the missing stone family instead of touring the same hole. The
      * gathered wood stays in the bag and the result names exactly one actionable blocker.
      */
-    @GameTest(maxTicks = 1600)
+    @GameTest(maxTicks = 1600, environment = "friendai-gametest:obtain_no_stone")
     public void impossibleStoneOrderKeepsItsWoodenWorkAndNamesOneBlocker(GameTestHelper h) {
         GameTestSupport.platformAt(h, 60, 16);
+        // The deliberate observation can see the platform itself from its edge. Use a floor
+        // outside the stone-tool ingredient tag so the fixture really has no usable stone.
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) h.setBlock(x, 60, z, Blocks.SMOOTH_QUARTZ);
+        }
         h.setBlock(2, 61, 4, Blocks.CRAFTING_TABLE);
         List<BlockPos> logs = List.of(new BlockPos(4, 61, 2), new BlockPos(4, 61, 7));
         logs.forEach(log -> h.setBlock(log, Blocks.OAK_LOG));

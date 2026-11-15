@@ -384,6 +384,9 @@ public final class ResourceSearchDriver implements Task {
     }
 
     private TaskStatus advance(TaskContext context, Pos position, boolean budgetReturn) {
+        if (budgetReturn && !returning && !found && returnFailureReason.isBlank()) {
+            returnFailureReason = "search budget reached before finding confirmed evidence for " + target.label();
+        }
         if (startupFailure != null) {
             return fail(context, startupFailure);
         }

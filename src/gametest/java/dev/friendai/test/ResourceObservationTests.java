@@ -218,6 +218,49 @@ public class ResourceObservationTests {
         h.succeed();
     }
 
+    /**
+     * A dead bush has no occlusion shape, so every ray passes through it; the passive sweep must still report the
+     * bush it passed, and must not report a bush behind a wall. Neither bush sits on a cell a sweep aims at, so only
+     * a ray that crosses the bush's outline can see it.
+     */
+    @GameTest(maxTicks = 400)
+    public void theSweepSeesAPlantItPassesButNotOneBehindAWall(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) h.setBlock(x, 2, z, Blocks.RED_SAND);
+        }
+        BlockPos open = new BlockPos(6, 3, 8);
+        BlockPos hidden = new BlockPos(12, 3, 3);
+        h.setBlock(open, Blocks.DEAD_BUSH);
+        h.setBlock(hidden, Blocks.DEAD_BUSH);
+        for (int z = 1; z <= 5; z++) {
+            for (int y = 3; y <= 6; y++) h.setBlock(10, y, z, Blocks.STONE);
+        }
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 3, 2);
+        ResourceObserver observer = new ResourceObserver(companion);
+        List<ResourceObservation> seen = new ArrayList<>();
+        Pos openPos = pos(h.absolutePos(open));
+        Pos hiddenPos = pos(h.absolutePos(hidden));
+        int sweeps = 0;
+        while (sweeps < 60 && seen.stream().noneMatch(o -> o.location().pos().equals(openPos))) {
+            observer.scheduleSweep(sweeps * 20L);
+            for (int step = 0; step < 64 && observer.queuedJobs() > 0; step++) {
+                seen.addAll(observer.tick(256, 1024, Long.MAX_VALUE).observations());
+            }
+            sweeps++;
+        }
+        h.assertTrue(
+                seen.stream()
+                        .anyMatch(o -> o.location().pos().equals(openPos)
+                                && o.blockId().equals("minecraft:dead_bush")),
+                "the bush in the open was never seen in " + sweeps + " sweeps");
+        h.assertTrue(
+                seen.stream().noneMatch(o -> o.location().pos().equals(hiddenPos)),
+                "the bush behind the wall must stay unknown");
+        System.out.println("[SWEEP] bush in the open seen after " + sweeps + " sweep(s)");
+        h.succeed();
+    }
+
     /** A pit under a dirt ceiling is still worth looking into: the walls beside the companion are what its eyes reach. */
     @GameTest(maxTicks = 400)
     public void aPocketUnderACeilingShowsItsWalls(GameTestHelper h) {
@@ -758,7 +801,14 @@ public class ResourceObservationTests {
         String dimension = level.dimension().identifier().toString();
         BlockPos target = h.absolutePos(new BlockPos(5, 3, 5));
         h.setBlock(5, 3, 5, Blocks.COAL_ORE);
-        state.resourceCandidates().observe(companion, observation(target, companion.blockPosition()));
+        state.resourceCandidates()
+                .observe(
+                        companion,
+                        new ResourceObservation(
+                                "minecraft:coal_ore",
+                                new ResourceObservation.Location(dimension, pos(target)),
+                                pos(companion.blockPosition()),
+                                level.getServer().overworld().getGameTime()));
         state.resourceCandidates()
                 .observeCaveEntrance(
                         companion,
@@ -787,6 +837,31 @@ public class ResourceObservationTests {
                                 && record.y() == target.getY()
                                 && record.z() == target.getZ()),
                 "durable knowledge must survive the unload");
+        h.succeed();
+    }
+
+    @GameTest(maxTicks = 100)
+    public void focusedLookKeepsScanningBounded(GameTestHelper h) {
+        GameTestSupport.platform(h, 32);
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        companion.setOwner(java.util.UUID.randomUUID());
+        for (int x = 0; x < 24; x++) {
+            for (int y = 0; y < 16; y++) {
+                for (int z = 0; z < 24; z++) h.setBlock(x, y + 1, z, Blocks.STONE);
+            }
+        }
+        int[] tested = {0};
+        var resources = GameTestSupport.runtime(h.getLevel().getServer()).resourceCandidates();
+        dev.friendai.perception.resource.FocusedLook.lookFor(
+                h.getLevel(),
+                companion,
+                resources,
+                state -> {
+                    tested[0]++;
+                    return state.is(Blocks.STONE);
+                },
+                32);
+        h.assertTrue(tested[0] <= 9000, "focused look exceeded its cell budget: " + tested[0]);
         h.succeed();
     }
 

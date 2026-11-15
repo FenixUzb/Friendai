@@ -20,6 +20,8 @@
 				"SessionLifecycleTests",
 				"TaskFaceTests",
 				"LoggingTests",
+				"LiveCompanionTests",
+				"LiveUnderstandingTests",
 				"TickBudgetTests"
 			]
 		},

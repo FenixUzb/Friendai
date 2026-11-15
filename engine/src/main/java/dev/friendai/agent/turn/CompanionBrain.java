@@ -4,6 +4,7 @@ import dev.friendai.agent.goal.GoalView;
 import dev.friendai.agent.llm.RequestTelemetry;
 import dev.friendai.agent.llm.model.LlmResponse;
 import dev.friendai.agent.llm.model.Message;
+import dev.friendai.agent.llm.model.Role;
 import dev.friendai.agent.llm.model.StopReason;
 import dev.friendai.agent.llm.model.ToolCall;
 import dev.friendai.agent.llm.model.ToolSpec;
@@ -108,6 +109,11 @@ public final class CompanionBrain {
     private PlacedSource placedSource = PlacedSource.NONE;
     private PlannerPort plannerPort = PlannerPort.NONE;
     private TradingTurnPort tradingTurnPort = TradingTurnPort.NOOP;
+    /** Delivered lines a principal's conversation starts from when this brain first answers them. */
+    private RecentConversationSource recentConversation = RecentConversationSource.NONE;
+
+    /** A cleared transcript must also leave the live conversation it backed; applied when the turn settles. */
+    private boolean clearConversationOnTurnEnd;
     /** A plan that failed or needs a decision in this turn's batch is the one the goal follows. */
     private boolean ownsTroubledPlan;
     /** What the planner just did; shown once in the next request's Mission block. */
@@ -155,6 +161,9 @@ public final class CompanionBrain {
     private final Deque<SpokenLine> recentSpeech = new ArrayDeque<>();
 
     private Set<String> turnToolNames = Set.of();
+    /** The tools whose schemas the latest request carried; a call outside it was written from memory. */
+    private Set<String> offeredTools = Set.of();
+
     private final TurnRouter router = new TurnRouter(IntentVocabulary.load());
     private final ToolCatalog catalog;
     /** The tool groups this turn may use; widened by request_tools, reset at every turn start. */
@@ -444,6 +453,30 @@ public final class CompanionBrain {
         this.plannerPort = java.util.Objects.requireNonNull(plannerPort);
     }
 
+    /**
+     * Where a recreated principal conversation may start from. Consulted once per principal, when its history is
+     * created; {@link RecentConversationSource#NONE} leaves every conversation to start empty.
+     */
+    public void setRecentConversationSource(RecentConversationSource source) {
+        this.recentConversation = source == null ? RecentConversationSource.NONE : source;
+    }
+
+    /**
+     * Forgets every live principal conversation. Called after the transcript was cleared, so neither the text still
+     * in memory nor a restored seed can bring the cleared exchange back. A turn already running is forgotten when it
+     * ends; a queued turn then starts empty. Facts and other memory stores are not touched.
+     */
+    public void clearConversationHistory() {
+        for (PrincipalHistory history : histories.values()) {
+            history.memory.clear();
+        }
+        if (thinking) {
+            clearConversationOnTurnEnd = true;
+        } else {
+            memory.clear();
+        }
+    }
+
     public void setTradingTurnPort(TradingTurnPort tradingTurnPort) {
         this.tradingTurnPort = tradingTurnPort == null ? TradingTurnPort.NOOP : tradingTurnPort;
     }
@@ -549,7 +582,9 @@ public final class CompanionBrain {
         PrincipalHistory history = histories.get(principal);
         if (history == null) {
             evictHistorySlot();
-            history = new PrincipalHistory(new ConversationMemory(historyMessages), level);
+            ConversationMemory fresh = new ConversationMemory(historyMessages);
+            seedRecentConversation(fresh, principal, level);
+            history = new PrincipalHistory(fresh, level);
             histories.put(principal, history);
         } else if (history.access != level) {
             // A trust change must not carry text or tool output across the authorization boundary.
@@ -558,6 +593,49 @@ public final class CompanionBrain {
         }
         memory = history.memory;
         activePrincipal = principal;
+    }
+
+    /**
+     * Starts a principal's conversation from the delivered lines an earlier session left behind, so a follow-up
+     * after the companion was recreated can refer to the exchange before it. Only a player line and a companion
+     * line that was actually spoken become history — never a tool call or a tool result — and the conversation must
+     * start at a player line. A guest's conversation is never restored, a failing source costs only the continuity,
+     * and a source that returns anything else is ignored line by line.
+     */
+    private void seedRecentConversation(ConversationMemory fresh, UUID principal, AccessLevel level) {
+        if (level == AccessLevel.GUEST) {
+            return;
+        }
+        List<Message> recent;
+        try {
+            recent = recentConversation.recent(
+                    new Caller(principal, "", level), RecentConversationSource.BUDGET_MESSAGES);
+        } catch (RuntimeException e) {
+            LOGGER.debug("Recent conversation unavailable", e);
+            return;
+        }
+        if (recent == null || recent.isEmpty()) {
+            return;
+        }
+        List<Message> delivered = new ArrayList<>(recent.size());
+        for (Message message : recent) {
+            if (message == null || message.text().isBlank()) {
+                continue;
+            }
+            if (message.role() == Role.USER) {
+                delivered.add(Message.user(message.text()));
+            } else if (message.role() == Role.ASSISTANT && message.toolCalls().isEmpty()) {
+                delivered.add(Message.assistant(message.text(), List.of()));
+            }
+        }
+        int start = 0;
+        while (start < delivered.size() && delivered.get(start).role() != Role.USER) {
+            start++;
+        }
+        if (start == delivered.size()) {
+            return;
+        }
+        fresh.seed(delivered.subList(start, delivered.size()));
     }
 
     /** Drops the least recently used guest conversation; the owner and the active turn are never evicted. */
@@ -954,6 +1032,7 @@ public final class CompanionBrain {
             turnToolNames = wordsOnly
                     ? java.util.Set.of()
                     : specs.stream().map(ToolSpec::name).collect(Collectors.toUnmodifiableSet());
+            offeredTools = sent.stream().map(ToolSpec::name).collect(Collectors.toUnmodifiableSet());
             String system = buildSystemPrompt(plannerNote);
             plannerNote = "";
             LlmGateway active = gateway.get();
@@ -1204,6 +1283,7 @@ public final class CompanionBrain {
         for (ToolCall call : calls) {
             ToolResult result;
             observe(o -> o.onToolCall(call));
+            Optional<ToolGroup> revealed = revealHiddenGroup(call.name());
             noteAttempt(call.name());
             Optional<ToolResult> reused = repeatedCalls.blocked(call);
             if (reused.isPresent()) {
@@ -1225,6 +1305,12 @@ public final class CompanionBrain {
                     result = ToolResult.error("Tool " + call.name() + " failed: " + e.getMessage());
                 }
                 repeatedCalls.record(call, result);
+            }
+            if (result.error() && revealed.isPresent()) {
+                result = ToolResult.error(result.content() + " The "
+                        + revealed.get().name().toLowerCase(java.util.Locale.ROOT)
+                        + " tools were not loaded when you made this call; they are loaded now, so read the schema of "
+                        + call.name() + " and call it again.");
             }
             ToolResult finalResult = result;
             observe(o -> o.onToolResult(call, finalResult));
@@ -1329,6 +1415,23 @@ public final class CompanionBrain {
             return finished.planId();
         }
         return -1;
+    }
+
+    /**
+     * Shows the group of a tool the model called although routing had hidden it. Such a call is written from memory,
+     * without a schema, which is where a refused argument comes from; with the group visible for the rest of the turn
+     * the next request carries the schema, so the model can repeat the call correctly instead of guessing again.
+     */
+    private Optional<ToolGroup> revealHiddenGroup(String tool) {
+        if (socialTurn || offeredTools.contains(tool) || !agentSettings.get().toolRouting()) {
+            return Optional.empty();
+        }
+        Optional<ToolGroup> group =
+                catalog.meta(tool).filter(meta -> !meta.core()).map(dev.friendai.agent.tools.ToolMeta::group);
+        if (group.isEmpty() || !visibleGroups.add(group.get())) {
+            return Optional.empty();
+        }
+        return group;
     }
 
     /** Unlocks a tool group for the rest of the turn; an unknown group is an error listing the valid ones. */
@@ -1446,6 +1549,13 @@ public final class CompanionBrain {
     private void endTurn() {
         teachingContext = null;
         thinking = false;
+        if (clearConversationOnTurnEnd) {
+            clearConversationOnTurnEnd = false;
+            for (PrincipalHistory history : histories.values()) {
+                history.memory.clear();
+            }
+            memory.clear();
+        }
         streamInFlight = false;
         requestFuture = null;
         hasFinishedTurn = true;

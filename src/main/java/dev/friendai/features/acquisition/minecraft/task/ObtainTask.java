@@ -5,16 +5,24 @@ import dev.friendai.entity.CompanionEntity;
 import dev.friendai.execution.log.TaskLogSpan;
 import dev.friendai.execution.tool.Caller;
 import dev.friendai.features.acquisition.AcquisitionAttempts;
+import dev.friendai.features.acquisition.ObtainCapacity;
 import dev.friendai.features.acquisition.ObtainPlan;
 import dev.friendai.features.acquisition.ObtainPlanner;
 import dev.friendai.features.acquisition.ObtainStep;
 import dev.friendai.features.acquisition.ObtainText;
+import dev.friendai.features.acquisition.Source;
 import dev.friendai.features.acquisition.TradingContext;
 import dev.friendai.features.acquisition.WorldFacts;
 import dev.friendai.features.acquisition.minecraft.ObtainSubtaskFactory;
 import dev.friendai.features.acquisition.minecraft.search.DropIndex;
 import dev.friendai.features.acquisition.minecraft.search.WorldScan;
+import dev.friendai.features.crafting.CraftPlan;
+import dev.friendai.features.crafting.CraftPlanner;
+import dev.friendai.features.crafting.CraftStep;
+import dev.friendai.features.crafting.Ingredient;
+import dev.friendai.features.crafting.Station;
 import dev.friendai.features.crafting.minecraft.RecipeIndex;
+import dev.friendai.features.crafting.minecraft.Stations;
 import dev.friendai.features.creative.CreativeAction;
 import dev.friendai.features.creative.minecraft.CreativeItemCapability;
 import dev.friendai.perception.resource.ResourceCandidates;
@@ -23,14 +31,19 @@ import dev.friendai.task.TaskContext;
 import dev.friendai.task.TaskStatus;
 import dev.friendai.task.interact.ContainerAccess;
 import dev.friendai.task.interact.ContainerSession;
+import dev.friendai.task.interact.ContainerTour;
 import dev.friendai.task.interact.ContainerTransfer;
 import dev.friendai.task.inventory.ItemMatcher;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -50,7 +63,6 @@ public final class ObtainTask implements Task {
     public static final int DEFAULT_EXPLORE_BLOCKS = 128;
     public static final int DEFAULT_EXPLORE_TICKS = 6_000;
     private static final int NOTICE_INTERVAL = 600;
-    private static final int FREE_SLOTS = 2;
     private static final int CONTAINER_RADIUS = 16;
     private final String item;
     private final int count;
@@ -71,6 +83,10 @@ public final class ObtainTask implements Task {
     private final List<String> history = new ArrayList<>();
     private final Set<Long> excludedSiteIds = new LinkedHashSet<>();
     private Task current;
+    /** A look through nearby storage, run once before making or gathering the item. */
+    private Task tour;
+
+    private boolean touredContainers;
     private TaskContext childContext;
     private TaskLogSpan span;
     private Supplier<ResourceCandidates.Verification> currentVisitVerification;
@@ -314,6 +330,18 @@ public final class ObtainTask implements Task {
             }
             return TaskStatus.RUNNING;
         }
+        if (tour != null) {
+            TaskStatus status = tour.tick(c);
+            if (status == TaskStatus.RUNNING) {
+                return TaskStatus.RUNNING;
+            }
+            String toured = tour.resultSummary();
+            safeStop(tour, c);
+            tour = null;
+            if (!toured.isBlank()) history.add(toured);
+            // What the chests hold is known now: plan again from it.
+            return startNext(c);
+        }
         if (current != null) {
             TaskStatus status = current.tick(childContext == null ? c : childContext);
             if (status == TaskStatus.RUNNING) {
@@ -393,6 +421,17 @@ public final class ObtainTask implements Task {
                 DropIndex.of(level),
                 facts,
                 tradingContext);
+        if (shouldTour(plan)) {
+            touredContainers = true;
+            List<BlockPos> targets =
+                    ContainerTour.unchecked(c, ContainerTour.NEAR_RADIUS, ContainerTour.MAX_CONTAINERS);
+            if (!targets.isEmpty()) {
+                tour = new ContainerTour(targets);
+                tour.start(c);
+                c.debug("obtain " + item + ": checking " + targets.size() + " containers nearby before going out");
+                return TaskStatus.RUNNING;
+            }
+        }
         if (!plan.actionable()) {
             return fail(
                     "can't get " + count + " " + item + " here: " + ObtainText.missingText(plan.missing(), !explore));
@@ -400,7 +439,7 @@ public final class ObtainTask implements Task {
         if (plan.steps().isEmpty()) {
             return fail("can't get " + count + " " + item + " here: nothing to do");
         }
-        Optional<String> room = ensureRoom(c, plan);
+        Optional<String> room = ensureRoom(c, plan, plan.steps().get(0));
         if (room.isPresent()) {
             return fail(room.get());
         }
@@ -453,9 +492,18 @@ public final class ObtainTask implements Task {
         return created.task();
     }
 
-    private Optional<String> ensureRoom(TaskContext c, ObtainPlan plan) {
+    /**
+     * Makes room for the upcoming step only when that step genuinely needs it. The need is measured, not assumed:
+     * a produced item first fills the room left in a compatible carried stack (63 cobblestone need no free slot for
+     * the 64th), and an ingredient the step consumes first can free the slot its result takes (a log becomes planks).
+     * When space is short, only unrelated stacks move — never the target, a plan item, a reserved material or a
+     * station the step will use — and only as many as it takes to reach the measured need.
+     */
+    private Optional<String> ensureRoom(TaskContext c, ObtainPlan plan, ObtainStep step) {
         CompanionEntity companion = c.companion();
-        if (emptySlots(companion) >= FREE_SLOTS) {
+        StepDemand demand = demandOf(c, step);
+        int needed = ObtainCapacity.emptySlotsNeeded(demand.produced(), demand.consumed(), bag(companion));
+        if (emptySlots(companion) >= needed) {
             return Optional.empty();
         }
         if (!useContainers) {
@@ -472,7 +520,12 @@ public final class ObtainTask implements Task {
         }
         Set<String> keep = itemsUsed(plan);
         keep.add(item);
+        keep.addAll(demand.keep());
+        keep.addAll(c.materialReserve().asMap().keySet());
         for (int slot = 0; slot < companion.inventory().getContainerSize(); slot++) {
+            if (emptySlots(companion) >= needed) {
+                break;
+            }
             ItemStack stack = companion.inventory().getItem(slot);
             if (stack.isEmpty()) {
                 continue;
@@ -485,7 +538,164 @@ public final class ObtainTask implements Task {
         }
         companion.inventory().setChanged();
         container.setChanged();
-        return emptySlots(companion) >= FREE_SLOTS ? Optional.empty() : Optional.of("my inventory is full");
+        return emptySlots(companion) >= needed ? Optional.empty() : Optional.of("my inventory is full");
+    }
+
+    /** What one step adds to and takes out of the inventory, plus the items it must keep in the bag. */
+    private record StepDemand(Map<String, Integer> produced, Map<String, Integer> consumed, Set<String> keep) {}
+
+    private StepDemand demandOf(TaskContext c, ObtainStep step) {
+        Map<String, Integer> produced = new LinkedHashMap<>();
+        Map<String, Integer> consumed = new LinkedHashMap<>();
+        Set<String> keep = new LinkedHashSet<>();
+        switch (step) {
+            case ObtainStep.Take take -> produced.put(take.item(), take.count());
+            case ObtainStep.Craft craft -> craftDemand(c, craft, produced, consumed, keep);
+            case ObtainStep.Smelt smelt -> {
+                produced.put(smelt.output(), smelt.count());
+                consumed.put(smelt.input(), smelt.count());
+                keep.add(smelt.input());
+            }
+            case ObtainStep.Mine mine ->
+                produced.put(
+                        item,
+                        producedBy(
+                                c,
+                                item,
+                                mine.count(),
+                                source -> source instanceof Source.Mine candidate
+                                        && candidate.block().equals(mine.block()),
+                                source -> ((Source.Mine) source).perBlock()));
+            case ObtainStep.Hunt hunt ->
+                produced.put(
+                        item,
+                        producedBy(
+                                c,
+                                item,
+                                hunt.count(),
+                                source -> source instanceof Source.Hunt candidate
+                                        && candidate.mob().equals(hunt.mob()),
+                                source -> ((Source.Hunt) source).perKill()));
+            case ObtainStep.Harvest harvest ->
+                produced.put(
+                        item,
+                        producedBy(
+                                c,
+                                item,
+                                harvest.count(),
+                                source -> source instanceof Source.Harvest candidate
+                                        && candidate.crop().equals(harvest.crop()),
+                                source -> ((Source.Harvest) source).perBlock()));
+            case ObtainStep.Shear shear ->
+                produced.put(
+                        item,
+                        producedBy(
+                                c,
+                                item,
+                                shear.count(),
+                                source -> source instanceof Source.Shear candidate
+                                        && candidate.mob().equals(shear.mob()),
+                                source -> ((Source.Shear) source).perAnimal()));
+            case ObtainStep.Milk milk -> {
+                produced.put("minecraft:milk_bucket", milk.count());
+                consumed.put("minecraft:bucket", milk.count());
+                keep.add("minecraft:bucket");
+            }
+            case ObtainStep.Trade trade -> produced.put(item, trade.count());
+            case ObtainStep.VisitResource ignored -> {}
+            case ObtainStep.Explore ignored -> {}
+            case ObtainStep.InspectTrader ignored -> {}
+        }
+        keep.addAll(produced.keySet());
+        keep.addAll(consumed.keySet());
+        return new StepDemand(produced, consumed, keep);
+    }
+
+    /**
+     * What a step that yields drops really adds: its step count times the expected yield the drop index knows for
+     * that item and source, rounded up and never below one item per step. The index is the same one the plan was
+     * built from, so this neither reads the world again nor guesses a number the plan did not use.
+     */
+    private static int producedBy(
+            TaskContext c, String item, int stepCount, Predicate<Source> match, ToDoubleFunction<Source> yield) {
+        double per = DropIndex.of(c.level()).sourcesOf(item).stream()
+                .filter(match)
+                .mapToDouble(yield)
+                .findFirst()
+                .orElse(1.0);
+        return Math.max(stepCount, (int) Math.ceil(stepCount * per));
+    }
+
+    /**
+     * A craft consumes its ingredients before its result arrives, so the recipe plan decides both sides. The same
+     * planner the craft task will run against is asked here, and its steps are replayed over a copy of the bag; a
+     * plan that cannot be replayed falls back to the plain output count, which is the conservative answer.
+     */
+    private void craftDemand(
+            TaskContext c,
+            ObtainStep.Craft craft,
+            Map<String, Integer> produced,
+            Map<String, Integer> consumed,
+            Set<String> keep) {
+        RecipeIndex index = RecipeIndex.of(c.level());
+        Map<String, Integer> inventory = AcquiredItems.inventoryMap(c.companion());
+        CraftPlan plan = CraftPlanner.planNew(
+                craft.item(), craft.count(), inventory, index, Stations.available(c.level(), c.companion()));
+        if (!plan.ok() || plan.steps().isEmpty()) {
+            produced.put(craft.item(), craft.count());
+            return;
+        }
+        Map<String, Integer> sim = new LinkedHashMap<>(inventory);
+        for (CraftStep step : plan.steps()) {
+            if (step.recipe().station() != Station.INVENTORY) {
+                String stationItem = index.stationItem(step.recipe().station());
+                if (stationItem != null && !stationItem.isBlank()) {
+                    keep.add(stationItem);
+                }
+            }
+            for (int run = 0; run < step.times(); run++) {
+                for (Ingredient ingredient : step.recipe().ingredients()) {
+                    String chosen = null;
+                    for (String candidate : ingredient.items()) {
+                        if (sim.getOrDefault(candidate, 0) > 0) {
+                            chosen = candidate;
+                            break;
+                        }
+                    }
+                    if (chosen == null) {
+                        produced.clear();
+                        consumed.clear();
+                        produced.put(craft.item(), craft.count());
+                        return;
+                    }
+                    sim.merge(chosen, -1, Integer::sum);
+                    consumed.merge(chosen, 1, Integer::sum);
+                }
+                sim.merge(step.recipe().output(), step.recipe().outputCount(), Integer::sum);
+                produced.merge(step.recipe().output(), step.recipe().outputCount(), Integer::sum);
+            }
+        }
+    }
+
+    /** The live bag, measured the way the game fills it. */
+    private static ObtainCapacity.Inventory bag(CompanionEntity companion) {
+        Container inventory = companion.inventory();
+        return new ObtainCapacity.Inventory() {
+            @Override
+            public int freeRoom(String itemId) {
+                return StackSpace.freeRoom(inventory, itemId);
+            }
+
+            @Override
+            public int maxStack(String itemId) {
+                return StackSpace.maxStack(itemId);
+            }
+
+            @Override
+            public int emptiedSlots(String itemId, int consumed) {
+                return StackSpace.emptiedSlots(inventory, itemId, consumed);
+            }
+        };
     }
 
     private static Set<String> itemsUsed(ObtainPlan plan) {
@@ -566,6 +776,27 @@ public final class ObtainTask implements Task {
     }
 
     /**
+     * Whether to look through nearby storage first: once per task, when containers may be used and the next step does
+     * not already take from a known container. Check for the finished item before spending materials or going out.
+     */
+    private boolean shouldTour(ObtainPlan plan) {
+        if (touredContainers || !useContainers) return false;
+        if (!plan.actionable() || plan.steps().isEmpty()) return true;
+        ObtainStep first = plan.steps().get(0);
+        return !(first instanceof ObtainStep.Take);
+    }
+
+    /** Accepts an item id the matcher accepts, so remembered container contents can be searched by matcher. */
+    private static java.util.function.Predicate<String> acceptsId(ItemMatcher matcher) {
+        return id -> {
+            Identifier key = Identifier.tryParse(id);
+            return key != null
+                    && BuiltInRegistries.ITEM.containsKey(key)
+                    && matcher.test(new ItemStack(BuiltInRegistries.ITEM.getValue(key)));
+        };
+    }
+
+    /**
      * Records the material source a failed step tried, so the next plan prefers another reachable source and stops
      * offering one that already failed twice. Only source-bearing steps count: a craft or a container take has no
      * source to exclude and its own repetition is already caught by {@link #lastFailedKey}.
@@ -643,9 +874,11 @@ public final class ObtainTask implements Task {
         private TakeFromContainerTask(ItemMatcher matcher, int count) {
             this.matcher = matcher;
             this.count = count;
+            // The chest the item was seen in, live records first; the nearest container only when none is recorded.
             this.session = new ContainerSession(
                     null,
-                    context -> ContainerAccess.nearest(context, CONTAINER_RADIUS),
+                    context -> ContainerAccess.recordedWith(context, acceptsId(matcher), CONTAINER_RADIUS)
+                            .or(() -> ContainerAccess.nearest(context, CONTAINER_RADIUS)),
                     true,
                     () -> "no storage container with " + matcher.label() + " within " + CONTAINER_RADIUS + " blocks",
                     position -> "there is no chest, barrel or other storage at " + position.getX() + " "
@@ -703,6 +936,10 @@ public final class ObtainTask implements Task {
     @Override
     public void stop(TaskContext c) {
         clearCreativeCreation();
+        if (tour != null) {
+            safeStop(tour, c);
+            tour = null;
+        }
         if (span != null) {
             span.finish("cancelled", "stopped", java.util.Map.of());
             span = null;

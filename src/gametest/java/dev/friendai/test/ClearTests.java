@@ -221,12 +221,12 @@ public class ClearTests {
      * Working from the outside in opens the inside of a dense canopy; starting at the top left the buried cells
      * "out of sight" and the task ran on with the cells it could not reach.
      */
-    @GameTest(maxTicks = 2400)
+    @GameTest(maxTicks = 2400, environment = "friendai-gametest:clear_dense_canopy")
     public void aDenseCanopyIsClearedWithoutStalling(GameTestHelper h) {
-        GameTestSupport.platform(h, 64);
+        GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
         var leaves = Blocks.BIRCH_LEAVES.defaultBlockState().setValue(LeavesBlock.PERSISTENT, true);
-        for (int y = 2; y <= 9; y++) {
+        for (int y = 2; y <= 7; y++) {
             for (int x = 5; x <= 9; x++) {
                 for (int z = 5; z <= 9; z++) {
                     h.setBlock(x, y, z, leaves);
@@ -236,11 +236,12 @@ public class ClearTests {
         Result result = new Result();
         ExecutionCoordinator runner = runner(companion, result);
         runner.start(new ClearAreaTask(h.absolutePos(new BlockPos(7, 2, 7)), 4, 0, 8, false, false), "clear_area");
-        h.succeedWhen(() -> {
+        TaskTrace.of(h, runner, companion).succeedWhen(() -> {
             runner.tick();
             h.assertTrue(result.status != null, "still running");
             h.assertTrue(result.status == TaskStatus.SUCCESS, "status " + result.status + ": " + result.summary);
             h.assertTrue(!result.summary.contains("out of sight"), result.summary);
+            h.assertTrue(h.getBlockState(new BlockPos(7, 4, 7)).isAir(), "the buried core was not cleared");
         });
     }
 

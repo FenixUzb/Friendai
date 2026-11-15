@@ -1,4 +1,4 @@
-package dev.friendai.infrastructure.persistence;
+package dev.friendai.foundation.persistence;
 
 import java.util.Map;
 import java.util.Objects;

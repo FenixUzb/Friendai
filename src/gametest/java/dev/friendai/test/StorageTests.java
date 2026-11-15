@@ -2,18 +2,23 @@ package dev.friendai.test;
 
 import dev.friendai.entity.CompanionEntity;
 import dev.friendai.entity.FriendaiEntities;
+import dev.friendai.features.acquisition.minecraft.task.ObtainTask;
 import dev.friendai.features.inventory.minecraft.task.CheckContainerTask;
 import dev.friendai.features.inventory.minecraft.task.MoveItemsTask;
 import dev.friendai.features.inventory.minecraft.task.StoreItemsTask;
 import dev.friendai.features.inventory.minecraft.task.TakeItemsTask;
+import dev.friendai.features.knowledge.ContainerFreshness;
+import dev.friendai.features.knowledge.ResourceKnowledge;
 import dev.friendai.server.execution.ExecutionCoordinator;
 import dev.friendai.server.execution.TaskEventSink;
+import dev.friendai.server.execution.tools.MinecraftObtainSubtaskFactory;
 import dev.friendai.task.TaskContext;
 import dev.friendai.task.TaskStatus;
 import dev.friendai.task.interact.ContainerAccess;
 import dev.friendai.task.interact.ContainerSession;
 import dev.friendai.task.inventory.ItemMatcher;
 import java.util.Set;
+import java.util.UUID;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -528,6 +533,191 @@ public class StorageTests {
                     result.summary.equals("the chest at " + coords(target) + " has no minecraft:quartz"),
                     "summary was " + result.summary);
         });
+    }
+
+    /**
+     * "Bring me an ender pearl" in a house with ten chests the companion never opened: it looks through them, finds the
+     * pearl in the last one and takes it from that chest, instead of answering that it would have to hunt endermen.
+     */
+    @GameTest(maxTicks = 2400, environment = "friendai-gametest:storage_tour")
+    public void anObtainLooksThroughTheChestsBeforeGoingOut(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        // A room of ten chests around the companion, three apart so no two pair into a double chest.
+        BlockPos[] chests = {
+            new BlockPos(3, 2, 4),
+            new BlockPos(6, 2, 4),
+            new BlockPos(9, 2, 4),
+            new BlockPos(12, 2, 4),
+            new BlockPos(3, 2, 8),
+            new BlockPos(13, 2, 8),
+            new BlockPos(3, 2, 12),
+            new BlockPos(6, 2, 12),
+            new BlockPos(9, 2, 12),
+            new BlockPos(12, 2, 12)
+        };
+        for (int i = 0; i < chests.length; i++) {
+            h.setBlock(chests[i], Blocks.CHEST);
+            containerAt(h, chests[i].getX(), 2, chests[i].getZ()).setItem(0, new ItemStack(Items.COBBLESTONE, 8 + i));
+        }
+        Container holder = containerAt(h, chests[9].getX(), 2, chests[9].getZ());
+        holder.setItem(5, new ItemStack(Items.ENDER_PEARL, 1));
+        holder.setChanged();
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 8, 2, 8);
+        c.setOwner(UUID.randomUUID());
+        Result result = new Result();
+        ExecutionCoordinator runner = runner(c, result);
+        runner.start(
+                new ObtainTask("minecraft:ender_pearl", 1, true, false, new MinecraftObtainSubtaskFactory()),
+                "obtain_item");
+        h.succeedWhen(() -> {
+            runner.tick();
+            h.assertTrue(result.status == TaskStatus.SUCCESS, "not finished: " + result.status + " " + result.summary);
+            h.assertValueEqual(c.inventory().countItem(Items.ENDER_PEARL), 1, "pearls carried");
+            h.assertValueEqual(holder.countItem(Items.ENDER_PEARL), 0, "the pearl left the chest that held it");
+        });
+    }
+
+    @GameTest(maxTicks = 1200, environment = "friendai-gametest:storage_tour")
+    public void obtainChecksChestBeforeCrafting(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        h.setBlock(6, 2, 6, Blocks.CHEST);
+        Container chest = containerAt(h, 6, 2, 6);
+        chest.setItem(0, new ItemStack(Items.OAK_PLANKS, 4));
+        chest.setChanged();
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 3, 2, 6);
+        c.setOwner(UUID.randomUUID());
+        c.inventory().addItem(new ItemStack(Items.OAK_LOG));
+        Result result = new Result();
+        ExecutionCoordinator runner = runner(c, result);
+        runner.start(
+                new ObtainTask("minecraft:oak_planks", 4, true, false, new MinecraftObtainSubtaskFactory()),
+                "obtain_item");
+        h.succeedWhen(() -> {
+            runner.tick();
+            h.assertTrue(result.status == TaskStatus.SUCCESS, "not finished: " + result.status + " " + result.summary);
+            h.assertValueEqual(c.inventory().countItem(Items.OAK_LOG), 1, "log preserved");
+            h.assertValueEqual(chest.countItem(Items.OAK_PLANKS), 0, "planks taken from chest");
+            h.assertValueEqual(c.inventory().countItem(Items.OAK_PLANKS), 4, "planks carried");
+        });
+    }
+
+    /**
+     * For five minutes after the companion opened a chest it still sees what the owner puts in; past that window what
+     * it remembers is a hint that may have changed, and something new is not seen until it looks again.
+     */
+    @GameTest(maxTicks = 600, environment = "friendai-gametest:storage_live")
+    public void aChestStaysInViewForAWhileAfterOpening(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        h.setBlock(6, 2, 6, Blocks.CHEST);
+        Container chest = containerAt(h, 6, 2, 6);
+        chest.setItem(0, new ItemStack(Items.DIRT, 3));
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        c.setOwner(UUID.randomUUID());
+        var tools = GameTestToolRegistry.create(c, () -> 32).bind(c);
+        Result result = new Result();
+        ExecutionCoordinator runner = runner(c, result);
+        runner.start(new CheckContainerTask(h.absolutePos(new BlockPos(6, 2, 6))), "check_container");
+        h.succeedWhen(() -> {
+            runner.tick();
+            h.assertTrue(result.status == TaskStatus.SUCCESS, "not opened yet: " + result.status);
+            // The owner drops a pearl in right after the companion looked.
+            chest.setItem(5, new ItemStack(Items.ENDER_PEARL, 1));
+            chest.setChanged();
+            String pearl = find(tools, "minecraft:ender_pearl");
+            h.assertTrue(pearl.contains("1 in a chest") && pearl.contains("still in view"), "live view: " + pearl);
+
+            long now = h.getLevel().getServer().overworld().getGameTime();
+            if (now <= ContainerFreshness.LIVE_TICKS) return; // too young a world to age a record past the window
+            var book = new TaskContext(c, h.getLevel()).ownerKnowledge();
+            var record = book.containerObservations().getFirst();
+            book.recordContainer(new ResourceKnowledge.ContainerObservation(
+                    record.location(), record.items(), 0, record.kind(), record.slotsUsed(), record.slotsTotal()));
+            chest.setItem(6, new ItemStack(Items.DIAMOND, 1));
+            chest.setChanged();
+            String diamond = find(tools, "minecraft:diamond");
+            h.assertTrue(diamond.startsWith("I have no record"), "past the window a new item is not seen: " + diamond);
+            String remembered = find(tools, "minecraft:ender_pearl");
+            h.assertTrue(remembered.contains("may have changed"), "the pearl is only remembered now: " + remembered);
+        });
+    }
+
+    @GameTest(maxTicks = 400)
+    public void liveViewDoesNotReadAfterProtectionIsApplied(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        h.setBlock(6, 2, 6, Blocks.CHEST);
+        Container chest = containerAt(h, 6, 2, 6);
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 4, 2, 4);
+        c.setOwner(UUID.randomUUID());
+        BlockPos target = h.absolutePos(new BlockPos(6, 2, 6));
+        Result result = new Result();
+        ExecutionCoordinator runner = runner(c, result);
+        runner.start(new CheckContainerTask(target), "check_container");
+        var tools = GameTestToolRegistry.create(c, () -> 32).bind(c);
+        h.succeedWhen(() -> {
+            runner.tick();
+            h.assertTrue(result.status == TaskStatus.SUCCESS, "not opened yet: " + result.status);
+            c.hands().overrideProtection(target::equals);
+            chest.setItem(0, new ItemStack(Items.DIAMOND));
+            String answer = find(tools, "minecraft:diamond");
+            h.assertTrue(answer.startsWith("I have no record"), "protected contents leaked: " + answer);
+        });
+    }
+
+    @GameTest(maxTicks = 400)
+    public void liveViewDoesNotReadAfterChestIsLocked(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        h.setBlock(6, 2, 6, Blocks.CHEST);
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 4, 2, 4);
+        c.setOwner(UUID.randomUUID());
+        BlockPos target = h.absolutePos(new BlockPos(6, 2, 6));
+        Result result = new Result();
+        ExecutionCoordinator runner = runner(c, result);
+        runner.start(new CheckContainerTask(target), "check_container");
+        var tools = GameTestToolRegistry.create(c, () -> 32).bind(c);
+        h.succeedWhen(() -> {
+            runner.tick();
+            h.assertTrue(result.status == TaskStatus.SUCCESS, "not opened yet: " + result.status);
+            ChestBlockEntity chest = (ChestBlockEntity) h.getLevel().getBlockEntity(target);
+            chest.setItem(0, new ItemStack(Items.DIAMOND));
+            var registry = h.getLevel().registryAccess();
+            var tag = chest.saveWithFullMetadata(registry);
+            var lockTag = new net.minecraft.nbt.CompoundTag();
+            lockTag.putString("items", "minecraft:stick");
+            tag.put(LockCode.TAG_LOCK, lockTag);
+            chest.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, registry, tag));
+            String answer = find(tools, "minecraft:diamond");
+            h.assertTrue(answer.startsWith("I have no record"), "locked contents leaked: " + answer);
+        });
+    }
+
+    @GameTest
+    public void liveViewDoesNotActivateTrappedChest(GameTestHelper h) {
+        GameTestSupport.platform(h, 12);
+        h.setBlock(6, 2, 6, Blocks.TRAPPED_CHEST);
+        BlockPos pos = h.absolutePos(new BlockPos(6, 2, 6));
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 4, 2, 4);
+        companion.setOwner(UUID.randomUUID());
+        Container chest = containerAt(h, 6, 2, 6);
+        // Prime a prior authorized observation without a real open that would schedule its own recheck.
+        ContainerAccess.recordContents(new TaskContext(companion, h.getLevel()), pos, chest);
+        chest.setItem(0, new ItemStack(Items.DIAMOND));
+        var tools = GameTestToolRegistry.create(companion, () -> 32).bind(companion);
+        h.assertTrue(find(tools, "minecraft:diamond").contains("still in view"), "the live view must update");
+        h.assertFalse(
+                h.getLevel().getBlockTicks().hasScheduledTick(pos, Blocks.TRAPPED_CHEST),
+                "a read-only refresh must not open the trapped chest");
+        h.succeed();
+    }
+
+    private static String find(dev.friendai.execution.tool.ToolExecutor tools, String item) {
+        String json = "{\"item\":\"" + item + "\"}";
+        return tools.execute(new dev.friendai.agent.llm.model.ToolCall(
+                        "storage-test",
+                        "find_stored_item",
+                        com.google.gson.JsonParser.parseString(json).getAsJsonObject(),
+                        json,
+                        null))
+                .content();
     }
 
     @GameTest(maxTicks = 400)

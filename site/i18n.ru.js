@@ -223,6 +223,7 @@ const RU = {
   "Store up to two stacks in one call.": "Положить до двух стаков за один вызов.",
   "Take items out of a container.": "Достать предметы из контейнера.",
   "Look inside a container.": "Заглянуть в контейнер.",
+  "Look through the nearby chests not opened in the last five minutes.": "Обойти ближайшие сундуки, которые не открывал последние пять минут.",
   "Deposit into the nearest storage.": "Сложить в ближайшее хранилище.",
   "Report where you last saw an item in a recorded container.": "Сообщить, где предмет последний раз видели в запомненном контейнере.",
   "Move a known quantity between two containers in one call.": "Перенести известное количество между двумя контейнерами за один вызов.",
@@ -234,8 +235,8 @@ const RU = {
   /* ---- Acquisition ---- */
   "Resource Acquisition": "Добыча ресурсов",
   "Ask for an item and it works out how: inventory, chests, craft, smelt, mine, hunt, harvest, shear, milk or explore.": "Попросите предмет, и он сам решит как: инвентарь, сундуки, крафт, плавка, добыча, охота, урожай, стрижка, дойка или разведка.",
-  "Get an item by any means; wood is felled as whole trees.":
-    "Получить предмет любым способом; древесину добывает, свалив деревья целиком.",
+  "Get an item by any means, using the room left in the stacks it already carries; wood is felled as whole trees.":
+    "Получить предмет любым способом, используя свободное место в уже переносимых стопках; древесину добывает, свалив деревья целиком.",
   "Gather every material for a set of items once, then craft them all; accepts the item/count aliases; mines a mineable item instead of crafting it from a rarer one; wood is felled as whole trees.":
     "Собрать все материалы для набора предметов один раз, а потом создать их все; принимает псевдонимы item/count; добывает предмет, который можно добыть, вместо крафта из более редкого; древесину добывает, свалив деревья целиком.",
   "Gather shared materials once for a set of items, then craft them all; accepts item/count aliases; mines a mineable item instead of crafting it from a rarer one; wood is felled as whole trees.":
@@ -347,7 +348,7 @@ const RU = {
   "Merge duplicate facts safely, dry run first (owner only).": "Безопасно слить дубликаты фактов, сначала пробный запуск (только владелец).",
   "Drop a manner the owner dislikes and never drift back into it (owner only).": "Убрать манеру, которая не нравится владельцу, и не возвращаться к ней (только владелец).",
   "Conversation transcript": "Запись разговоров",
-  "Both sides of every chat, redacted, capped by count and age.": "Обе стороны каждого разговора, секреты скрыты, ограничено по числу и возрасту.",
+  "Both sides of every chat, redacted, capped by count and age; a recreated companion restores the last few delivered lines.": "Обе стороны каждого разговора, секреты скрыты, ограничено по числу и возрасту; пересозданный компаньон восстанавливает последние произнесённые реплики.",
   "Store a fact.": "Запомнить факт.",
   "List the owner's skills with ids, versions and on/off state.":
     "Показать навыки владельца: идентификаторы, версии и включённость.",
@@ -511,7 +512,7 @@ const RU = {
   "Detects whether the companion is addressed.": "Определяет, обращаются ли к компаньону.",
   "Own companion in hearing range, else the nearest other whose owner is online.": "Свой компаньон в зоне слышимости, иначе ближайший другой, чей владелец в сети.",
   "CompanionBrain": "CompanionBrain",
-  "The per-owner agent loop. One principal per turn; late replies are dropped by a generation counter. A blocked job that fails three times without a new fact pauses the turn that carries it and asks the owner, instead of starting unrelated work. Every request is fitted into one conservative token budget, and a committed plan is acknowledged without a second round trip.": "Цикл агента для каждого владельца. Один принципал на ход; запоздалые ответы отбрасывает счётчик поколений. Заблокированная работа, трижды сорвавшаяся без новых фактов, приостанавливает свой ход и спрашивает владельца, вместо того чтобы начинать постороннюю работу. Каждый запрос укладывается в один осторожный бюджет токенов, а принятый план подтверждается без второго обращения к модели.",
+  "The per-owner agent loop. One principal per turn; late replies are dropped by a generation counter. A blocked job that fails three times without a new fact pauses the turn that carries it and asks the owner, instead of starting unrelated work. Every request is fitted into one conservative token budget, and a committed plan is acknowledged without a second round trip. A recreated companion restores the last few delivered lines of the owner's conversation.": "Цикл агента для каждого владельца. Один принципал на ход; запоздалые ответы отбрасывает счётчик поколений. Заблокированная работа, трижды сорвавшаяся без новых фактов, приостанавливает свой ход и спрашивает владельца, вместо того чтобы начинать постороннюю работу. Каждый запрос укладывается в один осторожный бюджет токенов, а принятый план подтверждается без второго обращения к модели. Пересозданный компаньон восстанавливает последние произнесённые реплики разговора владельца.",
   "TurnRouter": "TurnRouter",
   "Picks chat, action, goal, recovery or event, and which tool groups are visible; PlanningPolicy then names what a plan-worthy turn is about.": "Выбирает режим: чат, действие, цель, восстановление или событие, и какие группы инструментов видны; затем PlanningPolicy решает, о чём стоит планировать.",
   "Planner": "Планировщик",
