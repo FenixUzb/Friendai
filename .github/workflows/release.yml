@@ -87,12 +87,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_SHA: ${{ steps.candidate.outputs.sha }}
         run: |
-          conclusion=$(gh run list --workflow=ci.yml --branch main --event push --commit "$RELEASE_SHA" \
-            --status success --limit 1 --json conclusion --jq '.[0].conclusion // "missing"')
-          if [[ "$conclusion" != success ]]; then
-            echo "No successful main push CI run for $RELEASE_SHA"
-            exit 1
-          fi
+          runs=$(gh api --paginate --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" \
+            -f branch=main -f event=push -f head_sha="$RELEASE_SHA" -f per_page=100 \
+            --jq '.workflow_runs[].id')
+          for run in $runs; do
+            # Automatic publication can fail after the required checks have already passed.
+            gate=$(gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs?filter=latest&per_page=100" \
+              --jq '.jobs[] | select(.name == "CI gate" and .status == "completed" and .conclusion == "success") | .id')
+            if [[ -n "$gate" ]]; then
+              echo "CI gate passed for $RELEASE_SHA in run $run"
+              exit 0
+            fi
+          done
+          echo "No successful CI gate on a main push for $RELEASE_SHA"
+          exit 1
 
   verify:
     name: Verify release files
