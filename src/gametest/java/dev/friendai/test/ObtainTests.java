@@ -695,7 +695,7 @@ public class ObtainTests {
                 for (int y = 199; y <= 200; y++) h.setBlock(x, y, z, Blocks.DIRT);
             }
         }
-        var owner = GameTestSupport.mockPlayerAt(h, 10, 201, 10);
+        var owner = GameTestSupport.mockPlayerAt(h, 8, 201, 12);
         // Seed one station
         h.setBlock(8, 201, 10, Blocks.CRAFTING_TABLE);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 10, 201, 10);
