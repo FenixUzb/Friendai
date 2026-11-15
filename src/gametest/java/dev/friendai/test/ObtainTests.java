@@ -161,7 +161,7 @@ public class ObtainTests {
         return step;
     }
 
-    @GameTest(maxTicks = 16000)
+    @GameTest(maxTicks = 16000, environment = "friendai-gametest:obtain_scripted_kit")
     public void scriptedForestKitUsesOneBatchAndFourStrictTransfers(GameTestHelper h) {
         ResourceWorkFixture.BirchKit fixture = ResourceWorkFixture.birchKit(h, 80, 2);
         ResourceWorkFixture.removeDeliveryObstruction(h, fixture);
@@ -769,7 +769,7 @@ public class ObtainTests {
                                 == dev.friendai.features.knowledge.ResourceObservation.EvidenceSource.ADJACENT_BREAK);
     }
 
-    @GameTest(maxTicks = 18000)
+    @GameTest(maxTicks = 18000, environment = "friendai-gametest:obtain_buried_tool_set")
     public void callerObtainsAndDeliversStoneToolSetFromBuriedStone(GameTestHelper h) {
         GameTestSupport.platformAt(h, 200, 24);
         for (int x = 0; x < 24; x++) {
@@ -778,7 +778,7 @@ public class ObtainTests {
                 for (int y = 199; y <= 200; y++) h.setBlock(x, y, z, Blocks.DIRT);
             }
         }
-        var owner = GameTestSupport.mockPlayerAt(h, 10, 201, 10);
+        var owner = GameTestSupport.mockPlayerAt(h, 8, 201, 12);
         h.setBlock(8, 201, 10, Blocks.CRAFTING_TABLE);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 10, 201, 10);
         companion.setOwner(owner.getUUID());
