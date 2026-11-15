@@ -1736,11 +1736,12 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(maxTicks = 600, environment = "friendai-gametest:pathing_walk_budget")
     public void walksThirtyTwoBlocksInBudget(GameTestHelper h) {
         int base = 230;
         GameTestSupport.platformAt(h, base, 40);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, base + 1, 20);
+        c.setPathBounds(new AABB(h.absoluteVec(new Vec3(0, base, 0)), h.absoluteVec(new Vec3(40, base + 6, 40))));
         Vec3 target = h.absoluteVec(new Vec3(34.5, base + 1, 20.5));
         TaskContext context = new TaskContext(c, h.getLevel());
         Navigator navigator = new Navigator(context);
