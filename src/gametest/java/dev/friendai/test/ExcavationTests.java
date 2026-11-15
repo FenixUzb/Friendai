@@ -241,7 +241,7 @@ public class ExcavationTests {
      * the shaft was the air at its feet, so only one layer of earth came out. A shaft started by "near" now begins with
      * the ground under the feet.
      */
-    @GameTest(maxTicks = 2400)
+    @GameTest(maxTicks = 2400, environment = "friendai-gametest:excavate_full_pit")
     public void aPitDugFromWhereTheCompanionStandsGoesTheFullDepth(GameTestHelper h) {
         CompanionEntity c = companion(h);
         for (int x = 0; x <= 7; x++) {

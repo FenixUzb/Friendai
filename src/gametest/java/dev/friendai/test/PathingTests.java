@@ -472,7 +472,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(maxTicks = 800, environment = "friendai-gametest:pathing_stone_under_dirt")
     public void minesStoneUnderDirt(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(new BlockPos(8, 2, 8), Blocks.POLISHED_ANDESITE);
@@ -806,7 +806,7 @@ public class PathingTests {
                 "still " + c.position().distanceTo(owner.position()) + " blocks away"));
     }
 
-    @GameTest(maxTicks = 3000)
+    @GameTest(maxTicks = 3000, environment = "friendai-gametest:pathing_long_approach")
     public void approachCrossesThreeHundredBlocksWithoutTeleporting(GameTestHelper h) {
         int floor = 240;
         GameTestSupport.platformAt(h, floor, 312);
@@ -841,7 +841,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 3000)
+    @GameTest(maxTicks = 3000, environment = "friendai-gametest:pathing_long_crossing")
     public void goToCrossesThreeHundredBlocksWithoutTeleporting(GameTestHelper h) {
         int floor = 200;
         GameTestSupport.platformAt(h, floor, 312);
@@ -1659,7 +1659,7 @@ public class PathingTests {
         walkCorridorAndCheckYaw(h, base, 10.5, base + 4);
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(maxTicks = 600, environment = "friendai-gametest:pathing_descend_steps")
     public void walksDownThreeBlocksWithoutTurningBack(GameTestHelper h) {
         int base = 220;
         descentCorridor(h, base);
@@ -1667,7 +1667,7 @@ public class PathingTests {
     }
 
     /** Climbs two one-block steps in a row; momentum past the target cell must not turn the body back. */
-    @GameTest(maxTicks = 600)
+    @GameTest(maxTicks = 600, environment = "friendai-gametest:pathing_climb_steps")
     public void climbsStepsWithoutSteppingBack(GameTestHelper h) {
         int base = 250;
         GameTestSupport.platformAt(h, base, 40);
@@ -1700,7 +1700,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(maxTicks = 600, environment = "friendai-gametest:pathing_straight_walk")
     public void walksFortyBlocksWithoutReversalOrDetour(GameTestHelper h) {
         int base = 260;
         GameTestSupport.platformAt(h, base, 56);
@@ -1885,7 +1885,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(maxTicks = 400, environment = "friendai-gametest:pathing_corner_run")
     public void runningCompanionDoesNotSwingWideAtCorners(GameTestHelper h) {
         int base = 120;
         GameTestSupport.platformAt(h, base, 24);
@@ -1936,7 +1936,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(maxTicks = 400, environment = "friendai-gametest:pathing_hungry_gap")
     public void hungryCompanionWalkJumpsAOneBlockGap(GameTestHelper h) {
         int base = 150;
         GameTestSupport.platformAt(h, base, 16);
