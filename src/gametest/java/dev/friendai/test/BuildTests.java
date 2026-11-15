@@ -61,6 +61,7 @@ import net.minecraft.world.level.block.WallSignBlock;
 import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.Vec3;
 
 public class BuildTests {
     private static final Block RED_BED = Blocks.BED.pick(DyeColor.RED);
@@ -2292,6 +2293,33 @@ public class BuildTests {
             h.assertTrue(state[0] == Scaffold.State.FAILED, "waiting for jump timeout");
             h.assertTrue(companion.inventory().getItem(0).getCount() == 8, "a failed jump spent material");
             h.assertTrue(scaffold.placed().isEmpty(), "a failed jump placed a support");
+        });
+    }
+
+    @GameTest(maxTicks = 300)
+    public void scaffoldCentersOverTheSupportingBlockBeforeJumping(GameTestHelper h) {
+        int floor = 190;
+        GameTestSupport.keepLoaded(h, 0, 0, 8, 8);
+        BlockPos support = new BlockPos(5, floor, 5);
+        h.setBlock(support, Blocks.STONE);
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, new Vec3(6.05, floor + 1, 5.5));
+        companion.inventory().addItem(new ItemStack(Items.DIRT, 1));
+        Scaffold scaffold = new Scaffold(companion);
+        int targetY = h.absolutePos(support.above(2)).getY();
+        Scaffold.State[] state = {Scaffold.State.CLIMBING};
+        h.runAfterDelay(3, () -> {
+            h.assertTrue(companion.onGround(), "the body must be standing on the edge");
+            h.assertTrue(
+                    companion.getBlockX() != h.absolutePos(support).getX(),
+                    "the centre of the body must be over the empty cell beside the support");
+            h.succeedWhen(() -> {
+                if (state[0] == Scaffold.State.CLIMBING) {
+                    state[0] = scaffold.pillarTo(targetY);
+                }
+                h.assertTrue(state[0] == Scaffold.State.READY, "scaffold: " + scaffold.failure());
+                h.assertTrue(companion.onGround(), "the companion has not landed on the pillar");
+                h.assertTrue(h.getBlockState(support.above()).is(Blocks.DIRT), "pillar is missing above the support");
+            });
         });
     }
 
