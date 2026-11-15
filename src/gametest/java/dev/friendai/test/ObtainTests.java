@@ -34,11 +34,11 @@ import dev.friendai.features.acquisition.minecraft.search.DropIndex;
 import dev.friendai.features.acquisition.minecraft.search.WorldScan;
 import dev.friendai.features.acquisition.minecraft.task.BatchObtainTask;
 import dev.friendai.features.acquisition.minecraft.task.ObtainTask;
+import dev.friendai.features.acquisition.minecraft.task.StackSpace;
 import dev.friendai.features.crafting.CraftPlanner;
 import dev.friendai.features.crafting.minecraft.RecipeIndex;
 import dev.friendai.features.crafting.minecraft.Stations;
 import dev.friendai.features.exploration.minecraft.task.ExploreTask;
-import dev.friendai.features.inventory.minecraft.StackSpace;
 import dev.friendai.features.inventory.minecraft.task.CheckContainerTask;
 import dev.friendai.features.inventory.minecraft.task.GiveItemsTask;
 import dev.friendai.foundation.item.Tier;
@@ -161,7 +161,7 @@ public class ObtainTests {
         return step;
     }
 
-    @GameTest(maxTicks = 16000)
+    @GameTest(maxTicks = 16000, environment = "friendai-gametest:obtain_scripted_kit")
     public void scriptedForestKitUsesOneBatchAndFourStrictTransfers(GameTestHelper h) {
         ResourceWorkFixture.BirchKit fixture = ResourceWorkFixture.birchKit(h, 80, 2);
         ResourceWorkFixture.removeDeliveryObstruction(h, fixture);
@@ -695,7 +695,7 @@ public class ObtainTests {
                 for (int y = 199; y <= 200; y++) h.setBlock(x, y, z, Blocks.DIRT);
             }
         }
-        var owner = GameTestSupport.mockPlayerAt(h, 10, 201, 10);
+        var owner = GameTestSupport.mockPlayerAt(h, 8, 201, 12);
         // Seed one station
         h.setBlock(8, 201, 10, Blocks.CRAFTING_TABLE);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 10, 201, 10);
@@ -769,7 +769,7 @@ public class ObtainTests {
                                 == dev.friendai.features.knowledge.ResourceObservation.EvidenceSource.ADJACENT_BREAK);
     }
 
-    @GameTest(maxTicks = 18000)
+    @GameTest(maxTicks = 18000, environment = "friendai-gametest:obtain_buried_tool_set")
     public void callerObtainsAndDeliversStoneToolSetFromBuriedStone(GameTestHelper h) {
         GameTestSupport.platformAt(h, 200, 24);
         for (int x = 0; x < 24; x++) {
@@ -778,7 +778,7 @@ public class ObtainTests {
                 for (int y = 199; y <= 200; y++) h.setBlock(x, y, z, Blocks.DIRT);
             }
         }
-        var owner = GameTestSupport.mockPlayerAt(h, 10, 201, 10);
+        var owner = GameTestSupport.mockPlayerAt(h, 8, 201, 12);
         h.setBlock(8, 201, 10, Blocks.CRAFTING_TABLE);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 10, 201, 10);
         companion.setOwner(owner.getUUID());
@@ -1939,9 +1939,14 @@ public class ObtainTests {
      * batch gathers the wood first and then stops on the missing stone family instead of touring the same hole. The
      * gathered wood stays in the bag and the result names exactly one actionable blocker.
      */
-    @GameTest(maxTicks = 1600)
+    @GameTest(maxTicks = 1600, environment = "friendai-gametest:obtain_no_stone")
     public void impossibleStoneOrderKeepsItsWoodenWorkAndNamesOneBlocker(GameTestHelper h) {
         GameTestSupport.platformAt(h, 60, 16);
+        // The deliberate observation can see the platform itself from its edge. Use a floor
+        // outside the stone-tool ingredient tag so the fixture really has no usable stone.
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) h.setBlock(x, 60, z, Blocks.SMOOTH_QUARTZ);
+        }
         h.setBlock(2, 61, 4, Blocks.CRAFTING_TABLE);
         List<BlockPos> logs = List.of(new BlockPos(4, 61, 2), new BlockPos(4, 61, 7));
         logs.forEach(log -> h.setBlock(log, Blocks.OAK_LOG));

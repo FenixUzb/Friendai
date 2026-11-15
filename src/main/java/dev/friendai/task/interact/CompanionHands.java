@@ -246,6 +246,23 @@ public final class CompanionHands {
         return new Storage(hands);
     }
 
+    /** Rechecks access without opening a menu or unpacking a loot table. */
+    public boolean mayReadStorage(BlockPos pos) {
+        if (!canInteract(pos) || !hasUnpackedStorage(pos)) return false;
+        BlockState state = level().getBlockState(pos);
+        if (state.hasProperty(ChestBlock.TYPE) && state.getValue(ChestBlock.TYPE) != ChestType.SINGLE) {
+            BlockPos other = ChestBlock.getConnectedBlockPos(pos, state);
+            if (!level().hasChunkAt(other) || !canInteract(other) || !hasUnpackedStorage(other)) return false;
+        }
+        return state.getMenuProvider(level(), pos) != null && mayOpenStorage(pos, state, handsPlayer());
+    }
+
+    private boolean hasUnpackedStorage(BlockPos pos) {
+        return level().getBlockEntity(pos) instanceof BaseContainerBlockEntity storage
+                && (!(storage instanceof net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity loot)
+                        || loot.getLootTable() == null);
+    }
+
     /** Vanilla's own lock rule for the block and, for a double chest, for the other half as well. */
     private boolean mayOpenStorage(BlockPos pos, BlockState state, FakePlayer hands) {
         if (!(level().getBlockEntity(pos) instanceof BaseContainerBlockEntity blockEntity)) {

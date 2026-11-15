@@ -120,7 +120,7 @@ public final class GiveItemsTask implements Task {
             pickedUp += absorbNearby(companion);
             have = carried(companion);
         }
-        if (have == 0) return fail(c, "I don't have " + itemLabel());
+        if (have == 0) return failDelivery(c, "I don't have " + itemLabel());
 
         ServerPlayer owner = c.owner().orElse(null);
         if (waitingForApproach) return waitForApproach(c, owner);
@@ -163,12 +163,12 @@ public final class GiveItemsTask implements Task {
                     return handOver(c, owner);
                 }
                 if (approachWaitTicks >= APPROACH_WAIT_LIMIT_TICKS && waitingForApproach) {
-                    return fail(c, waitBlocker);
+                    return failDelivery(c, waitBlocker);
                 }
                 return TaskStatus.RUNNING;
             }
         }
-        if (approachWaitTicks >= APPROACH_WAIT_LIMIT_TICKS) return fail(c, waitBlocker);
+        if (approachWaitTicks >= APPROACH_WAIT_LIMIT_TICKS) return failDelivery(c, waitBlocker);
         return TaskStatus.RUNNING;
     }
 
@@ -255,14 +255,14 @@ public final class GiveItemsTask implements Task {
         // This is the final stock check before any inventory mutation or drop, on the owning server thread.
         int available = carried(companion);
         if (strict && available < count + retain) {
-            return fail(
+            return failDelivery(
                     c,
                     "need " + (count + retain) + " " + itemLabel() + " to give " + count + " and keep " + retain
                             + "; have " + available);
         }
         int wanted = Math.min(count, Math.max(0, available - retain));
         if (wanted == 0) {
-            return fail(c, "not enough " + itemLabel() + " to give " + count + " and keep " + retain);
+            return failDelivery(c, "not enough " + itemLabel() + " to give " + count + " and keep " + retain);
         }
 
         int bag = InventoryOps.count(companion.inventory(), matcher);
@@ -285,7 +285,8 @@ public final class GiveItemsTask implements Task {
         int removed = taken.stream().mapToInt(ItemStack::getCount).sum();
         if (removed != wanted) {
             restore(companion, taken);
-            return fail(c, "could only reserve " + removed + " of " + wanted + " " + itemLabel() + " for handover");
+            return failDelivery(
+                    c, "could only reserve " + removed + " of " + wanted + " " + itemLabel() + " for handover");
         }
 
         List<ItemEntity> drops = new ArrayList<>(taken.size());
@@ -294,7 +295,7 @@ public final class GiveItemsTask implements Task {
             if (drop == null) {
                 drops.forEach(ItemEntity::discard);
                 restore(companion, taken);
-                return fail(c, "could not create the owner handover for " + itemLabel());
+                return failDelivery(c, "could not create the owner handover for " + itemLabel());
             }
             drops.add(drop);
         }
@@ -323,7 +324,7 @@ public final class GiveItemsTask implements Task {
         return TaskStatus.SUCCESS;
     }
 
-    private TaskStatus fail(TaskContext c, String message) {
+    private TaskStatus failDelivery(TaskContext c, String message) {
         mover.stop(c);
         c.companion().getNavigation().stop();
         summary = message;

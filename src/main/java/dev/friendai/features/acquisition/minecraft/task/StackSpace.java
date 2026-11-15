@@ -1,4 +1,4 @@
-package dev.friendai.features.inventory.minecraft;
+package dev.friendai.features.acquisition.minecraft.task;
 
 import java.util.ArrayList;
 import java.util.Comparator;

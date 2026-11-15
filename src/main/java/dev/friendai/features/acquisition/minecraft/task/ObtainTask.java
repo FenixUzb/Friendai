@@ -25,13 +25,13 @@ import dev.friendai.features.crafting.minecraft.RecipeIndex;
 import dev.friendai.features.crafting.minecraft.Stations;
 import dev.friendai.features.creative.CreativeAction;
 import dev.friendai.features.creative.minecraft.CreativeItemCapability;
-import dev.friendai.features.inventory.minecraft.StackSpace;
 import dev.friendai.perception.resource.ResourceCandidates;
 import dev.friendai.task.Task;
 import dev.friendai.task.TaskContext;
 import dev.friendai.task.TaskStatus;
 import dev.friendai.task.interact.ContainerAccess;
 import dev.friendai.task.interact.ContainerSession;
+import dev.friendai.task.interact.ContainerTour;
 import dev.friendai.task.interact.ContainerTransfer;
 import dev.friendai.task.inventory.ItemMatcher;
 import java.util.ArrayList;
@@ -83,6 +83,10 @@ public final class ObtainTask implements Task {
     private final List<String> history = new ArrayList<>();
     private final Set<Long> excludedSiteIds = new LinkedHashSet<>();
     private Task current;
+    /** A look through nearby storage, run once before making or gathering the item. */
+    private Task tour;
+
+    private boolean touredContainers;
     private TaskContext childContext;
     private TaskLogSpan span;
     private Supplier<ResourceCandidates.Verification> currentVisitVerification;
@@ -326,6 +330,18 @@ public final class ObtainTask implements Task {
             }
             return TaskStatus.RUNNING;
         }
+        if (tour != null) {
+            TaskStatus status = tour.tick(c);
+            if (status == TaskStatus.RUNNING) {
+                return TaskStatus.RUNNING;
+            }
+            String toured = tour.resultSummary();
+            safeStop(tour, c);
+            tour = null;
+            if (!toured.isBlank()) history.add(toured);
+            // What the chests hold is known now: plan again from it.
+            return startNext(c);
+        }
         if (current != null) {
             TaskStatus status = current.tick(childContext == null ? c : childContext);
             if (status == TaskStatus.RUNNING) {
@@ -405,6 +421,17 @@ public final class ObtainTask implements Task {
                 DropIndex.of(level),
                 facts,
                 tradingContext);
+        if (shouldTour(plan)) {
+            touredContainers = true;
+            List<BlockPos> targets =
+                    ContainerTour.unchecked(c, ContainerTour.NEAR_RADIUS, ContainerTour.MAX_CONTAINERS);
+            if (!targets.isEmpty()) {
+                tour = new ContainerTour(targets);
+                tour.start(c);
+                c.debug("obtain " + item + ": checking " + targets.size() + " containers nearby before going out");
+                return TaskStatus.RUNNING;
+            }
+        }
         if (!plan.actionable()) {
             return fail(
                     "can't get " + count + " " + item + " here: " + ObtainText.missingText(plan.missing(), !explore));
@@ -749,6 +776,27 @@ public final class ObtainTask implements Task {
     }
 
     /**
+     * Whether to look through nearby storage first: once per task, when containers may be used and the next step does
+     * not already take from a known container. Check for the finished item before spending materials or going out.
+     */
+    private boolean shouldTour(ObtainPlan plan) {
+        if (touredContainers || !useContainers) return false;
+        if (!plan.actionable() || plan.steps().isEmpty()) return true;
+        ObtainStep first = plan.steps().get(0);
+        return !(first instanceof ObtainStep.Take);
+    }
+
+    /** Accepts an item id the matcher accepts, so remembered container contents can be searched by matcher. */
+    private static java.util.function.Predicate<String> acceptsId(ItemMatcher matcher) {
+        return id -> {
+            Identifier key = Identifier.tryParse(id);
+            return key != null
+                    && BuiltInRegistries.ITEM.containsKey(key)
+                    && matcher.test(new ItemStack(BuiltInRegistries.ITEM.getValue(key)));
+        };
+    }
+
+    /**
      * Records the material source a failed step tried, so the next plan prefers another reachable source and stops
      * offering one that already failed twice. Only source-bearing steps count: a craft or a container take has no
      * source to exclude and its own repetition is already caught by {@link #lastFailedKey}.
@@ -826,9 +874,11 @@ public final class ObtainTask implements Task {
         private TakeFromContainerTask(ItemMatcher matcher, int count) {
             this.matcher = matcher;
             this.count = count;
+            // The chest the item was seen in, live records first; the nearest container only when none is recorded.
             this.session = new ContainerSession(
                     null,
-                    context -> ContainerAccess.nearest(context, CONTAINER_RADIUS),
+                    context -> ContainerAccess.recordedWith(context, acceptsId(matcher), CONTAINER_RADIUS)
+                            .or(() -> ContainerAccess.nearest(context, CONTAINER_RADIUS)),
                     true,
                     () -> "no storage container with " + matcher.label() + " within " + CONTAINER_RADIUS + " blocks",
                     position -> "there is no chest, barrel or other storage at " + position.getX() + " "
@@ -886,6 +936,10 @@ public final class ObtainTask implements Task {
     @Override
     public void stop(TaskContext c) {
         clearCreativeCreation();
+        if (tour != null) {
+            safeStop(tour, c);
+            tour = null;
+        }
         if (span != null) {
             span.finish("cancelled", "stopped", java.util.Map.of());
             span = null;
