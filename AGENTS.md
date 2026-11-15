@@ -112,7 +112,7 @@ JAVA_HOME="/path/to/jdk-25" ./gradlew build
 
 | Command | What it does |
 |---|---|
-| `./gradlew build` | Compile, run unit tests **and** the Fabric GameTests (`runGameTest` is part of `check`), then package. The full gate: CI runs it on every pull request and on `main`; agents do not run it while working (see "Test scope"). |
+| `./gradlew build` | Compile, run unit tests and Fabric GameTests, then package. Use `check --continue` for full local verification when packaging is already covered. |
 | `./gradlew test` | Root and engine unit tests (JUnit 5, no Minecraft); root `test` aggregates `:engine:test`. |
 | `./gradlew :engine:test --tests 'dev.friendai.<package>.*'` | Tests only the selected pure engine package. |
 | `./gradlew test --tests '*SomeTest'` | One unit test class; root `test` also aggregates `:engine:test`. |
@@ -240,19 +240,19 @@ Java layout is not a matter of taste: `build.gradle` wires [Spotless](https://gi
 
 ## Testing
 
-### Test scope: group while working, everything at merge
+### Test scope: fast feedback and full verification
 
-A full run is about 9 minutes of GameTests plus the unit suite, so an agent does **not** run it while working on a task. The rule:
 
-- **While working** (new module, skill, fix): run only the group that covers your change.
+- **During edits, start with the fastest check that can reproduce the problem or verify the change.**
   - Root unit tests of the area: `./gradlew test --tests 'dev.friendai.<package>.*'` (or a single class). For engine-only code, use `./gradlew :engine:test --tests 'dev.friendai.<package>.*'`.
   - GameTests of the area, only if the change touches the game layer: one class glob per run, e.g. `./gradlew runGameTest -Dfabric-api.gametest.filter='friendai-gametest:<class>_tests_*'` (`BuildTests` → `build_tests_*`, `FarmingTests` → `farming_tests_*`). Name the class(es) you added or whose behavior you changed; a new skill's GameTest class counts.
   - Always run `LangFilesTest` when you touched a language file.
-- **Do not** run `./gradlew build`, `check` or the unfiltered `runGameTest` merely to "be safe" before a commit or a task report. A full GameTest run is justified only for a game-layer change that one filtered class cannot cover, and the report says why it was run.
-- **At merge to `main`** the full gate runs: CI (`.github/workflows/ci.yml`) runs all unit tests and all GameTests on every pull request, merge-queue entry and push to `main`, and `CI gate` is the required check. A local full run is the maintainer's call, not an agent's default.
+- **Before pushing changes with broad game impact or fixes for recurring failures across classes, batch the fixes and run `./gradlew check --continue` locally.** Use the same check when the maintainer asks for full local verification. Group tasks in one Gradle invocation where possible. After subsequent edits, rerun the checks those edits affect.
+- **Use CI's isolation when diagnosing a shard failure.** Run `scripts/run-gametest-shard.sh --class <class_id>` or its filtered Gradle command. An unfiltered local run shares a server across classes and can reveal different failures.
+- **At merge to `main`** CI (`.github/workflows/ci.yml`) runs all unit tests and GameTests on every pull request, merge-queue entry and push to `main`. The required `CI gate` must pass.
   - The GameTests run as a matrix of shards, and `scripts/run-gametest-shard.sh` boots **one class per server** inside its shard, so a red run names the failing class and a class that only passes beside a particular neighbour cannot hide. The shard map is `.github/gametest-shards.json`; `./gradlew verifyGametestShards` fails when a registered class is missing, listed twice or unknown, and `CI gate` runs it before any shard starts.
-  - `.github/workflows/nightly.yml` runs the whole suite in one server every night, which is the only place cross-shard state and batch timing can show up. A shard-only red is a signal about that shard, not a reason to widen your own test scope.
-- In the task report, state which group you ran and its real result, and say plainly that the full suite was left to CI. A failure in an unrelated test on the full run is CI's finding to triage, not a reason to widen your own scope.
+  - `.github/workflows/nightly.yml` also runs the whole suite in one server, where cross-class state and batch timing can show up.
+- Report which local groups or full suite ran, their actual results, and the status of CI. Triage failures with evidence before widening the change.
 - **A world change is exercised once before the commit.** Unit tests prove logic, not that a task runs: a change to a `Task`, `ExecutionCoordinator`, the entity, a builder or a menu is run once — a filtered GameTest class, or a real `runClient`/`runServer` session — and the report says what was run. Compiling is not running.
 
 ### Batch the loop: write everything, run once
@@ -260,7 +260,7 @@ A full run is about 9 minutes of GameTests plus the unit suite, so an agent does
 An agent slows itself down by running Gradle after every edit: a unit run costs tens of seconds, a GameTest boot minutes, the edit itself seconds. The rule:
 
 1. Write the whole slice first: the logic, the tests that pin it, the language keys, the call sites, the doc line.
-2. Run once, only the group that covers it (see "Test scope"), and read every failure before touching anything.
+2. Run the covering group and read failures before editing again. Broaden verification after the fixes are batched (see "Test scope").
 3. Fix all of them in one pass, then re-run. Do not restart the loop after each individual fix.
 4. Treat compilation as part of the batch: write against the type system, not against the compiler's first error message.
 5. Format as part of the batch too: one `./gradlew spotlessApply -PspotlessFiles=<your files>` before the single test run, never after it (see "Formatting").
@@ -278,7 +278,7 @@ An agent slows itself down by running Gradle after every edit: a unit run costs 
 - **GameTest runs are expensive; batch them.**
   - Every `runGameTest` boots a Minecraft server, so do not repeat a filtered boot per test. While debugging one test, filter it: `./gradlew runGameTest -Dfabric-api.gametest.filter=friendai-gametest:<test_name>`; `build.gradle` forwards the property to the GameTest server.
   - The value is one glob where `*` matches any text (`friendai-gametest:hunger_tests_*` runs the whole `HungerTests` class, 24 tests in about 50 s including the boot); there is no negation and no pattern list, so "everything except X" is not expressible.
-  - A full run takes about 9 minutes, mostly in the batches holding the long `BuildTests`; for a change in one area run that area's class glob first. A full `./gradlew runGameTest` is justified only when a game-layer change cannot be covered by one class glob (see "Test scope"), and it is never a prerequisite for a commit.
+  - Run the affected class first. Use "Test scope" to decide when to verify the full suite locally.
   - If a full run shows a failure in an unrelated, timing-sensitive test (the shared world makes a few rotate), re-run only that test filtered for a clean signal instead of repeating the whole suite.
 - **A hanging task test must say what it was doing.**
   - Drive the tick loop through `TaskTrace.of(h, runner, companion).succeedWhen(() -> { … })` instead of a bare `h.succeedWhen(...)`: it records one line per tick (position, active task with its `debugStatus()`, queued jobs, sight backlog and how much the companion currently sees).
@@ -294,7 +294,7 @@ An agent slows itself down by running Gradle after every edit: a unit run costs 
 - **The guides are checked too.** `Docs links` runs `scripts/check-docs.sh`: a relative link to a missing path, a `#anchor` no heading produces, or a table row with the wrong cell count fails the job — fix the link, the heading or the table, never the check. `Workflow lint` also runs `shellcheck` over `scripts/*.sh`.
 - **A red GameTest shard names its class.** The suite runs as a matrix of shards and `scripts/run-gametest-shard.sh` boots one class per server, so the job name tells you which class to reproduce locally with that class's glob. The shard map is `.github/gametest-shards.json`.
 - **The log is an artifact.** A failing shard uploads `build/gametest-shards/<class>.log`, which holds the `TaskTrace` timeline of a flaky or hanging test. Read it before changing code.
-- **The nightly workflow is the only cross-class run.** `.github/workflows/nightly.yml` runs the whole suite in one server every night; a failure that appears only there is a shared-world or timing signal, not a reason to widen your own test scope.
+- **Nightly and unfiltered local runs cover cross-class interactions.** Inspect shared-world state and timing when a failure appears only in one of those runs.
 - **Triage before rerunning.** Reproduce with the covering group, fix what is yours, and report what is not with the evidence (`git status`, the failing class, the log line). Re-run only the affected job; never merge around a red gate.
 
 ## Minecraft API notes (26.3)
@@ -316,7 +316,7 @@ An agent slows itself down by running Gradle after every edit: a unit run costs 
 2. Add its tool to the area-owned `*Tools` contributor using `TaskToolDefinition` and `FeatureToolRegistry`. Validate arguments with `SchemaBuilder`, set access and queue traits deliberately, and add it to the catalog metadata. `FriendaiTools.build` composes the contributors; do not add a second central task factory.
 3. If the task should be restorable, mark the definition restorable and contribute its bounded checkpoint decoder beside it with `.withCheckpoint(<stable task type>, <CheckpointRestorer>)` in the owning feature; `TaskRestoreRegistry` composes the contributed decoders and rejects a duplicate key, so adding a restorable task never edits orchestration.
 4. Add player-facing strings to every shipped language file and a GameTest in `src/gametest`; register its class in `src/gametest/resources/fabric.mod.json`.
-5. Bump `mod_version` for a shipped behavior change. Run only the covering unit-test group and one filtered GameTest class while working; leave the full suite to CI. `assemble verifyModArtifact` refreshes `test-builds/friendai-<version>.jar` without running GameTests.
+5. Bump `mod_version` for a shipped behavior change. Start with the covering unit tests and filtered GameTest class, then follow "Test scope". `assemble verifyModArtifact` refreshes `test-builds/friendai-<version>.jar`.
 
 ### Add a config option
 
@@ -360,7 +360,7 @@ An agent slows itself down by running Gradle after every edit: a unit run costs 
 1. Change the versions only in `gradle.properties` (Loom, Minecraft, Fabric API, Java) and keep `fabric.mod.json`'s dependency ranges in step; never hard-code a loader or game version in code.
 2. Run `./gradlew genSources` and re-check every name the change moved or removed against the decompiled sources or `javap` (see "Minecraft API notes"). Do not guess a replacement variant.
 3. Boot the game before trusting a compile. `defaultRequire: 1` turns a renamed mixin target into a boot failure: run one filtered GameTest class per mixin-affected area (targeting, barter, advancements) or a `runClient` smoke session.
-4. Run the unit suites and the GameTest class of each area you touched; state the real result, and leave the full suite to CI.
+4. Run the unit and GameTest classes for the areas you touched. Follow "Test scope" for full local verification and report the actual results.
 5. Treat it as a breaking change for versioning (while `0.x`, a MINOR bump), add the `CHANGELOG.md` line, and update the README's supported version when it is user-visible.
 
 ## Failure modes we have already seen
@@ -369,7 +369,7 @@ Each line is a rule stated above, in the shape it has actually failed in this re
 
 - **Guessed a Minecraft or Fabric name.** The fix is never a variant that happens to compile: look the name up with `javap` or the decompiled sources.
 - **Trusted the compiler for a mixin.** `defaultRequire: 1` fails at boot, not at compile time; boot the game.
-- **Ran the full suite "to be safe".** Nine minutes of GameTests that CI runs anyway; run the covering group.
+- **Repeated full runs for a known failure.** Reproduce it with the smallest relevant group and batch the fixes before broadening verification.
 - **Built a second mechanism.** A parallel queue, store, registry or turn loop beside the one the architecture already has; extend the existing one and delete the draft.
 - **Staged everything.** `git add -A` swept another session's files into a commit; name your paths.
 - **Let a test pass on the first run.** Nothing proved it can fail; break the guarded line once and watch the red.
@@ -623,7 +623,7 @@ run `scripts/check-release.sh vX.Y.Z` after `./gradlew assemble`.
 ## Definition of done
 
 1. **Code must compile before it is committed.** Tests are optional for a commit, compilation is not: run `./gradlew assemble verifyModArtifact` (compiles every source set, packages and inspects the mod jar) and read its result, with `JAVA_HOME` pointing at JDK 25. Never commit code that was not compiled, and never rely on "the API probably has that method" for Minecraft names; look them up (see "Minecraft API notes (26.3)"). A commit that breaks the build blocks every other session. A docs-only change (Markdown, `site/` text) needs neither the build nor the tests. Formatting is part of this gate (see "Formatting").
-2. Tests are not a gate for a commit: commit a coherent change when it is ready, having run only the covering group (see "Test scope") and quoted its real result — unit-test count and GameTest line, not an assumption.
+2. Commit coherent changes after verification at the scope in "Testing". Report actual unit-test counts and GameTest results.
 3. New player-facing strings exist in every shipped language file, not only `en_us.json`.
 4. New behavior has a test that pins it and would fail without the change (see "Batch the loop" for how to prove that inside one run); bugs get a regression test.
 5. Layer boundaries respected (no Minecraft imports in the pure layers).
@@ -645,7 +645,7 @@ run `scripts/check-release.sh vX.Y.Z` after `./gradlew assemble`.
 ```text
 Changed: <files, with path:line where it helps>
 Tests: <command> — <N passed / N failed>; GameTest <class glob> — <"N GAME TESTS COMPLETE" line>
-        full suite left to CI
+        Full local suite: <result or scope reason>; CI gate: <status>
 Version: <old> -> <new>, <why>; test jar: test-builds/friendai-<version>.jar
 Not verified: <real provider, microphone, GUI, LAN — or "nothing">
 Foreign changes noticed: <files another session left uncommitted — or "none">

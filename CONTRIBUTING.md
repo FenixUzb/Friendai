@@ -28,7 +28,8 @@ Java 25 is required. If needed, set `JAVA_HOME` to a JDK 25 before invoking Grad
 ```
 
 The full command table, the test-scope rules, the formatter invocation and the prompt-golden workflow live in
-`AGENTS.md` ("Commands", "Testing", "Formatting"). Run only the group covering the change; CI owns the full gate.
+`AGENTS.md` ("Commands", "Testing", "Formatting"). Start with the group covering the change. Run the full suite
+locally before pushing broad gameplay changes or fixes for recurring failures across classes. CI verifies the final revision.
 Compilation is not a substitute for running a GameTest when a world behavior changed.
 
 ## Common changes
