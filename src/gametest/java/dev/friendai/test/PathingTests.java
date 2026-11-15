@@ -600,21 +600,25 @@ public class PathingTests {
 
     @GameTest(maxTicks = 1200)
     public void protectedWallIsWalkedAround(GameTestHelper h) {
-        GameTestSupport.platform(h, 16);
-        int wallX = h.absolutePos(new BlockPos(8, 2, 0)).getX();
+        int floor = 14;
+        GameTestSupport.platformAt(h, floor, 16);
+        int wallX = h.absolutePos(new BlockPos(8, floor + 1, 0)).getX();
         for (int z = 1; z <= 12; z++) {
-            for (int y = 2; y <= 4; y++) {
+            for (int y = floor + 1; y <= floor + 3; y++) {
                 h.setBlock(8, y, z, Blocks.STONE);
             }
         }
-        CompanionEntity c = walker(h, 2, 2, 8);
+        CompanionEntity c = platformWalker(h, floor, 2, 8);
         c.hands().overrideProtection(p -> p.getX() == wallX);
         Outcome out = new Outcome();
-        walkTo(c, h, out, 13.5, 2, 8.5);
+        walkTo(c, h, out, 13.5, floor + 1, 8.5);
         h.succeedWhen(() -> {
-            h.assertTrue(out.status == TaskStatus.SUCCESS, "go_to did not finish: " + out.why());
+            h.assertTrue(
+                    out.status == TaskStatus.SUCCESS,
+                    "go_to did not finish: " + out.why() + " at " + c.position() + " after " + c.tickCount
+                            + " entity ticks");
             for (int z = 1; z <= 12; z++) {
-                for (int y = 2; y <= 4; y++) {
+                for (int y = floor + 1; y <= floor + 3; y++) {
                     assertBlock(h, 8, y, z, Blocks.STONE, "protected wall");
                 }
             }

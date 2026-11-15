@@ -52,20 +52,40 @@ public class CompanionChunkLoadingTests {
     }
 
     /**
-     * The ticket is armed by the tick loop synchronously; the chunk it names is generated asynchronously, on a worker
-     * starved by the rest of the shard, so the load is awaited inside the test's own budget instead of being asserted
-     * at a fixed tick. The budget covers a fresh pair of chunk neighbourhoods; a failing run still ends, just later.
+     * An anchor points to previously visited terrain. Generate the two chunks before exercising the ticket and
+     * let them unload so the test measures restoration of saved chunks rather than the speed of new world generation.
      */
     @GameTest(maxTicks = 6000)
     public void anchorsAreReArmedEveryTickAndRestoredWithoutBlocking(GameTestHelper h) {
         ServerLevel level = h.getLevel();
         CompanionChunkLoader loader = GameTestSupport.runtime(level.getServer()).chunkLoader();
         CompanionAnchors anchors = level.getServer().getDataStorage().computeIfAbsent(CompanionAnchors.TYPE);
+        ChunkPos firstChunk = farChunk(h);
+        ChunkPos secondChunk = new ChunkPos(firstChunk.x() + 16, firstChunk.z());
+        level.getChunk(firstChunk.x(), firstChunk.z());
+        level.getChunk(secondChunk.x(), secondChunk.z());
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    h.assertTrue(
+                            level.getChunkSource().getChunkNow(firstChunk.x(), firstChunk.z()) == null,
+                            "the first saved chunk should unload before the ticket test");
+                    h.assertTrue(
+                            level.getChunkSource().getChunkNow(secondChunk.x(), secondChunk.z()) == null,
+                            "the second saved chunk should unload before the ticket test");
+                })
+                .thenExecute(() -> verifyRestoration(h, level, loader, anchors, firstChunk, secondChunk));
+    }
 
+    private static void verifyRestoration(
+            GameTestHelper h,
+            ServerLevel level,
+            CompanionChunkLoader loader,
+            CompanionAnchors anchors,
+            ChunkPos firstChunk,
+            ChunkPos secondChunk) {
         // Phase 1: an anchor saved earlier in the session must be picked up by the tick loop alone,
         // even if restore() has not run again (the reload path).
         UUID first = UUID.randomUUID();
-        ChunkPos firstChunk = farChunk(h);
         anchors.put(first, new CompanionAnchors.Anchor(level.dimension(), firstChunk));
         h.runAfterDelay(60, () -> {
             h.assertTrue(loader.awaitingChunk(first), "a later tick should re-arm the saved anchor");
@@ -73,7 +93,6 @@ public class CompanionChunkLoadingTests {
                 // Phase 2: restore() over an anchor whose chunk is not in memory must not generate it
                 // synchronously; the pending ticket loads it a few ticks later.
                 UUID second = UUID.randomUUID();
-                ChunkPos secondChunk = new ChunkPos(firstChunk.x() + 16, firstChunk.z());
                 anchors.put(second, new CompanionAnchors.Anchor(level.dimension(), secondChunk));
                 loader.restore();
                 h.assertTrue(
