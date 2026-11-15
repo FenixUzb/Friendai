@@ -1638,6 +1638,7 @@ public class PathingTests {
      */
     private static void walkCorridorAndCheckYaw(GameTestHelper h, int base, double targetX, double targetY) {
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, base + 5, 11);
+        c.setPathBounds(new AABB(h.absoluteVec(new Vec3(0, base, 10)), h.absoluteVec(new Vec3(24, base + 10, 13))));
         Vec3 target = h.absoluteVec(new Vec3(targetX, targetY, 11.5));
         TaskContext context = new TaskContext(c, h.getLevel());
         Navigator navigator = new Navigator(context);
@@ -1656,7 +1657,9 @@ public class PathingTests {
             }
         });
         h.succeedWhen(() -> {
-            h.assertTrue(state[0] == Navigator.State.ARRIVED, "not arrived: " + state[0] + " at " + c.position());
+            h.assertTrue(
+                    state[0] == Navigator.State.ARRIVED,
+                    "not arrived: " + state[0] + " at " + c.position() + " " + navigator.lastSearch());
             // The policy caps at 30; vanilla's own rotlerp can add a fraction of a degree on top.
             h.assertTrue(maxStep[0] <= 31.0f, "turned " + maxStep[0] + " degrees in one tick");
             // A cap that stalls the walk would show up here: the 18-block corridor takes about 137 ticks.
