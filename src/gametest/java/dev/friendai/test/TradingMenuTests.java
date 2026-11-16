@@ -117,7 +117,7 @@ public class TradingMenuTests {
                 costB.isEmpty() || count(companion, Items.BOOK) == costB.getCount() * 2, "second cost was overcharged");
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void villager_trade_uses_real_result_slot(GameTestHelper h) {
         Fixture f = setup(h);
         MerchantOffer bread = bread(8);
@@ -175,7 +175,7 @@ public class TradingMenuTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void merchant_close_returns_unpaid_inputs(GameTestHelper h) {
         Fixture f = setup(h);
         MerchantOffer offer = new MerchantOffer(
@@ -225,7 +225,7 @@ public class TradingMenuTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void merchant_open_preserves_companion_xp(GameTestHelper h) {
         Fixture f = setup(h);
         f.villager().getOffers().add(bread(8));
@@ -245,7 +245,7 @@ public class TradingMenuTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void merchant_close_preserves_xp_collected_while_open(GameTestHelper h) {
         Fixture f = setup(h);
         f.villager().getOffers().add(bread(8));
@@ -276,7 +276,7 @@ public class TradingMenuTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void merchant_close_clears_prices_after_vanilla_release(GameTestHelper h) {
         Fixture f = setup(h);
         MerchantOffer offer = bread(8);
@@ -309,7 +309,7 @@ public class TradingMenuTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void busy_merchant_is_not_stolen(GameTestHelper h) {
         Fixture f = setup(h);
         MerchantOffer offer = bread(8);
@@ -414,7 +414,7 @@ public class TradingMenuTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void wandering_trader_does_not_restock(GameTestHelper h) {
         Fixture f = setup(h);
         WanderingTrader trader = h.spawn(EntityTypes.WANDERING_TRADER, 3, 2, 3);

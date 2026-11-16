@@ -37,7 +37,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.VineBlock;
 
 public class MiningTests {
-    private static final String ARENA = "friendai-gametest:mining_arena";
+    private static final String ARENA = "friendai-gametest:arena_32";
 
     private static final class Outcome implements TaskEventSink {
         TaskStatus status;
@@ -680,14 +680,13 @@ public class MiningTests {
 
         BlockPos ore = new BlockPos(12, 121, 6);
         h.setBlock(ore, Blocks.IRON_ORE);
-        // The target is visible and known, but every horizontal mining stance is lava and the top stance is sealed.
-        // The solid floor keeps the moat finite; the companion has no blocks with which to bridge it.
+        // Sink the lava below the bank so a source cannot spread onto the approach during the test.
         for (int x = 7; x <= 17; x++) {
             for (int z = 1; z <= 11; z++) {
-                if (x == ore.getX() && z == ore.getZ()) {
-                    continue;
+                h.setBlock(x, 119, z, Blocks.BEDROCK);
+                if (x != ore.getX() || z != ore.getZ()) {
+                    h.setBlock(x, 120, z, Blocks.LAVA);
                 }
-                h.setBlock(x, 121, z, Blocks.LAVA);
             }
         }
         h.setBlock(ore.above(), Blocks.BEDROCK);
@@ -712,8 +711,10 @@ public class MiningTests {
                 new MineBlocksTask(BlockMatcher.parse("minecraft:iron_ore").orElseThrow(), 1, 16);
         runner.start(task, "mine_blocks");
 
+        boolean[] enteredLava = {false};
         TaskTrace.of(h, runner, companion).succeedWhen(() -> {
             runner.tick();
+            enteredLava[0] |= companion.isInLava();
             h.assertTrue(outcome.status != null, "unreachable mining route did not terminate: " + task.debugStatus());
             h.assertTrue(
                     outcome.status == TaskStatus.FAILED,
@@ -724,7 +725,7 @@ public class MiningTests {
                     "the failure should explain the unreachable or unsafe passage: " + outcome.summary);
             h.assertTrue(
                     h.getLevel().getBlockState(absoluteOre).is(Blocks.IRON_ORE), "the unreachable ore was altered");
-            h.assertTrue(!companion.isInLava(), "the companion entered the moat while giving up");
+            h.assertFalse(enteredLava[0], "the companion entered the moat while giving up");
         });
     }
 

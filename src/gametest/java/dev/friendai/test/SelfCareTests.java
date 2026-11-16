@@ -30,7 +30,7 @@ import net.minecraft.world.level.block.Blocks;
 /** The companion spending its own survival items: the water drop, milk, a golden apple and a splash potion. */
 public class SelfCareTests {
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 300)
     public void fallsIntoItsOwnWaterAndTakesTheBucketBack(GameTestHelper h) {
         tower(h, 300, 10, 18);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 4, 316, 4);
@@ -48,7 +48,7 @@ public class SelfCareTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 300)
     public void milkClearsAHarmfulEffectAndTheBeneficialOneToo(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -62,7 +62,7 @@ public class SelfCareTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 300)
     public void criticalOutsideCombatEatsAGoldenApple(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -77,7 +77,7 @@ public class SelfCareTests {
     }
 
     /** The reflex holds the runner while it eats, so a task cannot take the hand back mid-use. */
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 200)
     public void eatingHoldsTheRunnerSoATaskCannotTakeTheHandBack(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -165,7 +165,7 @@ public class SelfCareTests {
      * inventory while the use runs, so nothing disappears and the tool selection of a running task cannot empty the
      * hand and have the reflex credit food that was never eaten.
      */
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 200)
     public void combatEatingKeepsTheDisplacedPickaxeInTheInventory(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -191,7 +191,7 @@ public class SelfCareTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 300)
     public void oneItemPerEmergency(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -206,7 +206,7 @@ public class SelfCareTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 300)
     public void splashPotionHealsAWoundedOwner(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -220,7 +220,7 @@ public class SelfCareTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 300)
     public void nothingIsSpentWhenNothingMatches(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

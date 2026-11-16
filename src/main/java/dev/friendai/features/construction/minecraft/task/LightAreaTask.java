@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
@@ -157,16 +158,7 @@ public final class LightAreaTask implements Task {
                     if (skipped.contains(pos) || pos.equals(from)) {
                         continue;
                     }
-                    if (!c.level().getBlockState(pos).isAir()) {
-                        continue;
-                    }
-                    if (!c.level().getBlockState(pos.below()).isFaceSturdy(c.level(), pos.below(), Direction.UP)) {
-                        continue;
-                    }
-                    if (c.level().getBrightness(LightLayer.BLOCK, pos) >= DARK_BELOW) {
-                        continue;
-                    }
-                    if (c.level().getBrightness(LightLayer.SKY, pos) > 0) {
+                    if (!isDarkTorchSite(c.level(), pos)) {
                         continue;
                     }
                     double distance = from.distSqr(pos);
@@ -178,6 +170,14 @@ public final class LightAreaTask implements Task {
             }
         }
         return Optional.ofNullable(best);
+    }
+
+    public static boolean isDarkTorchSite(ServerLevel level, BlockPos pos) {
+        return level.hasChunkAt(pos)
+                && level.getBlockState(pos).isAir()
+                && level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)
+                && level.getBrightness(LightLayer.BLOCK, pos) < DARK_BELOW
+                && level.getBrightness(LightLayer.SKY, pos) == 0;
     }
 
     @Override

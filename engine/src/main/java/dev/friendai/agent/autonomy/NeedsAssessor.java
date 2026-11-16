@@ -43,6 +43,7 @@ public final class NeedsAssessor {
         }
         Optional<PlaceRef> home = f.homeHere();
         if (f.dark()
+                && f.self().unlitAndExposed()
                 && home.isPresent()
                 && !f.self().bedAtHome()
                 && (home.get().distance() > SHELTER_DISTANCE || f.armor().ordinal() < Tier.IRON.ordinal())) {
@@ -52,12 +53,14 @@ public final class NeedsAssessor {
                     Executor.REFLEX,
                     "it is dark; go home to " + home.get().name() + " until morning"));
         }
-        if (f.dark() && home.isEmpty()) {
+        if (f.dark() && home.isEmpty() && ReflexPlans.canShelterWithoutHome(f, s)) {
             needs.add(new Need(
                     NeedKind.SHELTER,
                     90,
                     Executor.REFLEX,
-                    "it is dark and there is no known home; build a shelter if materials allow, otherwise stay safe"));
+                    f.self().unlitInterior()
+                            ? "it is dark under cover; light the area with carried torches"
+                            : "it is dark and there is no known home; build a shelter with carried blocks"));
         }
         if (f.dark() && home.isPresent() && f.self().bedAtHome()) {
             needs.add(new Need(

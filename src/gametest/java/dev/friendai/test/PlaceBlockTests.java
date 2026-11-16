@@ -47,7 +47,7 @@ public class PlaceBlockTests {
         return p.getX() + " " + p.getY() + " " + p.getZ();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void placeAtCoordinates(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -69,7 +69,7 @@ public class PlaceBlockTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void placeFurnaceFacesCompanion(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -87,7 +87,7 @@ public class PlaceBlockTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void placeNearbyAvoidsOwnerAndSelf(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -115,7 +115,7 @@ public class PlaceBlockTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void placeOccupiedFails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(8, 2, 3, Blocks.BRICKS);
@@ -133,7 +133,7 @@ public class PlaceBlockTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void placeNothingToPlaceAgainst(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -150,7 +150,7 @@ public class PlaceBlockTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void placeInUnloadedTerrainIsReported(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -171,7 +171,7 @@ public class PlaceBlockTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void placeWithoutItemFails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -185,7 +185,7 @@ public class PlaceBlockTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void placeUsesMainHand(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -202,7 +202,7 @@ public class PlaceBlockTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void placeRefusedReturnsItem(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -224,7 +224,7 @@ public class PlaceBlockTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void placeSpotFilledWhileWalking(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -247,7 +247,7 @@ public class PlaceBlockTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void placeWallTorchUsesWallVariant(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(8, 3, 3, Blocks.STONE);
@@ -270,7 +270,7 @@ public class PlaceBlockTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void placeProtectedFails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

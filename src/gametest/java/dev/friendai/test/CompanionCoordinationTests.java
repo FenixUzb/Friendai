@@ -51,7 +51,7 @@ public class CompanionCoordinationTests {
                 0);
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void aLiveJobIsClaimedAcrossCompanionsAndHelpCanBeDeclined(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerRuntime runtime = GameTestSupport.runtime(h.getLevel().getServer());
@@ -284,7 +284,7 @@ public class CompanionCoordinationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void aConsentedHandoffMovesTheExactQuantityOnce(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerRuntime runtime = GameTestSupport.runtime(h.getLevel().getServer());

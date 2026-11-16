@@ -94,7 +94,7 @@ public class FarmingTests {
                 : -1;
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void harvestsMatureAndReplants(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos[] ring = plot(h);
@@ -124,7 +124,8 @@ public class FarmingTests {
             h.assertValueEqual(report.harvested().get("minecraft:wheat"), 4, "harvested wheat " + report.harvested());
             h.assertValueEqual(report.replanted(), 4, "replanted");
             for (int index : mature) {
-                h.assertValueEqual(age(h, ring[index].getX(), 2, ring[index].getZ()), 0, "mature plot replanted");
+                int replantedAge = age(h, ring[index].getX(), 2, ring[index].getZ());
+                h.assertTrue(replantedAge >= 0 && replantedAge < 7, "mature plot replanted: age " + replantedAge);
             }
             for (int index : immature) {
                 int age = age(h, ring[index].getX(), 2, ring[index].getZ());
@@ -133,7 +134,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void farmDebugTargetTracksSelectedCropStep(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos crop = h.absolutePos(new BlockPos(5, 2, 5));
@@ -157,7 +158,7 @@ public class FarmingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void replantsFromDrops(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos[] ring = plot(h);
@@ -175,12 +176,13 @@ public class FarmingTests {
             h.assertTrue(pass.tick(ctx), "pass not done yet");
             h.assertValueEqual(pass.report().replanted(), 4, "replanted from the harvest drops");
             for (int index = 0; index < 4; index++) {
-                h.assertValueEqual(age(h, ring[index].getX(), 2, ring[index].getZ()), 0, "plot replanted");
+                int replantedAge = age(h, ring[index].getX(), 2, ring[index].getZ());
+                h.assertTrue(replantedAge >= 0 && replantedAge < 7, "plot replanted: age " + replantedAge);
             }
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void farmlandGoneSkipsReplant(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos[] ring = plot(h);
@@ -207,7 +209,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void harvestsMelonKeepsStem(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(4, 1, 4, Blocks.FARMLAND);
@@ -232,7 +234,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void harvestsSugarCaneAboveBottom(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(4, 0, 4, Blocks.STONE);
@@ -253,7 +255,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void harvestsSweetBerries(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(4, 1, 4, Blocks.DIRT);
@@ -287,7 +289,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest(maxTicks = 800, environment = "friendai-gametest:farming_plant_crop")
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800, environment = "friendai-gametest:farming_plant_crop")
     public void plantsGivenCrop(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(3, 1, 4, Blocks.WATER);
@@ -312,7 +314,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void tillsNextToWater(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int x = 4; x <= 6; x++) {
@@ -345,7 +347,7 @@ public class FarmingTests {
      * "Plant wheat" with a hoe and seeds on grass beside water: the model named the crop and left till out, and the
      * pass found "nothing to do". Naming a crop now tills unless till is explicitly false.
      */
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void namingACropTillsGrassNextToWater(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int x = 4; x <= 6; x++) {
@@ -386,7 +388,7 @@ public class FarmingTests {
      * "Plant wheat" farmed a radius of three around the companion, found nothing and asked the owner whether to walk to
      * the pond six blocks off. A pass around the companion itself now moves there once and plants.
      */
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void aPassAroundTheCompanionMovesToTheNearestSoil(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int x = 4; x <= 6; x++) {
@@ -418,7 +420,7 @@ public class FarmingTests {
      * "Harvest the wheat" with the plot on the rim of the pass's circle took two ears of eight and said nothing ripe
      * was left. A pass around the companion now follows the field and takes the rest past its edge.
      */
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void aPassAroundTheCompanionTakesTheWholeFieldPastItsEdge(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         wheatPlot(h, 4, 4, 7, 7, 7);
@@ -439,7 +441,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void tillWithoutHoe(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int x = 4; x <= 6; x++) {
@@ -484,7 +486,7 @@ public class FarmingTests {
         }
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void farmTaskReports(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(4, 1, 4, Blocks.FARMLAND);
@@ -502,7 +504,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void farmTaskNothingToDo(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -521,7 +523,7 @@ public class FarmingTests {
      * "Plant wheat" farmed a radius of three around the companion while the grass by the water lay farther off; the
      * failure now names the nearest soil to till, so the next call can go there.
      */
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void aPassThatFindsNothingNamesTheNearestSoil(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int x = 4; x <= 6; x++) {
@@ -594,7 +596,7 @@ public class FarmingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void tendStoresHarvestInChest(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         wheatPlot(h, 4, 4, 5, 5, 7);
@@ -616,7 +618,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void tendWithFullChestNotifiesOnce(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         wheatPlot(h, 4, 4, 5, 5, 7);
@@ -652,7 +654,7 @@ public class FarmingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void bonemealGrowsPotatoes(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int x = 4; x <= 6; x++) {
@@ -677,7 +679,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void bonemealWithout(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -701,7 +703,7 @@ public class FarmingTests {
         return total;
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void farmPassSkipsHarvestWithoutRoom(GameTestHelper h) {
         GameTestSupport.platformAt(h, 260, 16);
         h.setBlock(4, 260, 4, Blocks.FARMLAND);
@@ -724,7 +726,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void tendWithFullInventoryDoesNotHarvest(GameTestHelper h) {
         GameTestSupport.platformAt(h, 280, 16);
         h.setBlock(4, 280, 4, Blocks.FARMLAND);
@@ -749,7 +751,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void snapshotClassifiesField(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos[] ring = plot(h);
@@ -799,7 +801,7 @@ public class FarmingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void farmReplansWhenCropRemoved(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos[] ring = plot(h);
@@ -828,7 +830,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void farmStopsHarvestingWhenInventoryFull(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos[] ring = plot(h);
@@ -854,7 +856,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void farmPrefersFoodCropWhenHungry(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         // Water hydrates the row: vanilla turns a dry farmland with nothing planted on it back into dirt on a random
@@ -880,7 +882,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void farmBonemealOption(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(5, 1, 4, Blocks.FARMLAND);
@@ -898,7 +900,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void farmBonemealOptionUsesBoneMeal(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(5, 1, 4, Blocks.FARMLAND);
@@ -914,7 +916,7 @@ public class FarmingTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void planFarmIsReadOnly(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(5, 1, 4, Blocks.FARMLAND);

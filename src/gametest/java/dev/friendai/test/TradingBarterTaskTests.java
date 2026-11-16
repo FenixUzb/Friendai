@@ -19,7 +19,7 @@ import net.minecraft.world.item.Items;
 
 /** Server-side order gate and single-payment behavior for piglin barter. */
 public final class TradingBarterTaskTests {
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 40)
     public void oneAuthorizedOrderPaysAtMostOneInFlightIngot(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

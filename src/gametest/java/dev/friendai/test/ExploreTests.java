@@ -17,7 +17,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.level.block.Blocks;
 
 public final class ExploreTests {
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void ignoresStaleNearestMemoryWhenAnotherResourceIsVisible(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -73,7 +73,7 @@ public final class ExploreTests {
         }
     }
 
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void failedUndergroundExploreLogsMiningFailureDetails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -97,7 +97,10 @@ public final class ExploreTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 80)
+    @GameTest(
+            structure = GameTestArenas.ARENA_16,
+            maxTicks = 80,
+            environment = "friendai-gametest:explore_observation_radius")
     public void surfaceExploreRecordsARememberedLogAsARecentSighting(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -108,7 +111,6 @@ public final class ExploreTests {
         BlockPos log = h.absolutePos(new BlockPos(10, 2, 2));
         var state = GameTestSupport.runtime(level.getServer());
         var config = state.config();
-        int oldRadius = config.tasks.resources.observationRadius;
         config.tasks.resources.observationRadius = 1;
         state.applyConfig(config);
         state.observations().unregister(companion);
@@ -140,8 +142,6 @@ public final class ExploreTests {
                 world.blocksNearby().getOrDefault("minecraft:acacia_log", 0),
                 1,
                 "the explored log should be recorded as a recent sighting");
-        config.tasks.resources.observationRadius = oldRadius;
-        state.applyConfig(config);
         h.succeed();
     }
 }

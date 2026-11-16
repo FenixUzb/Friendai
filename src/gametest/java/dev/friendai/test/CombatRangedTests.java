@@ -41,7 +41,7 @@ public class CombatRangedTests {
         return c.inventory().countItem(Items.ARROW) + flyingArrows(h, c);
     }
 
-    @GameTest(maxTicks = 500)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 500)
     public void lastArrowConsumedOnce(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -59,7 +59,7 @@ public class CombatRangedTests {
         });
     }
 
-    @GameTest(maxTicks = 500)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 500)
     public void infinityRequiresAnArrowAndPreservesIt(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -79,7 +79,7 @@ public class CombatRangedTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void bowBreakDuringDrawFallsBackWithoutLosingArrows(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -112,7 +112,7 @@ public class CombatRangedTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void fullInventoryDoesNotDuplicateWeapon(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

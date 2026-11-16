@@ -9,7 +9,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 
 /** Exact owner orders run through the tool registry even when the model is unavailable. */
 public class LocalOrderTests {
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void followOrderStartsWithoutAModel(GameTestHelper h) {
         var owner = online(h, "local-follow", 61);
         CompanionEntity companion =
@@ -20,7 +20,7 @@ public class LocalOrderTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void stayAndComeUseTheirTasks(GameTestHelper h) {
         var owner = online(h, "local-stay", 63);
         CompanionEntity companion =
@@ -34,7 +34,7 @@ public class LocalOrderTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void stopEndsTheCurrentOrder(GameTestHelper h) {
         var owner = online(h, "local-stop", 65);
         CompanionEntity companion =
@@ -48,7 +48,7 @@ public class LocalOrderTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void aGuestCannotOrderTheCompanion(GameTestHelper h) {
         GameTestSupport.platformAt(h, 66, 16);
         var owner = GameTestSupport.onlinePlayer(h, "local-owner", 2, 67, 2, true);
@@ -65,7 +65,7 @@ public class LocalOrderTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void aQuestionIsNotAnOrder(GameTestHelper h) {
         var owner = online(h, "local-question", 69);
         CompanionEntity companion =

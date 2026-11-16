@@ -16,7 +16,7 @@ import net.minecraft.server.level.ServerPlayer;
 /** The terrain sampler records only already-loaded columns and stays inside its per-tick budget. */
 public class TerrainMapTests {
     /** A route walked in short samples still accumulates, because the comparison point is the last recorded end. */
-    @GameTest(maxTicks = 700)
+    @GameTest(structure = GameTestArenas.ARENA_LONG_128, maxTicks = 700)
     public void walkingAccumulatesRoadSegments(GameTestHelper h) {
         GameTestSupport.corridor(h, 1, 120, 5);
         GameTestSupport.keepLoaded(h, -16, -16, 120, 16);
@@ -53,7 +53,7 @@ public class TerrainMapTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void samplerRecordsLoadedColumnsWithinBudget(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);

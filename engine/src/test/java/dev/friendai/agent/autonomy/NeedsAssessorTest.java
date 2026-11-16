@@ -62,10 +62,29 @@ class NeedsAssessorTest {
 
     @Test
     void nightWithoutHomePrioritizesShelterOverRoutineWork() {
-        var agenda = needs(Facts.base().dark().stock(StockKind.LOGS, 8).foodPoints(19));
+        var agenda = needs(Facts.base().dark().oakPlanks(96).foodPoints(19));
         assertEquals(NeedKind.SHELTER, agenda.get(0).kind());
         assertEquals(90, agenda.get(0).urgency());
         assertEquals(Executor.REFLEX, agenda.get(0).executor());
+    }
+
+    @Test
+    void nightWithoutHomeDoesNotStartAnImpossibleShelter() {
+        assertFalse(kinds(needs(Facts.base().dark().stock(StockKind.LOGS, 8))).contains(NeedKind.SHELTER));
+        assertFalse(
+                kinds(needs(Facts.base().dark().stock(StockKind.TORCHES, 1))).contains(NeedKind.SHELTER));
+        assertFalse(kinds(needs(Facts.base().dark().oakPlanks(95))).contains(NeedKind.SHELTER));
+        assertFalse(
+                kinds(needs(Facts.base().dark().stock(StockKind.PLANKS, 96))).contains(NeedKind.SHELTER));
+    }
+
+    @Test
+    void nightUnderCoverUsesTorchesOnlyWhenDark() {
+        assertTrue(kinds(needs(Facts.base().dark().underCover(true).stock(StockKind.TORCHES, 1)))
+                .contains(NeedKind.SHELTER));
+        assertFalse(kinds(needs(Facts.base().dark().underCover(true))).contains(NeedKind.SHELTER));
+        assertFalse(kinds(needs(Facts.base().dark().underCover(false).home("home", 40)))
+                .contains(NeedKind.SHELTER));
     }
 
     @Test
@@ -306,7 +325,7 @@ class NeedsAssessorTest {
                         .otherDimension()
                         .storageFreeSlots(27)))
                 .contains(NeedKind.UNLOAD));
-        assertTrue(kinds(needs(Facts.base().dark().home("home", 40).otherDimension()))
+        assertFalse(kinds(needs(Facts.base().dark().home("home", 40).otherDimension()))
                 .contains(NeedKind.SHELTER));
         assertFalse(kinds(needs(Facts.base().farm("f", "wheat", 5, 3_600_000).otherDimension()))
                 .contains(NeedKind.FARM));

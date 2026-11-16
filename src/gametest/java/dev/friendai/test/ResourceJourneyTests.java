@@ -60,7 +60,7 @@ public final class ResourceJourneyTests {
         return new ReturnFixture(companion, journey, anchor, h.absolutePos(new BlockPos(5, 3, 4)));
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void followsTheVerifiedRouteBackFromTheLowerStance(GameTestHelper h) {
         ReturnFixture fixture = returnFixture(h, false);
         TaskContext context = new TaskContext(fixture.companion(), h.getLevel());
@@ -75,7 +75,7 @@ public final class ResourceJourneyTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void obstructedVerifiedExitTriesOneAlternateWithoutBreakingBlocks(GameTestHelper h) {
         ReturnFixture fixture = returnFixture(h, true);
         fixture.companion().inventory().addItem(new net.minecraft.world.item.ItemStack(Items.IRON_INGOT, 3));
@@ -95,7 +95,7 @@ public final class ResourceJourneyTests {
         });
     }
 
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 900)
     public void blockedAcquisitionReturnReportsFailureAndKeepsCargo(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 3, 2, 3);
@@ -153,7 +153,7 @@ public final class ResourceJourneyTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void returnJourneyCannotSpendTheKitBlockReservedForWork(GameTestHelper h) {
         for (int x = 0; x < 9; x++) {
             for (int z = 0; z < 9; z++) {
@@ -188,7 +188,7 @@ public final class ResourceJourneyTests {
         });
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 40)
     public void executionReserveKeepsWorkAndReturnSharesSeparate(GameTestHelper h) {
         GameTestSupport.platform(h, 24);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -241,7 +241,7 @@ public final class ResourceJourneyTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_32, maxTicks = 600)
     public void aVisitThatFindsNothingForgetsTheSite(GameTestHelper h) {
         GameTestSupport.platformAt(h, 500, 32);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 501, 2);
@@ -305,56 +305,36 @@ public final class ResourceJourneyTests {
         public void onCancelled(int id, String tool, String reason) {}
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 40)
     public void disabledExpeditionsDoNotRequestChunkTickets(GameTestHelper h) {
-        GameTestSupport.platform(h, 8);
-        var state = GameTestSupport.runtime(h.getLevel().getServer());
-        var config = state.config();
-        boolean oldExpeditions = config.tasks.resources.allowExpeditions;
-        config.tasks.resources.allowExpeditions = false;
-        state.applyConfig(config);
-        var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
-        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
-        companion.setOwner(owner.getUUID());
-        ExpeditionChunkHorizon horizon = state.chunkLoader().expeditionHorizon();
-        var lease = horizon.request(owner.getUUID(), h.getLevel(), new ChunkPos(128, 128));
-        h.assertTrue(lease.expired() && !lease.ready(), "disabled expedition should stop at the local frontier");
-        h.assertTrue(
-                horizon.activeLeases() == 0 && horizon.ticketKeys() == 0, "disabled request must not hold tickets");
-        lease.close();
-        config.tasks.resources.allowExpeditions = oldExpeditions;
-        state.applyConfig(config);
+        var level = h.getLevel();
+        var horizon = new ExpeditionChunkHorizon(level.getServer(), () -> false);
+        var chunk = ChunkPos.containing(h.absolutePos(BlockPos.ZERO));
+        try (var lease = horizon.request(UUID.randomUUID(), level, chunk)) {
+            h.assertTrue(lease.expired() && !lease.ready(), "disabled expedition should stop at the local frontier");
+            h.assertTrue(
+                    horizon.activeLeases() == 0 && horizon.ticketKeys() == 0, "disabled request must not hold tickets");
+        }
         h.succeed();
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 40)
     public void cancelledJourneyReleasesHorizonIdempotently(GameTestHelper h) {
-        GameTestSupport.platform(h, 8);
-        var state = GameTestSupport.runtime(h.getLevel().getServer());
-        var config = state.config();
-        boolean oldExpeditions = config.tasks.resources.allowExpeditions;
-        boolean oldChunkLoading = config.companion.chunkLoading.enabled;
-        config.tasks.resources.allowExpeditions = true;
-        config.companion.chunkLoading.enabled = true;
-        state.applyConfig(config);
-        var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
-        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
-        companion.setOwner(owner.getUUID());
-        ExpeditionChunkHorizon horizon = state.chunkLoader().expeditionHorizon();
-        var lease = horizon.request(owner.getUUID(), h.getLevel(), new ChunkPos(128, 128));
-        h.assertTrue(horizon.activeLeases() == 1 && horizon.ticketKeys() == 1, "next leg should have one ticket");
-        lease.close();
-        lease.close();
-        h.assertTrue(
-                horizon.activeLeases() == 0 && horizon.ticketKeys() == 0,
-                "repeated cancel should release exactly once");
-        config.tasks.resources.allowExpeditions = oldExpeditions;
-        config.companion.chunkLoading.enabled = oldChunkLoading;
-        state.applyConfig(config);
+        var level = h.getLevel();
+        var horizon = new ExpeditionChunkHorizon(level.getServer(), () -> true);
+        var chunk = ChunkPos.containing(h.absolutePos(BlockPos.ZERO));
+        try (var lease = horizon.request(UUID.randomUUID(), level, chunk)) {
+            h.assertTrue(horizon.activeLeases() == 1 && horizon.ticketKeys() == 1, "next leg should have one ticket");
+            lease.close();
+            lease.close();
+            h.assertTrue(
+                    horizon.activeLeases() == 0 && horizon.ticketKeys() == 0,
+                    "repeated cancel should release exactly once");
+        }
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void trailOnlyKnowledgeIsWrittenByTheRuntimeFlush(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2).getUUID();
@@ -389,7 +369,10 @@ public final class ResourceJourneyTests {
      * Closes and rebuilds the server runtime to simulate a restart, so it must not share a batch with any other test:
      * every test in its batch would lose the runtime it already holds. Its own test environment gives it its own batch.
      */
-    @GameTest(maxTicks = 2400, environment = "friendai-gametest:restart_resource_journey")
+    @GameTest(
+            structure = GameTestArenas.ARENA_64,
+            maxTicks = 2400,
+            environment = "friendai-gametest:restart_resource_journey")
     public void passCoalRestartAskThenReturnAndCollect(GameTestHelper h) {
         GameTestSupport.platformAt(h, 300, 64);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 301, 2);
@@ -481,7 +464,7 @@ public final class ResourceJourneyTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_64, maxTicks = 2400)
     public void unknownIronCrossesChunksWithoutXray(GameTestHelper h) {
         GameTestSupport.platformAt(h, 200, 64);
         int startX = -1;
@@ -594,7 +577,7 @@ public final class ResourceJourneyTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_64, maxTicks = 2400)
     public void visitThenMineReplansFromObservedInventory(GameTestHelper h) {
         GameTestSupport.platformAt(h, 100, 64);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 101, 2);

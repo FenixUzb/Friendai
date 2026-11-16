@@ -59,9 +59,9 @@ import net.minecraft.world.phys.Vec3;
 public class PathingTests {
 
     // Reserve the actual fixture footprint so the structure grid cannot place other tests inside it.
-    private static final String ARENA = "friendai-gametest:pathing_arena";
+    private static final String ARENA = "friendai-gametest:arena_24";
     private static final String WIDE_ARENA = "friendai-gametest:pathing_wide";
-    private static final String FOLLOW_ARENA = "friendai-gametest:pathing_follow";
+    private static final String FOLLOW_ARENA = "friendai-gametest:arena_100";
     private static final String SHORT_CORRIDOR = "friendai-gametest:pathing_short_corridor";
     private static final String LONG_CORRIDOR = "friendai-gametest:pathing_long_corridor";
 
@@ -586,21 +586,27 @@ public class PathingTests {
         });
     }
 
-    @GameTest(structure = ARENA, maxTicks = 1200)
+    @GameTest(structure = ARENA, maxTicks = 1200, environment = "friendai-gametest:pathing_plank_wall")
     public void goToWalksAroundPlankWall(GameTestHelper h) {
-        GameTestSupport.platform(h, 16);
+        int floor = 160;
+        GameTestSupport.platformAt(h, floor, 16);
+        GameTestSupport.enclose(h, floor, 16, 3);
         for (int z = 1; z <= 12; z++) {
-            for (int y = 2; y <= 4; y++) {
+            for (int y = floor + 1; y <= floor + 3; y++) {
                 h.setBlock(8, y, z, Blocks.OAK_PLANKS);
             }
         }
-        CompanionEntity c = walker(h, 2, 2, 8);
+        CompanionEntity c = platformWalker(h, floor, 2, 8);
         Outcome out = new Outcome();
-        walkTo(c, h, out, 13.5, 2, 8.5);
+        walkTo(c, h, out, 13.5, floor + 1, 8.5);
         h.succeedWhen(() -> {
-            h.assertTrue(out.status == TaskStatus.SUCCESS, "go_to did not finish: " + out.why());
+            h.assertTrue(
+                    out.status == TaskStatus.SUCCESS,
+                    "go_to did not finish: " + out.why() + " at " + c.position() + " after " + c.tickCount
+                            + " entity ticks, alive=" + c.isAlive() + ", removed=" + c.getRemovalReason()
+                            + ", suspended=" + c.executionCoordinator().suspended());
             for (int z = 1; z <= 12; z++) {
-                for (int y = 2; y <= 4; y++) {
+                for (int y = floor + 1; y <= floor + 3; y++) {
                     assertBlock(h, 8, y, z, Blocks.OAK_PLANKS, "wall");
                 }
             }

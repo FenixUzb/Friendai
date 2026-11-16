@@ -25,7 +25,7 @@ import net.minecraft.world.phys.Vec3;
  * that walks out of them silently stops.
  */
 public class PaceTests {
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 400)
     public void followRunsWhenOwnerPullsAway(GameTestHelper h) {
         int floor = 60;
         GameTestSupport.platformAt(h, floor, 20);
@@ -46,7 +46,7 @@ public class PaceTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 200)
     public void runModeSprintsOnGoTo(GameTestHelper h) {
         int floor = 70;
         GameTestSupport.platformAt(h, floor, 20);
@@ -56,7 +56,7 @@ public class PaceTests {
         h.succeedWhen(() -> h.assertTrue(c.isSprinting(), "not sprinting while walking to the target"));
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 300)
     public void walkModeNeverSprints(GameTestHelper h) {
         int floor = 80;
         GameTestSupport.platformAt(h, floor, 20);
@@ -75,7 +75,7 @@ public class PaceTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 300)
     public void sprintClearsWhenIdle(GameTestHelper h) {
         int floor = 90;
         GameTestSupport.platformAt(h, floor, 20);
@@ -121,7 +121,7 @@ public class PaceTests {
     }
 
     /** Two companions on side-by-side lanes race over the same distance; the runner needs well under 1/1.2 of the walker's time. */
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 300)
     public void runIsFasterThanWalk(GameTestHelper h) {
         int floor = 120;
         GameTestSupport.platformAt(h, floor, 20);

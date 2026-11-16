@@ -134,7 +134,7 @@ public class TreeFellingTests {
      * A live battery: "chop some wood" right after the companion was summoned failed with "no tree within 32 blocks"
      * beside an oak eleven blocks off. The companion had not looked around yet; it now looks long enough to see it.
      */
-    @GameTest(maxTicks = 3000, skyAccess = true)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 3000, skyAccess = true)
     public void aFreshCompanionFindsTheTreeInPlainView(GameTestHelper h) {
         GameTestSupport.platform(h, 20);
         var leaves = Blocks.OAK_LEAVES
@@ -169,7 +169,7 @@ public class TreeFellingTests {
     }
 
     /** A starved observer may finish a pending sweep after the ordinary search deadline. */
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void treeSearchWaitsForPendingObservationButEventuallyStops(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 3, 2, 3);
@@ -194,7 +194,7 @@ public class TreeFellingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 7000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 7000)
     public void tallDarkOakFallsFromTheCrown(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         java.util.List<BlockPos> logs = new java.util.ArrayList<>();
@@ -245,7 +245,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void aTreeWithNoUsableClimbIsCutFromTheGround(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> logs = new java.util.ArrayList<>();
@@ -279,7 +279,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void safelyCutsTreeLogUnderItsFeet(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos log = new BlockPos(6, 2, 6);
@@ -305,7 +305,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void shortTreeWithoutScaffoldCutsReachableLogsFromTheBase(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> logs = new java.util.ArrayList<>();
@@ -331,7 +331,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void shortTreeWithScaffoldIsCutFromTheBase(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> logs = new java.util.ArrayList<>();
@@ -358,7 +358,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void fellsWholeTree(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int y = 2; y <= 6; y++) {
@@ -394,7 +394,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 4000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 4000)
     public void tallTreeLeavesNoScaffoldBlocks(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int y = 2; y <= 10; y++) {
@@ -431,7 +431,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 4000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 4000)
     public void startsAtTheTopLog(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int y = 2; y <= 10; y++) {
@@ -450,7 +450,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void limitStopsEarly(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int y = 2; y <= 6; y++) {
@@ -470,7 +470,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void finishesFloatingLeftovers(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(new BlockPos(6, 5, 6), Blocks.OAK_LOG);
@@ -487,7 +487,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void reportsPartialWhenALogIsProtected(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int y = 2; y <= 5; y++) {
@@ -511,7 +511,7 @@ public class TreeFellingTests {
     }
 
     /** One protected log of nine must not discard the eight that came down; the shortfall names its real reason. */
-    @GameTest(maxTicks = 4000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 4000)
     public void oneProtectedLogOfNineStillSucceeds(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> logs = new java.util.ArrayList<>();
@@ -550,7 +550,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void doesNotFellALogStructure(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int x = 9; x <= 13; x++) {
@@ -591,7 +591,7 @@ public class TreeFellingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 400)
     public void fellsTreeNearTheSpeaker(GameTestHelper h) {
         GameTestSupport.platform(h, 20);
         for (int y = 2; y <= 5; y++) {
@@ -662,7 +662,7 @@ public class TreeFellingTests {
     }
 
     /** The search origin is the companion: no {@code near} must never mean the owner's position. */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void defaultsToTheTreeNearTheCompanion(GameTestHelper h) {
         CompanionEntity c = twoTreeArena(h, 1.5, 2, 1.5);
         var owner = new Caller(c.ownerUuid(), "owner", AccessLevel.OWNER);
@@ -687,7 +687,7 @@ public class TreeFellingTests {
     }
 
     /** An owner more than 64 blocks away is not an origin: the job starts around the companion. */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void startsWhenTheOwnerIsFarAway(GameTestHelper h) {
         CompanionEntity c = twoTreeArena(h, 100.5, 2, 100.5);
         var owner = new Caller(c.ownerUuid(), "owner", AccessLevel.OWNER);
@@ -700,7 +700,7 @@ public class TreeFellingTests {
     }
 
     /** An owner who is offline cannot be the origin either: a reflex plan has no speaker at all. */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void startsWhenTheOwnerIsOffline(GameTestHelper h) {
         CompanionEntity c = twoTreeArena(h, java.util.UUID.randomUUID());
         var anonymous = new Caller(null, "", AccessLevel.TRUSTED);
@@ -713,7 +713,7 @@ public class TreeFellingTests {
     }
 
     /** "near me" still needs a speaker; without one the model is told how to proceed, not sent to the owner. */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void nearMeWithoutASpeakerIsRefused(GameTestHelper h) {
         CompanionEntity c = twoTreeArena(h, 1.5, 2, 1.5);
         var anonymous = new Caller(null, "", AccessLevel.TRUSTED);
@@ -723,7 +723,7 @@ public class TreeFellingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void mineBlocksNearTheSpeaker(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(new BlockPos(10, 2, 10), Blocks.DARK_PRISMARINE); // next to the speaker
@@ -751,7 +751,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void findTreesListsTheNearest(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int y = 2; y <= 5; y++) {
@@ -779,7 +779,7 @@ public class TreeFellingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void findTreesAroundTheSpeaker(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int y = 2; y <= 5; y++) {
@@ -810,7 +810,7 @@ public class TreeFellingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void finderDescendsToTheBase(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int y = 2; y <= 10; y++) {
@@ -832,22 +832,22 @@ public class TreeFellingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_64, maxTicks = 400)
     public void classifiesLeftovers(GameTestHelper h) {
-        GameTestSupport.platform(h, 16);
-        for (int y = 2; y <= 4; y++) {
-            h.setBlock(new BlockPos(3, y, 3), Blocks.BIRCH_LOG); // supported 1x1: stump
+        GameTestSupport.platformAt(h, 200, 40);
+        for (int y = 201; y <= 203; y++) {
+            h.setBlock(new BlockPos(19, y, 19), Blocks.BIRCH_LOG); // supported 1x1: stump
         }
-        h.setBlock(new BlockPos(6, 5, 3), Blocks.SPRUCE_LOG); // air below: floating
-        h.setBlock(new BlockPos(6, 6, 3), Blocks.SPRUCE_LOG);
-        for (int x = 9; x <= 11; x++) {
-            for (int z = 10; z <= 12; z++) {
-                for (int y = 2; y <= 4; y++) {
+        h.setBlock(new BlockPos(22, 204, 19), Blocks.SPRUCE_LOG); // air below: floating
+        h.setBlock(new BlockPos(22, 205, 19), Blocks.SPRUCE_LOG);
+        for (int x = 25; x <= 27; x++) {
+            for (int z = 26; z <= 28; z++) {
+                for (int y = 201; y <= 203; y++) {
                     h.setBlock(new BlockPos(x, y, z), Blocks.PALE_OAK_LOG); // footprint 9: structure
                 }
             }
         }
-        BlockPos origin = h.absolutePos(new BlockPos(2, 2, 2));
+        BlockPos origin = h.absolutePos(new BlockPos(18, 201, 18));
         List<TreeFinder.TreeInfo> found = ofType(
                 TreeFinder.find(h.getLevel(), origin, 16, 16, 32, null, 20, false),
                 "birch_log",
@@ -860,7 +860,7 @@ public class TreeFellingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void treesSortBeforeStructures(GameTestHelper h) {
         // Keep the scan volume above terrain trees outside the small test platform.
         GameTestSupport.platformAt(h, 100, 16);
@@ -882,7 +882,7 @@ public class TreeFellingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void acaciaTreeIsFelledCompletely(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         int[][] logs = {{6, 2, 9}, {6, 3, 9}, {7, 3, 9}, {7, 4, 9}, {5, 3, 9}, {5, 4, 9}};
@@ -915,7 +915,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 120)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 120)
     public void findTreesAfterTheObservationTick(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int y = 2; y <= 4; y++) h.setBlock(new BlockPos(6, y, 6), Blocks.ACACIA_LOG);
@@ -933,7 +933,7 @@ public class TreeFellingTests {
     }
 
     /** A log walled in by stone is not a log behind leaves: the feller must not dig the stone. */
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void doesNotDigStoneToReachALog(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(new BlockPos(6, 2, 6), Blocks.OAK_LOG);
@@ -959,7 +959,7 @@ public class TreeFellingTests {
     }
 
     /** The trunk of the test tree is wrapped in persistent leaves; every log must still come down. */
-    @GameTest(maxTicks = 3000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 3000)
     public void leafCoveredLogIsUncoveredAndCut(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> logs = new java.util.ArrayList<>();
@@ -997,7 +997,7 @@ public class TreeFellingTests {
     }
 
     /** The first tree is too short for the amount asked; the companion must fell a second one to top the count up. */
-    @GameTest(maxTicks = 6000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 6000)
     public void fellLogsTopsUpAcrossTrees(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> first = new java.util.ArrayList<>();
@@ -1046,7 +1046,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 1800)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 1800)
     public void prefersAReachableLowTreeForLumber(GameTestHelper h) {
         int surfaceY = 60;
         GameTestSupport.platformAt(h, surfaceY, 20);
@@ -1114,7 +1114,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 3600)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 3600)
     public void gathersPartialTreeThenUsesAnotherTree(GameTestHelper h) {
         int surfaceY = 60;
         GameTestSupport.platformAt(h, surfaceY, 20);
@@ -1190,7 +1190,7 @@ public class TreeFellingTests {
     }
 
     /** A row of loose logs is no tree: the search gives up and the count miner gathers them, and the summary says so. */
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void fellLogsMinesLooseLogsWhenNoTreeStands(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> loose = new java.util.ArrayList<>();
@@ -1219,7 +1219,7 @@ public class TreeFellingTests {
     }
 
     /** A tall jungle tree with side branches: every log, branch included, must come down. */
-    @GameTest(maxTicks = 6000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 6000)
     public void wideBranchedTreeFallsCompletely(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> logs = new java.util.ArrayList<>();
@@ -1270,7 +1270,7 @@ public class TreeFellingTests {
                 type, absolute, absolute.get(0), height, TreeFinder.Kind.STANDING_TREE, 8.0, "south-east");
     }
 
-    @GameTest(maxTicks = 5000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 5000)
     public void branchingJungleGiantFallsFromTheCrown(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> logs = new java.util.ArrayList<>();
@@ -1316,7 +1316,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void refusesATreeTallerThanItsScaffold(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> logs = new java.util.ArrayList<>();
@@ -1340,7 +1340,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void refusesWithoutScaffoldMaterial(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> logs = new java.util.ArrayList<>();
@@ -1363,7 +1363,7 @@ public class TreeFellingTests {
         });
     }
 
-    @GameTest(maxTicks = 6000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 6000)
     public void cancelledFellingTakesItsScaffoldDown(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> logs = new java.util.ArrayList<>();
@@ -1407,7 +1407,7 @@ public class TreeFellingTests {
      * The owner pointed at the crown: the sight cache holds the top logs only, and the expansion must still reach the
      * foot, or the companion would cut the crown and leave a 22-block stump.
      */
-    @GameTest(maxTicks = 12000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 12000)
     public void crownSeedStillFellsTheWholeTrunk(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> logs = new java.util.ArrayList<>();
@@ -1470,7 +1470,7 @@ public class TreeFellingTests {
      * A log on a canopy leaf is out of every walkable reach; the felling must break the leaf it rests on so the item
      * falls where the sweep can take it. The leaf sits beside a small tree, inside the felling's reach from the ground.
      */
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void theLeafUnderAStrandedDropIsBroken(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> cells = strandedTree(h);
@@ -1507,7 +1507,7 @@ public class TreeFellingTests {
     }
 
     /** An item the owner dropped at the foot is not this felling's product and must survive. */
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void aForeignItemAtTheFootIsLeftAlone(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> cells = strandedTree(h);
@@ -1529,7 +1529,7 @@ public class TreeFellingTests {
     }
 
     /** A protected leaf must stop the rescue: no break, no retry, and the drop stays where it is. */
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void aProtectedLeafStopsTheRescue(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> cells = strandedTree(h);
@@ -1554,7 +1554,7 @@ public class TreeFellingTests {
      * The stance comes from the plan, one per layer: two logs of the same layer are cut without moving, and every
      * break happens from an interaction reach.
      */
-    @GameTest(maxTicks = 4000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 4000)
     public void aLayerIsCutFromOneStance(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> logs = new java.util.ArrayList<>();

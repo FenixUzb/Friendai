@@ -51,7 +51,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 public class CompanionControlTests {
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void teleportDoesNotReturnToTheCancelledWorkSite(GameTestHelper h) {
         int floor = 50;
         GameTestSupport.platformAt(h, floor, 16);
@@ -118,7 +118,7 @@ public class CompanionControlTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void teleportAcrossDimensionsKeepsOneCompanion(GameTestHelper h) {
         var nether = h.getLevel().getServer().getLevel(Level.NETHER);
         if (nether == null) {
@@ -168,7 +168,7 @@ public class CompanionControlTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void teleportMenuActionMovesTheCompanion(GameTestHelper h) {
         int floor = 30;
         GameTestSupport.platformAt(h, floor, 16);
@@ -199,7 +199,7 @@ public class CompanionControlTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void summonExistingCompanionDoesNotTeleport(GameTestHelper h) {
         int floor = 20;
         GameTestSupport.platformAt(h, floor, 16);
@@ -289,7 +289,7 @@ public class CompanionControlTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 900)
     public void taskHistoryRecordsFinishedTask(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(new BlockPos(4, 2, 2), Blocks.CHERRY_LOG);
@@ -336,14 +336,13 @@ public class CompanionControlTests {
         });
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(environment = "friendai-gametest:control_log_credentials", maxTicks = 100)
     public void logNeverContainsConfiguredApiKey(GameTestHelper h) {
         String key = "sk-test-12345678";
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
         var server = h.getLevel().getServer();
         ServerRuntime state = GameTestSupport.runtime(server);
-        ServerConfig original = state.config();
-        ServerConfig withKey = ServerConfig.defaults();
+        ServerConfig withKey = state.config();
         withKey.profiles.get(withKey.activeProfile).apiKey = key;
         state.applyConfig(withKey);
         CompanionSessions brains = state.sessions();
@@ -356,7 +355,6 @@ public class CompanionControlTests {
             List<LogEntry> log = brains.debug().logOf(player.getUUID()).after(0, 50);
             h.assertTrue(log.stream().anyMatch(e -> e.kind() == LogKind.ASSISTANT), "no ASSISTANT entry yet");
             h.assertTrue(log.stream().noneMatch(e -> e.text().contains(key)), "key leaked into the log: " + log);
-            state.applyConfig(original);
         });
     }
 
@@ -666,7 +664,7 @@ public class CompanionControlTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void diagnoseWritesForTheOwner(GameTestHelper h) {
         GameTestSupport.platformAt(h, 70, 16);
         var owner = GameTestSupport.onlinePlayer(h, "diagnose-owner", 2, 71, 2, true);

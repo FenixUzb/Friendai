@@ -21,7 +21,7 @@ import net.minecraft.world.level.block.Blocks;
 
 /** Brewing through the real stand menu: a supported chain, a resumed stand and a typed missing-input refusal. */
 public class BrewingTests {
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void brewsStrengthAtAFoundStand(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         BlockPos stand = new BlockPos(4, 2, 3);
@@ -52,7 +52,7 @@ public class BrewingTests {
         });
     }
 
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 900)
     public void aHalfFinishedStandSkipsTheCompletedStep(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         BlockPos stand = new BlockPos(4, 2, 3);
@@ -79,7 +79,7 @@ public class BrewingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void aMissingWaterBottleIsOneNamedRefusal(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         BlockPos stand = new BlockPos(4, 2, 3);

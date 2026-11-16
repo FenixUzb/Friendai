@@ -34,12 +34,18 @@ import net.minecraft.world.phys.Vec3;
 
 /** Search over target kinds, terrain scoring, the owner escort, and a clean budget failure. */
 public final class TargetSearchTests {
-    @GameTest(maxTicks = 400)
+    @GameTest(maxTicks = 400, structure = GameTestArenas.ARENA_100)
     public void choosesLandEastOverTheSea(GameTestHelper h) {
-        GameTestSupport.platformAt(h, 300, 56);
-        GameTestSupport.keepLoaded(h, -40, -4, 64, 64);
+        int shoreX = 32;
+        GameTestSupport.keepLoaded(h, -8, -4, shoreX + 64, 64);
+        for (int x = shoreX; x < shoreX + 56; x++) {
+            for (int z = 0; z < 56; z++) {
+                h.setBlock(x, 300, z, Blocks.STONE);
+                for (int y = 301; y <= 306; y++) h.setBlock(x, y, z, Blocks.AIR);
+            }
+        }
         // Ocean west of the platform: a 3x3 sample on those frontiers is water.
-        for (int x = -32; x < 0; x++) {
+        for (int x = 0; x < shoreX; x++) {
             for (int z = 0; z < 56; z++) {
                 h.setBlock(x, 299, z, Blocks.STONE);
                 h.setBlock(x, 300, z, Blocks.WATER);
@@ -48,15 +54,15 @@ public final class TargetSearchTests {
         }
         // A forest edge east, hidden behind a wall from the starting viewpoint.
         for (int z = 0; z <= 14; z++) {
-            for (int y = 301; y <= 307; y++) h.setBlock(28, y, z, Blocks.STONE);
+            for (int y = 301; y <= 307; y++) h.setBlock(shoreX + 28, y, z, Blocks.STONE);
         }
-        for (int x = 36; x <= 39; x++) {
+        for (int x = shoreX + 36; x <= shoreX + 39; x++) {
             for (int z = 0; z <= 4; z++) {
                 for (int y = 301; y <= 304; y++) h.setBlock(x, y, z, Blocks.OAK_LOG);
             }
         }
-        var owner = GameTestSupport.mockPlayerAt(h, 4, 301, 4);
-        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 4, 301, 4);
+        var owner = GameTestSupport.mockPlayerAt(h, shoreX + 4, 301, 4);
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, shoreX + 4, 301, 4);
         companion.setOwner(owner.getUUID());
         Result result = new Result();
         companion.executionCoordinator().setEventSink(result);
@@ -87,7 +93,7 @@ public final class TargetSearchTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(maxTicks = 400, structure = GameTestArenas.ARENA_32)
     public void waitsForALaggingOwnerAndResumes(GameTestHelper h) {
         GameTestSupport.platform(h, 32);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -110,7 +116,8 @@ public final class TargetSearchTests {
         h.succeedWhen(() -> {
             step[0]++;
             if (step[0] == 8) {
-                Vec3 far = h.absoluteVec(new Vec3(80, 2, 80));
+                // The escort measures three-dimensional distance. Keep the owner above the same arena.
+                Vec3 far = h.absoluteVec(new Vec3(2, 112, 2));
                 owner.teleportTo(far.x, far.y, far.z);
             } else if (step[0] == 24) {
                 String summary = companion
@@ -138,7 +145,7 @@ public final class TargetSearchTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(maxTicks = 600, structure = GameTestArenas.ARENA_16)
     public void failsCleanlyInsideItsBudget(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -146,11 +153,12 @@ public final class TargetSearchTests {
         companion.setOwner(owner.getUUID());
         String dimension = h.getLevel().dimension().identifier().toString();
         long now = h.getLevel().getServer().overworld().getGameTime();
+        BlockPos origin = companion.blockPosition();
         var session = new SearchSession(
                 UUID.randomUUID(),
                 dimension,
                 "biome:minecraft:the_void",
-                new Pos(2, 2, 2),
+                new Pos(origin.getX(), origin.getY(), origin.getZ()),
                 new SearchSession.Limits(32, 128, 160, 32),
                 now);
         var target = new TargetKind.Biome("minecraft:the_void", 32);
@@ -170,12 +178,13 @@ public final class TargetSearchTests {
             h.assertTrue(result.status != null, "search should stop inside its budget");
             h.assertTrue(result.status == TaskStatus.FAILED, "status " + result.status + " " + result.summary);
             h.assertTrue(
-                    result.summary.contains("no directly visible") || result.summary.contains("budget"),
+                    result.summary.contains("no confirmed evidence for the minecraft:the_void biome")
+                            || result.summary.contains("budget"),
                     "failure must name the reason: " + result.summary);
         });
     }
 
-    @GameTest(maxTicks = 80)
+    @GameTest(maxTicks = 80, structure = GameTestArenas.ARENA_16)
     public void resourceSearchHasNoResumableTaskCheckpoint(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -206,7 +215,7 @@ public final class TargetSearchTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 120)
+    @GameTest(maxTicks = 120, structure = GameTestArenas.ARENA_16)
     public void findsAVillageMarkerAndTheCurrentBiome(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -277,7 +286,7 @@ public final class TargetSearchTests {
         });
     }
 
-    @GameTest(maxTicks = 120)
+    @GameTest(maxTicks = 120, structure = GameTestArenas.ARENA_16)
     public void findsARememberedPlace(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -316,7 +325,7 @@ public final class TargetSearchTests {
         });
     }
 
-    @GameTest(maxTicks = 120)
+    @GameTest(maxTicks = 120, structure = GameTestArenas.ARENA_16)
     public void aRememberedStructureIsAReusableTravelTarget(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.onlinePlayer(h, "structure-owner", 2, 2, 2, true)
@@ -359,7 +368,7 @@ public final class TargetSearchTests {
         });
     }
 
-    @GameTest(maxTicks = 80)
+    @GameTest(maxTicks = 80, structure = GameTestArenas.ARENA_16)
     public void aStrongholdSearchSpendsOneEyeAsAHint(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.onlinePlayer(h, "stronghold-owner", 2, 2, 2, true)

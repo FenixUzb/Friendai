@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.Blocks;
 /** Verifies settings snapshots are captured by new tasks without changing work already constructed. */
 public class ConfigurationApplyTests {
 
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 40)
     public void newMiningTasksUseUpdatedSearchRadius(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

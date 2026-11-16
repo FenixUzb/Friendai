@@ -401,7 +401,7 @@ public final class QueueTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void aTaskThatFinishesFarFromTheOwnerStillReportsTheOwnerDistanceDelta(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         // A live owner, because the distance fact is read through the player list.

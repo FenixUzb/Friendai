@@ -86,7 +86,7 @@ public class DropPickupTests {
         return runner;
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void waitingDiagnosticsUseCachedDropFacts(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -126,7 +126,7 @@ public class DropPickupTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void roundDiagnosticsKeepBoundedLeftoversAndTotals(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -207,7 +207,7 @@ public class DropPickupTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void collectorWalksToADrop(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -220,7 +220,7 @@ public class DropPickupTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void collectorWaitsForPickupDelay(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -249,7 +249,7 @@ public class DropPickupTests {
         });
     }
 
-    @GameTest(maxTicks = 220)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 220)
     public void collectorTakesADropAboveMagmaWithoutSteppingOnIt(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -286,7 +286,7 @@ public class DropPickupTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 220)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 220)
     public void collectorSkipsUnreachableDrop(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -324,7 +324,7 @@ public class DropPickupTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void collectorDefersWhileAHostileIsNear(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -350,7 +350,7 @@ public class DropPickupTests {
         });
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void settleCollectsAtFeet(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

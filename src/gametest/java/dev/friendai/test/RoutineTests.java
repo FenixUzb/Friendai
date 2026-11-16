@@ -36,7 +36,7 @@ import net.minecraft.world.level.storage.ServerLevelData;
 
 /** Owner-defined routines through the real server driver, queue and world tasks. */
 public final class RoutineTests {
-    @GameTest(maxTicks = 1_800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1_800)
     public void morningRoutineFeedsAndMinesOnce(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         MinecraftServer server = h.getLevel().getServer();
@@ -108,7 +108,7 @@ public final class RoutineTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void ownerOrderComesFirst(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         MinecraftServer server = h.getLevel().getServer();
@@ -155,7 +155,7 @@ public final class RoutineTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void dormantOwnerWorkDoesNotDelayTheRoutine(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         MinecraftServer server = h.getLevel().getServer();
@@ -202,7 +202,7 @@ public final class RoutineTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void aManualPauseHoldsTheRoutineBack(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         MinecraftServer server = h.getLevel().getServer();
@@ -237,7 +237,7 @@ public final class RoutineTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 900)
     public void anExplicitReportTellsTheOwnerOnce(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         MinecraftServer server = h.getLevel().getServer();
@@ -263,7 +263,7 @@ public final class RoutineTests {
         });
     }
 
-    @GameTest(maxTicks = 1_200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1_200)
     public void aRepeatedFailureIsReportedOnce(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         MinecraftServer server = h.getLevel().getServer();
@@ -318,7 +318,7 @@ public final class RoutineTests {
         return args;
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void aCancelledRoutineDispatchesNothing(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         MinecraftServer server = h.getLevel().getServer();
@@ -352,7 +352,7 @@ public final class RoutineTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void disabledAutonomyPausesDispatchOnce(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         MinecraftServer server = h.getLevel().getServer();
@@ -395,7 +395,7 @@ public final class RoutineTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void aMissedWindowIsSkippedInsteadOfReplayed(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         MinecraftServer server = h.getLevel().getServer();
@@ -437,7 +437,7 @@ public final class RoutineTests {
     }
 
     /** Sleeping through the night moves the day clock; a morning routine must still fire that morning, once. */
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void aMorningRoutineFollowsTheDayClockAcrossSleep(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         MinecraftServer server = h.getLevel().getServer();

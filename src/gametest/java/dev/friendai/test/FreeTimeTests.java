@@ -42,6 +42,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
 
 public class FreeTimeTests {
     private record MockOwner(net.minecraft.server.level.ServerPlayer player, EmbeddedChannel channel) {}
@@ -116,12 +117,6 @@ public class FreeTimeTests {
         }
     }
 
-    /** The reflex tests that need daylight set it explicitly; the GameTest world may have started at night. */
-    private static void noon(GameTestHelper h) {
-        var server = h.getLevel().getServer();
-        server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "time set noon");
-    }
-
     private static Container chest(GameTestHelper h, int x, int y, int z) {
         return (Container) h.getLevel().getBlockEntity(h.absolutePos(new BlockPos(x, y, z)));
     }
@@ -140,7 +135,7 @@ public class FreeTimeTests {
         return InventoryOps.count(c.inventory(), ItemMatcher.parse(id).orElseThrow());
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void depositLikeWithLike(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -333,7 +328,7 @@ public class FreeTimeTests {
         return plan;
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void unloadReflex(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -373,7 +368,7 @@ public class FreeTimeTests {
         });
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void anUpdatedMineFollowsTheNewDig(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = companion(h);
@@ -486,7 +481,7 @@ public class FreeTimeTests {
      * the owner standing next to the companion. The owner's return order does stop it: the brain's {@code stop} call
      * ends free time, releases the shift's plan and leaves the companion under the owner's orders.
      */
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void theOwnersReturnOrderStopsTheShift(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var player = GameTestSupport.mockPlayerAt(h, 12, 2, 12);
@@ -721,7 +716,7 @@ public class FreeTimeTests {
 
     /** An owner who is online, whose brain never reaches a real model. */
     private static CompanionEntity onlineCompanion(GameTestHelper h) {
-        var player = GameTestSupport.mockPlayerAt(h, 3, 2, 3);
+        var player = mockOwner(h).player();
         var brains = GameTestSupport.runtime(h.getLevel().getServer()).sessions();
         brains.setGatewayOverride(
                 player.getUUID(),
@@ -751,10 +746,9 @@ public class FreeTimeTests {
         });
     }
 
-    @GameTest(maxTicks = 900)
+    @GameTest(environment = "friendai-gametest:free_time_daylight", structure = GameTestArenas.ARENA_16, maxTicks = 900)
     public void farmCreationRegistersPlace(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
-        noon(h);
         CompanionEntity c = onlineCompanion(h);
         UUID owner = c.ownerUuid();
         housePlace(h, c, "home", 4, 2, 4, 6);
@@ -782,7 +776,7 @@ public class FreeTimeTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void anAutoMineDoesNotProtectItsOwnSite(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(5, 2, 5, Blocks.DIORITE);
@@ -839,17 +833,13 @@ public class FreeTimeTests {
     }
 
     /** A silent director must not leave an hour empty: after the grace window a template starts. */
-    @GameTest(maxTicks = 500)
+    @GameTest(environment = "friendai-gametest:free_time_watchdog", maxTicks = 500)
     public void silentDirectorFallsBack(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity c = onlineCompanion(h);
         UUID owner = c.ownerUuid();
         var serverState = GameTestSupport.runtime(h.getLevel().getServer());
-        var gson = new com.google.gson.Gson();
-        var originalConfig =
-                gson.fromJson(gson.toJson(serverState.config()), dev.friendai.infrastructure.config.ServerConfig.class);
-        var shortWatchdogConfig =
-                gson.fromJson(gson.toJson(originalConfig), dev.friendai.infrastructure.config.ServerConfig.class);
+        var shortWatchdogConfig = serverState.config();
         shortWatchdogConfig.tasks.freeTimeWatchdogSec = 1;
         serverState.applyConfig(shortWatchdogConfig);
         driver(h).start(c, dev.friendai.agent.autonomy.FreeTime.Origin.COMMAND, "");
@@ -860,12 +850,11 @@ public class FreeTimeTests {
                             || !c.executionCoordinator().queue().plans().isEmpty()
                             || state.awaitingChoice(),
                     "the silent director does not leave free time idle: " + state);
-            serverState.applyConfig(originalConfig);
             driver(h).stop(owner, "test over");
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(environment = "friendai-gametest:free_time_daylight", maxTicks = 300)
     public void directorShift(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity c = onlineCompanion(h);
@@ -926,7 +915,7 @@ public class FreeTimeTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(environment = "friendai-gametest:free_time_daylight", maxTicks = 300)
     public void latePlanAfterStopIsDropped(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity c = onlineCompanion(h);
@@ -951,7 +940,7 @@ public class FreeTimeTests {
     }
 
     /** A teleport invalidates the planner reply in flight even though the shift itself survives. */
-    @GameTest(maxTicks = 400)
+    @GameTest(environment = "friendai-gametest:free_time_daylight", maxTicks = 400)
     public void latePlanAfterInvalidationIsDropped(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity c = onlineCompanion(h);
@@ -1014,7 +1003,7 @@ public class FreeTimeTests {
     }
 
     /** A proposal that arrives after the body left the world must not queue work for it. */
-    @GameTest(maxTicks = 400)
+    @GameTest(environment = "friendai-gametest:free_time_daylight", maxTicks = 400)
     public void latePlanAfterDeathIsDropped(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity c = onlineCompanion(h);
@@ -1053,7 +1042,7 @@ public class FreeTimeTests {
     }
 
     /** A proposal that arrives after the runtime stopped accepting work must not queue anything. */
-    @GameTest(maxTicks = 400)
+    @GameTest(environment = "friendai-gametest:free_time_shutdown", maxTicks = 400)
     public void latePlanAfterShutdownIsDropped(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity c = onlineCompanion(h);
@@ -1085,7 +1074,7 @@ public class FreeTimeTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void awayLinesWaitForTheOwner(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -1225,7 +1214,7 @@ public class FreeTimeTests {
                         c.level().getGameTime());
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void placeProtected(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(5, 2, 5, Blocks.HONEYCOMB_BLOCK);
@@ -1240,7 +1229,7 @@ public class FreeTimeTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void ownerMayBreakInsideAPlace(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(5, 2, 5, Blocks.MUD_BRICKS);
@@ -1254,7 +1243,7 @@ public class FreeTimeTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void freeTimeBreaksOutsidePlaces(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(11, 2, 11, Blocks.PACKED_MUD);
@@ -1266,7 +1255,7 @@ public class FreeTimeTests {
                 "free time breaks outside places: " + outside.last));
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void takeOutsidePlaceRefused(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(10, 2, 10, Blocks.CHEST);
@@ -1339,7 +1328,42 @@ public class FreeTimeTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_32, environment = "friendai-gametest:free_time_night", maxTicks = 1800)
+    public void buildsAndEntersShelterNearItselfWithTheOwnerFarAway(GameTestHelper h) {
+        GameTestSupport.platformAt(h, 120, 32);
+        var owner = GameTestSupport.onlinePlayer(h, "shelter", 28, 121, 27, true);
+        CompanionEntity companion = registered(h, owner.id());
+        Vec3 start = h.absoluteVec(new Vec3(12.5, 121, 14.5));
+        companion.snapTo(start.x, start.y, start.z, 0, 0);
+        companion.inventory().addItem(new ItemStack(Items.COBBLESTONE, 64));
+        companion.inventory().addItem(new ItemStack(Items.COBBLESTONE, 32));
+        driver(h).start(companion, dev.friendai.agent.autonomy.FreeTime.Origin.COMMAND, "");
+        h.succeedWhen(() -> {
+            var state = driver(h).state(owner.id());
+            BlockPos feet = companion.blockPosition();
+            h.assertTrue(
+                    feet.distSqr(BlockPos.containing(start)) <= 64
+                            && h.getLevel().getBlockState(feet.above(3)).is(Blocks.COBBLESTONE),
+                    "companion should be inside its new shelter near its starting point: " + feet + " " + state);
+            driver(h).stop(owner.id(), "test over");
+        });
+    }
+
+    @GameTest(environment = "friendai-gametest:free_time_night", maxTicks = 300)
+    public void exposedAtNightWithoutMaterialsStillAsksTheDirector(GameTestHelper h) {
+        GameTestSupport.platform(h, 8);
+        CompanionEntity companion = onlineCompanion(h);
+        h.assertTrue(h.getLevel().isDarkOutside(), "fixture must start at night");
+        h.assertTrue(h.getLevel().canSeeSky(companion.blockPosition()), "fixture must be exposed");
+        driver(h).start(companion, dev.friendai.agent.autonomy.FreeTime.Origin.COMMAND, "");
+        h.succeedWhen(() -> {
+            var state = driver(h).state(companion.ownerUuid());
+            h.assertTrue(state.awaitingChoice(), "without a feasible shelter, ask the director: " + state);
+            driver(h).stop(companion.ownerUuid(), "test over");
+        });
+    }
+
+    @GameTest(environment = "friendai-gametest:free_time_daylight", maxTicks = 200)
     public void directorTurnRefusesOtherTools(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity c = onlineCompanion(h);
@@ -1402,7 +1426,7 @@ public class FreeTimeTests {
      * Free time on: between activities the companion stands where it is. The owner walking away only grows the
      * distance — no default follow starts and the companion does not move.
      */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 400)
     public void freeTimeStandsInsteadOfFollowing(GameTestHelper h) {
         GameTestSupport.platform(h, 24);
         var player = GameTestSupport.mockPlayerAt(h, 3, 2, 3);
@@ -1589,7 +1613,7 @@ public class FreeTimeTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void depositStorageFull(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);

@@ -119,10 +119,8 @@ final class GameTestSupport {
     /**
      * Loads and force-loads the chunks over a test-relative box so the entities in it tick.
      *
-     * <p>A GameTest ticks entities only in the chunk(s) its 8x8 structure covers. A companion or a mob that walks or
-     * is knocked out of them stops ticking completely: it freezes mid-step, keeps its velocity and, for a mob, stays
-     * invulnerable, so a fight against it never lands another hit. The arenas here are larger than 8 blocks, so every
-     * helper that builds one has to say where its entities may go.
+     * <p>Some tests exercise positions beyond the chunks the runner loads for the template. An entity that moves
+     * into an unloaded chunk stops ticking mid-step. Load the fixture's full movement range before spawning entities.
      */
     static void keepLoaded(GameTestHelper h, int minX, int minZ, int maxX, int maxZ) {
         ServerLevel level = h.getLevel();
@@ -143,6 +141,7 @@ final class GameTestSupport {
 
     /** A stone wall ring {@code height} blocks tall on the edges of a platform built at {@code y}. */
     static void enclose(GameTestHelper h, int y, int size, int height) {
+        requireArena(h, size, size);
         for (int level = y + 1; level <= y + height; level++) {
             for (int x = 0; x < size; x++) {
                 for (int z = 0; z < size; z++) {
@@ -160,6 +159,7 @@ final class GameTestSupport {
      * would otherwise climb into a wall.
      */
     static void platform(GameTestHelper h, int size) {
+        requireArena(h, size, size);
         keepLoaded(h, -4, -4, size + 4, size + 4);
         for (int x = 0; x < size; x++) {
             for (int z = 0; z < size; z++) {
@@ -213,10 +213,10 @@ final class GameTestSupport {
     }
 
     /**
-     * A narrow stone walkway along x that force-loads every chunk it crosses. A square platform of the same length
-     * would overwrite the ground of neighbouring tests, which share the world and run side by side.
+     * A narrow stone walkway along x that force-loads every chunk it crosses.
      */
     static void corridor(GameTestHelper h, int y, int length, int width) {
+        requireArena(h, length, width);
         keepLoaded(h, -2, -2, length + 2, width + 2);
         for (int x = 0; x < length; x++) {
             for (int z = 0; z < width; z++) {
@@ -230,6 +230,7 @@ final class GameTestSupport {
 
     /** A stone floor at {@code y} with clear air above it, for tests that need a world band of their own. */
     static void platformAt(GameTestHelper h, int y, int size) {
+        requireArena(h, size, size);
         keepLoaded(h, -4, -4, size + 4, size + 4);
         for (int x = 0; x < size; x++) {
             for (int z = 0; z < size; z++) {
@@ -238,6 +239,15 @@ final class GameTestSupport {
                     h.setBlock(x, level, z, Blocks.AIR);
                 }
             }
+        }
+    }
+
+    /** Fail before a shared fixture writes outside the footprint reserved by its structure template. */
+    static void requireArena(GameTestHelper h, int width, int depth) {
+        var bounds = h.getRelativeBounds();
+        if (width > bounds.getXsize() || depth > bounds.getZsize()) {
+            h.fail("Fixture needs a " + width + "x" + depth + " arena, template reserves " + (int) bounds.getXsize()
+                    + "x" + (int) bounds.getZsize());
         }
     }
 }

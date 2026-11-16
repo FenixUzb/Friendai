@@ -29,7 +29,7 @@ public class ExperienceTests {
         return orbs.isEmpty();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void absorbsOrbsNearby(GameTestHelper h) {
         GameTestSupport.platformAt(h, BAND_Y, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, BAND_Y + 1, 2);
@@ -43,7 +43,7 @@ public class ExperienceTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void absorbsTwoOrbsOnce(GameTestHelper h) {
         GameTestSupport.platformAt(h, BAND_Y, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, BAND_Y + 1, 2);
@@ -57,7 +57,7 @@ public class ExperienceTests {
         });
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_32, maxTicks = 100)
     public void ignoresFarOrbs(GameTestHelper h) {
         GameTestSupport.platformAt(h, BAND_Y + 20, 30);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, BAND_Y + 21, 2);

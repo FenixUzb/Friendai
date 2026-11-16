@@ -29,7 +29,7 @@ public class MenuHandsTests {
         return h.absolutePos(new BlockPos(3, bandY + 1, 2));
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void opensEnchantingTable(GameTestHelper h) {
         CompanionEntity c = setup(h, BAND_Y, Blocks.ENCHANTING_TABLE);
         AbstractContainerMenu menu = c.hands().openMenu(blockPos(h, BAND_Y));
@@ -38,7 +38,7 @@ public class MenuHandsTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void opensAnvil(GameTestHelper h) {
         CompanionEntity c = setup(h, 116, Blocks.ANVIL);
         BlockPos pos = blockPos(h, 116);
@@ -48,7 +48,7 @@ public class MenuHandsTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void opensGrindstone(GameTestHelper h) {
         CompanionEntity c = setup(h, 160, Blocks.GRINDSTONE);
         AbstractContainerMenu menu = c.hands().openMenu(blockPos(h, 160));
@@ -57,7 +57,7 @@ public class MenuHandsTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void mirrorsExperience(GameTestHelper h) {
         CompanionEntity c = setup(h, 166, Blocks.ENCHANTING_TABLE);
         c.experience().load(ExperienceModel.pointsForLevel(30));
@@ -76,7 +76,7 @@ public class MenuHandsTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void closeReturnsItems(GameTestHelper h) {
         CompanionEntity c = setup(h, 170, Blocks.ENCHANTING_TABLE);
         AbstractContainerMenu menu = c.hands().openMenu(blockPos(h, 170));
@@ -93,7 +93,7 @@ public class MenuHandsTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void closeWithoutMenuIsHarmless(GameTestHelper h) {
         CompanionEntity c = setup(h, 210, Blocks.ENCHANTING_TABLE);
         c.experience().load(50);

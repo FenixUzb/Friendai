@@ -111,7 +111,7 @@ public class AnvilSkillTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void repairsWithMaterial(GameTestHelper h) {
         CompanionEntity c = setup(h, 92, true);
         ItemStack pickaxe = new ItemStack(Items.IRON_PICKAXE);
@@ -128,7 +128,7 @@ public class AnvilSkillTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void combinesTwoBooks(GameTestHelper h) {
         CompanionEntity c = setup(h, 96, true);
         c.inventory().addItem(sharpnessBook(h, 1));
@@ -140,7 +140,7 @@ public class AnvilSkillTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void renames(GameTestHelper h) {
         CompanionEntity c = setup(h, 120, true);
         c.inventory().addItem(new ItemStack(Items.IRON_SWORD));
@@ -153,7 +153,7 @@ public class AnvilSkillTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void failsWhenTooExpensive(GameTestHelper h) {
         CompanionEntity c = setup(h, 124, true);
         c.inventory().addItem(new ItemStack(Items.IRON_SWORD));
@@ -163,7 +163,7 @@ public class AnvilSkillTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void failsWithNoResult(GameTestHelper h) {
         CompanionEntity c = setup(h, 132, true);
         c.inventory().addItem(new ItemStack(Items.IRON_SWORD));
@@ -176,7 +176,7 @@ public class AnvilSkillTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void chippedAnvilIsDiscoveredAndUsed(GameTestHelper h) {
         CompanionEntity c = setup(h, 220, false);
         h.setBlock(3, 221, 2, Blocks.CHIPPED_ANVIL);
@@ -188,7 +188,7 @@ public class AnvilSkillTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void damagedAnvilAtAGivenPositionIsAccepted(GameTestHelper h) {
         CompanionEntity c = setup(h, 230, false);
         h.setBlock(3, 231, 2, Blocks.DAMAGED_ANVIL);
@@ -201,7 +201,7 @@ public class AnvilSkillTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void unrelatedBlockAtTheGivenPositionIsRejected(GameTestHelper h) {
         CompanionEntity c = setup(h, 240, false);
         h.setBlock(3, 241, 2, Blocks.STONE);
@@ -213,7 +213,7 @@ public class AnvilSkillTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void failsWithoutAnvil(GameTestHelper h) {
         CompanionEntity c = setup(h, 136, false);
         c.inventory().addItem(new ItemStack(Items.IRON_SWORD));

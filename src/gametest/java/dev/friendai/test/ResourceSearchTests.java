@@ -33,7 +33,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 
 public final class ResourceSearchTests {
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 40)
     public void miningFailureRecognizesSameTickAdjacentEvidence(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -118,7 +118,7 @@ public final class ResourceSearchTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 800)
     public void woodenPickaxeFindsStoneUnderDirtWithoutTorches(GameTestHelper h) {
         GameTestSupport.platformAt(h, 200, 24);
         for (int x = 0; x < 24; x++) {
@@ -158,7 +158,7 @@ public final class ResourceSearchTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void aMineFailureNamesTheLegReason(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int x = 0; x < 16; x++) {
@@ -191,7 +191,10 @@ public final class ResourceSearchTests {
         });
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(
+            structure = GameTestArenas.ARENA_16,
+            maxTicks = 40,
+            environment = "friendai-gametest:search_trusted_expedition")
     public void trustedCannotEscalateToExpedition(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -199,8 +202,6 @@ public final class ResourceSearchTests {
         companion.setOwner(owner.getUUID());
         var state = GameTestSupport.runtime(h.getLevel().getServer());
         var config = state.config();
-        boolean oldExpeditions = config.tasks.resources.allowExpeditions;
-        boolean oldChunkLoading = config.companion.chunkLoading.enabled;
         config.tasks.resources.allowExpeditions = true;
         config.companion.chunkLoading.enabled = true;
         state.applyConfig(config);
@@ -212,13 +213,13 @@ public final class ResourceSearchTests {
                         new Caller(owner.getUUID(), owner.getName().getString(), AccessLevel.TRUSTED));
         h.assertTrue(result.error(), "trusted caller must not escalate to expedition scope");
         h.assertTrue(!companion.executionCoordinator().hasWork(), "denied expedition must not start a task");
-        config.tasks.resources.allowExpeditions = oldExpeditions;
-        config.companion.chunkLoading.enabled = oldChunkLoading;
-        state.applyConfig(config);
         h.succeed();
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(
+            structure = GameTestArenas.ARENA_16,
+            maxTicks = 40,
+            environment = "friendai-gametest:search_expedition_budget")
     public void ownerExpeditionUsesConfiguredHardBudget(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -226,10 +227,6 @@ public final class ResourceSearchTests {
         companion.setOwner(owner.getUUID());
         var state = GameTestSupport.runtime(h.getLevel().getServer());
         var config = state.config();
-        boolean oldExpeditions = config.tasks.resources.allowExpeditions;
-        int oldRadius = config.tasks.resources.expeditionRadius;
-        int oldTicks = config.tasks.resources.expeditionTicks;
-        boolean oldChunkLoading = config.companion.chunkLoading.enabled;
         config.tasks.resources.allowExpeditions = true;
         config.tasks.resources.expeditionRadius = 700;
         config.tasks.resources.expeditionTicks = 18_000;
@@ -257,15 +254,13 @@ public final class ResourceSearchTests {
                         .orElse(false),
                 "an active search must carry a resumable checkpoint");
         companion.executionCoordinator().stop("test cleanup");
-        config.tasks.resources.allowExpeditions = oldExpeditions;
-        config.tasks.resources.expeditionRadius = oldRadius;
-        config.tasks.resources.expeditionTicks = oldTicks;
-        config.companion.chunkLoading.enabled = oldChunkLoading;
-        state.applyConfig(config);
         h.succeed();
     }
 
-    @GameTest(maxTicks = 160)
+    @GameTest(
+            structure = GameTestArenas.ARENA_16,
+            maxTicks = 160,
+            environment = "friendai-gametest:search_restart_expedition")
     public void restartResumesAnOutboundExpeditionAndReacquiresItsLease(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -273,10 +268,6 @@ public final class ResourceSearchTests {
         original.setOwner(owner.getUUID());
         var state = GameTestSupport.runtime(h.getLevel().getServer());
         var config = state.config();
-        boolean oldExpeditions = config.tasks.resources.allowExpeditions;
-        boolean oldChunkLoading = config.companion.chunkLoading.enabled;
-        int oldRadius = config.tasks.resources.expeditionRadius;
-        int oldTicks = config.tasks.resources.expeditionTicks;
         config.tasks.resources.allowExpeditions = true;
         config.companion.chunkLoading.enabled = true;
         config.tasks.resources.expeditionRadius = 96;
@@ -296,8 +287,8 @@ public final class ResourceSearchTests {
         var horizon = state.chunkLoader().expeditionHorizon();
         var context = new TaskContext(original, h.getLevel());
         var task = original.executionCoordinator().current().orElseThrow();
-        for (int i = 0; i < 120 && horizon.activeLeases() == 0; i++) task.tick(context);
-        h.assertTrue(horizon.activeLeases() == 1, "the outbound expedition should hold its next-leg lease");
+        for (int i = 0; i < 120 && !horizon.holdsLease(owner.getUUID()); i++) task.tick(context);
+        h.assertTrue(horizon.holdsLease(owner.getUUID()), "the outbound expedition should hold its next-leg lease");
 
         var ledger = state.knowledge().book(owner.getUUID()).searchLedger();
         SearchSession.Snapshot before = ledger.snapshot().getFirst();
@@ -318,7 +309,7 @@ public final class ResourceSearchTests {
         ledger.interruptActive();
         original.executionCoordinator().stop("simulated restart");
         original.discard();
-        h.assertTrue(horizon.activeLeases() == 0, "a restart must not leave a stale lease behind");
+        h.assertTrue(!horizon.holdsLease(owner.getUUID()), "a restart must not leave a stale lease behind");
 
         CompanionEntity restored = h.spawn(FriendaiEntities.COMPANION, 6, 2, 6);
         restored.setOwner(owner.getUUID());
@@ -332,7 +323,8 @@ public final class ResourceSearchTests {
                 job.state() == dev.friendai.execution.queue.JobState.RUNNING,
                 "a recoverable search job must stay running after a restart");
         var resumed = restored.executionCoordinator().current().orElseThrow();
-        h.assertTrue(horizon.activeLeases() == 0, "the resumed search must not hold a lease before its first leg");
+        h.assertTrue(
+                !horizon.holdsLease(owner.getUUID()), "the resumed search must not hold a lease before its first leg");
         SearchSession.Snapshot after = ledger.snapshot().getFirst();
         h.assertTrue(after.id().equals(before.id()), "the same ledger session must continue");
         h.assertTrue(
@@ -345,19 +337,15 @@ public final class ResourceSearchTests {
         var resumedContext = new TaskContext(restored, h.getLevel());
         resumed.tick(resumedContext);
         h.assertTrue(resumed.resultSummary().contains("resumed after restart"), resumed.resultSummary());
-        for (int i = 0; i < 120 && horizon.activeLeases() == 0; i++) resumed.tick(resumedContext);
-        h.assertTrue(horizon.activeLeases() == 1, "the resumed expedition must reacquire a lease for its next leg");
+        for (int i = 0; i < 120 && !horizon.holdsLease(owner.getUUID()); i++) resumed.tick(resumedContext);
+        h.assertTrue(
+                horizon.holdsLease(owner.getUUID()), "the resumed expedition must reacquire a lease for its next leg");
 
         restored.executionCoordinator().stop("test cleanup");
-        config.tasks.resources.allowExpeditions = oldExpeditions;
-        config.tasks.resources.expeditionRadius = oldRadius;
-        config.tasks.resources.expeditionTicks = oldTicks;
-        config.companion.chunkLoading.enabled = oldChunkLoading;
-        state.applyConfig(config);
         h.succeed();
     }
 
-    @GameTest(maxTicks = 120)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 120)
     public void restartResumesAnInspectionWithOnlyItsRemainingExcavation(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -437,7 +425,7 @@ public final class ResourceSearchTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void restartFinishesAReturnWalkWithItsDiscovery(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -499,7 +487,7 @@ public final class ResourceSearchTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void restartRetriesASearchSavedWithoutACheckpoint(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -558,7 +546,10 @@ public final class ResourceSearchTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(
+            structure = GameTestArenas.ARENA_16,
+            maxTicks = 40,
+            environment = "friendai-gametest:search_stop_expedition")
     public void stoppingExpeditionReleasesItsNextLegTicket(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -566,8 +557,6 @@ public final class ResourceSearchTests {
         companion.setOwner(owner.getUUID());
         var state = GameTestSupport.runtime(h.getLevel().getServer());
         var config = state.config();
-        boolean oldExpeditions = config.tasks.resources.allowExpeditions;
-        boolean oldChunkLoading = config.companion.chunkLoading.enabled;
         config.tasks.resources.allowExpeditions = true;
         config.companion.chunkLoading.enabled = true;
         state.applyConfig(config);
@@ -579,30 +568,27 @@ public final class ResourceSearchTests {
 
         var task = companion.executionCoordinator().current().orElseThrow();
         var context = new dev.friendai.task.TaskContext(companion, h.getLevel());
-        for (int i = 0; i < 50 && state.chunkLoader().expeditionHorizon().activeLeases() == 0; i++) {
+        var horizon = state.chunkLoader().expeditionHorizon();
+        for (int i = 0; i < 50 && !horizon.holdsLease(owner.getUUID()); i++) {
             task.tick(context);
         }
         h.assertTrue(
-                state.chunkLoader().expeditionHorizon().activeLeases() == 1,
+                horizon.holdsLease(owner.getUUID()),
                 "an outbound expedition leg should hold exactly its next-leg ticket");
 
         companion.executionCoordinator().stop("test cancellation");
         h.assertTrue(
-                state.chunkLoader().expeditionHorizon().activeLeases() == 0
-                        && state.chunkLoader().expeditionHorizon().ticketKeys() == 0,
+                !horizon.holdsLease(owner.getUUID()),
                 "stopping an expedition must release its next-leg ticket immediately");
         h.assertTrue(companion.getNavigation().isDone(), "stopping an expedition must leave no active navigator path");
         h.assertTrue(
                 state.knowledge().book(owner.getUUID()).searchLedger().snapshot().stream()
                         .allMatch(session -> session.phase() == SearchSession.Phase.INTERRUPTED),
                 "a stopped search must leave its persistent ledger interrupted while preserving spent work");
-        config.tasks.resources.allowExpeditions = oldExpeditions;
-        config.companion.chunkLoading.enabled = oldChunkLoading;
-        state.applyConfig(config);
         h.succeed();
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 40)
     public void ownerMineStrategyStartsBoundedMiningSearch(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -646,7 +632,7 @@ public final class ResourceSearchTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 40)
     public void miningSearchRejectsInsufficientEquipmentBeforeAcquiringBudget(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -679,7 +665,7 @@ public final class ResourceSearchTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 40)
     public void lowFoodRejectsSearchBeforeAcquiringBudget(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -712,7 +698,7 @@ public final class ResourceSearchTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 40)
     public void caveStrategyDoesNotAcquireBudgetWithoutObservedEntrance(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -744,7 +730,7 @@ public final class ResourceSearchTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 40)
     public void caveStrategyStartsFromAnObservedEntrance(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -781,7 +767,7 @@ public final class ResourceSearchTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void unsupportedFamilyIsReportedNotCrashed(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -803,7 +789,7 @@ public final class ResourceSearchTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 120)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 120)
     public void searchDoesNotTravelWhenWoodIsVisible(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -847,7 +833,7 @@ public final class ResourceSearchTests {
         });
     }
 
-    @GameTest(maxTicks = 2_400)
+    @GameTest(structure = GameTestArenas.ARENA_32, maxTicks = 2_400)
     public void failedRememberedRouteKeepsEvidenceAndObtainUsesSecondSite(GameTestHelper h) {
         GameTestSupport.platform(h, 32);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);

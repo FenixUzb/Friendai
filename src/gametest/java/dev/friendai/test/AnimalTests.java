@@ -59,7 +59,7 @@ public class AnimalTests {
         return runner;
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void interactReturnsFilledBucket(GameTestHelper h) {
         GameTestSupport.platformAt(h, 260, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 261, 2);
@@ -77,7 +77,7 @@ public class AnimalTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void breedsCows(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -98,7 +98,7 @@ public class AnimalTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void breedLimit(GameTestHelper h) {
         GameTestSupport.platformAt(h, 100, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 101, 2);
@@ -115,7 +115,7 @@ public class AnimalTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void breedNoFood(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -131,7 +131,7 @@ public class AnimalTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void breedNotEnoughAdults(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -148,7 +148,7 @@ public class AnimalTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void shearsSheep(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -178,7 +178,7 @@ public class AnimalTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void shearWithoutShears(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -192,7 +192,7 @@ public class AnimalTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void shearTargetGoneMovesOn(GameTestHelper h) {
         GameTestSupport.platformAt(h, 180, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 181, 2);
@@ -216,7 +216,7 @@ public class AnimalTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void milksCow(GameTestHelper h) {
         GameTestSupport.platformAt(h, 220, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 221, 2);
@@ -234,7 +234,7 @@ public class AnimalTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void milkWithoutBuckets(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -248,7 +248,7 @@ public class AnimalTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void tamesWolfForOwner(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         net.minecraft.server.level.ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -302,7 +302,7 @@ public class AnimalTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void tameWithoutFood(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -316,7 +316,7 @@ public class AnimalTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void leadsPigsAndTiesThem(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -345,7 +345,7 @@ public class AnimalTests {
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void leadLetsGoWithoutTie(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -363,7 +363,7 @@ public class AnimalTests {
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void leadLosesAnimal(GameTestHelper h) {
         GameTestSupport.platformAt(h, 180, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 181, 2);
@@ -388,7 +388,7 @@ public class AnimalTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void honeyNeedsSmoke(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -411,7 +411,7 @@ public class AnimalTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void honeyWithCampfire(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -435,7 +435,7 @@ public class AnimalTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void honeyNotFull(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -455,7 +455,7 @@ public class AnimalTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void fishesTwice(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int x = 4; x <= 6; x++) {
@@ -486,7 +486,7 @@ public class AnimalTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void fishWithoutRod(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -499,7 +499,7 @@ public class AnimalTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void fishWithoutWater(GameTestHelper h) {
         GameTestSupport.platformAt(h, 140, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 141, 2);
@@ -513,7 +513,7 @@ public class AnimalTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 900)
     public void breedStopsAfterParentsCoolDown(GameTestHelper h) {
         GameTestSupport.platformAt(h, 240, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 241, 2);

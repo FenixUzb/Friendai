@@ -26,7 +26,7 @@ public class NavigatorStateTests {
         return c;
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void aReachedNewGoalEndsNavigationWithoutWalkingTheOldRoute(GameTestHelper h) {
         GameTestSupport.platformAt(h, 300, 16);
         CompanionEntity c = walker(h, 2, 301, 2);
@@ -63,7 +63,7 @@ public class NavigatorStateTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void aStoppedNavigatorParksWithoutSearching(GameTestHelper h) {
         GameTestSupport.platformAt(h, 305, 16);
         CompanionEntity c = walker(h, 2, 306, 2);
@@ -97,7 +97,7 @@ public class NavigatorStateTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void startsARouteAfterLanding(GameTestHelper h) {
         int floor = 290;
         GameTestSupport.platformAt(h, floor, 16);
@@ -116,7 +116,7 @@ public class NavigatorStateTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void aDirectlyDrivenRouteStillSprintsIntoALeap(GameTestHelper h) {
         int base = 240;
         GameTestSupport.platformAt(h, base, 16);

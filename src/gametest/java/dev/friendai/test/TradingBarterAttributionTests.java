@@ -15,7 +15,7 @@ import net.minecraft.world.item.Items;
 
 /** Proves attribution only from real vanilla piglin-owned item entities. */
 public final class TradingBarterAttributionTests {
-    @GameTest(maxTicks = 2_400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2_400)
     public void realVanillaBarterOutputsAreAttributedToTheExactPiglin(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

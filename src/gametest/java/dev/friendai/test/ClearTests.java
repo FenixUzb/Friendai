@@ -51,7 +51,7 @@ public class ClearTests {
         return new ClearAreaTask(h.absolutePos(new BlockPos(x, y, z)), 4, 0, 1, true, blocks);
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void clearsVegetationAndSnow(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -79,7 +79,7 @@ public class ClearTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void aProtectedCellIsLeftAndReported(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -98,7 +98,7 @@ public class ClearTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void takesAWaterSourceWithABucket(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -119,7 +119,7 @@ public class ClearTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_32, maxTicks = 600)
     public void aWaterSourceIsTakenAfterWalkingToIt(GameTestHelper h) {
         GameTestSupport.platform(h, 32);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -140,7 +140,7 @@ public class ClearTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void waterWithoutABucketIsLeftAndReported(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -158,7 +158,7 @@ public class ClearTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void aBlockEntityIsNeverCleared(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -175,7 +175,7 @@ public class ClearTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void breaksAStrayBlockOnlyWhenAsked(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -195,7 +195,7 @@ public class ClearTests {
     }
 
     /** What the run breaks is picked up, not left on the ground to despawn. Dirt drops by hand. */
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void clearPicksUpWhatItBreaks(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -221,7 +221,10 @@ public class ClearTests {
      * Working from the outside in opens the inside of a dense canopy; starting at the top left the buried cells
      * "out of sight" and the task ran on with the cells it could not reach.
      */
-    @GameTest(maxTicks = 2400, environment = "friendai-gametest:clear_dense_canopy")
+    @GameTest(
+            structure = GameTestArenas.ARENA_16,
+            maxTicks = 2400,
+            environment = "friendai-gametest:clear_dense_canopy")
     public void aDenseCanopyIsClearedWithoutStalling(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -250,7 +253,7 @@ public class ClearTests {
      * cells it did not reach for another pass, and exposes a progress line while it works. Every cell costs at least
      * a tick to pick and a tick to break, so more cells than the budget can possibly reach leave work behind.
      */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void aTickBudgetStopsTheRunAndReportsTheRest(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -289,7 +292,7 @@ public class ClearTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void lavaOnlyAreaSucceeds(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -315,7 +318,7 @@ public class ClearTests {
      * Reading one block of a distant box generates its chunk, so a scan that touches the world there turns a clear
      * order into minutes of terrain generation. The unloaded part is reported instead.
      */
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void anUnloadedAreaIsReportedAndNotGenerated(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -399,7 +402,7 @@ public class ClearTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void anEmptyPlotSucceeds(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

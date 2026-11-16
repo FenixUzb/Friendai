@@ -199,7 +199,7 @@ public class LightAreaTests {
         }
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 600)
     public void lightPlacesNothingUnderOpenSky(GameTestHelper h) {
         // The scan reaches eight blocks in every direction, so the platform is wide enough to keep the whole scan
         // volume over open, sunlit ground; a smaller platform would scan the natural terrain beyond it.
@@ -231,7 +231,7 @@ public class LightAreaTests {
      * and the cell at the far end is still dark at block light 7 while its Manhattan distance from that torch is
      * five. The old shortcut skipped it as lit; the light paths around the wall instead.
      */
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 1200)
     public void aWallDoesNotHideADarkCell(GameTestHelper h) {
         GameTestSupport.keepLoaded(h, -4, -4, 16, 16);
         for (int x = 0; x < 12; x++) {
@@ -261,7 +261,7 @@ public class LightAreaTests {
                 });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 1200)
     public void everyScannedLayerIsLit(GameTestHelper h) {
         tallDarkRoom(h);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, -12, 2);
@@ -288,7 +288,7 @@ public class LightAreaTests {
                 });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 1200)
     public void lightsDarkRoom(GameTestHelper h) {
         darkRoom(h);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, -12, 2);
@@ -316,7 +316,7 @@ public class LightAreaTests {
                 });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 200)
     public void lightWithoutTorchesFails(GameTestHelper h) {
         darkRoom(h);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, -12, 2);
@@ -329,7 +329,7 @@ public class LightAreaTests {
                 });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 200)
     public void lightAlreadyLit(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         sealGround(h, 16);
@@ -357,7 +357,7 @@ public class LightAreaTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 200)
     public void lightReportsSkippedSpots(GameTestHelper h) {
         darkRoom(h);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, -12, 2);
@@ -373,7 +373,7 @@ public class LightAreaTests {
                 });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 1200)
     public void lightUsesATorchInTheMainHand(GameTestHelper h) {
         darkRoom(h);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, -12, 2);
@@ -392,14 +392,14 @@ public class LightAreaTests {
                 });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_24)
     public void lightClampsAnUnboundedRadius(GameTestHelper h) {
         String described = new LightAreaTask(1_000_000).describe();
         h.assertTrue(described.equals("lighting up the area within 16 blocks"), "describe was " + described);
         h.succeed();
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 1200)
     public void lightRunsOutOfTorches(GameTestHelper h) {
         darkRoom(h);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, -12, 2);

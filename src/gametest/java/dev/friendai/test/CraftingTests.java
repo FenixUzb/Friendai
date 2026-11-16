@@ -301,7 +301,7 @@ public class CraftingTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void stationsFindsNearbyTable(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(8, 2, 2, Blocks.CRAFTING_TABLE);
@@ -321,7 +321,7 @@ public class CraftingTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void baseNeedsTwoKinds(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos pos = h.absolutePos(new BlockPos(8, 2, 8));

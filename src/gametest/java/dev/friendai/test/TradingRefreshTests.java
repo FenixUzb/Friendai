@@ -32,7 +32,7 @@ public final class TradingRefreshTests {
         return tools.execute(new ToolCall("refresh-test", name, args, json, null), caller);
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void ownerCanScheduleAnExactMerchantRefresh(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -74,7 +74,7 @@ public final class TradingRefreshTests {
      * the model: a live session spent a model turn every few seconds on "I can't reach the trader". The idle refresh
      * now visits one trader once per retry window and keeps its outcome out of the brain.
      */
-    @GameTest(maxTicks = 1800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1800)
     public void idleRefreshVisitsABoxedTraderOnceAndKeepsItFromTheBrain(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var server = h.getLevel().getServer();

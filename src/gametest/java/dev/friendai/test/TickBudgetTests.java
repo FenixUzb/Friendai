@@ -14,7 +14,7 @@ import net.minecraft.server.level.ServerPlayer;
 /** The per-tick bounds on menus, perception and passive observation. */
 public final class TickBudgetTests {
     /** Several open menus no longer rebuild every snapshot on the same server tick. */
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void oneMenuSnapshotPerTickAndEveryViewerIsServed(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerRuntime runtime = GameTestSupport.runtime(h.getLevel().getServer());
@@ -52,7 +52,7 @@ public final class TickBudgetTests {
     }
 
     /** The menu and the perceive tool share one detailed build inside a tick and rebuild on the next. */
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void detailedPerceptionIsSharedWithinATickAndRebuiltAfterIt(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.onlinePlayer(h, "perception-owner", 2, 2, 2, true)
@@ -74,7 +74,7 @@ public final class TickBudgetTests {
     }
 
     /** The observation scheduler still schedules and completes work now that setup counts against its deadline. */
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void observationStillMakesProgressWithSetupInsideTheBudget(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner =

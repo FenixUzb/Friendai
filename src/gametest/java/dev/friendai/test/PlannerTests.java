@@ -101,7 +101,7 @@ public class PlannerTests {
         };
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void goal_turn_plans_through_the_planner(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -140,7 +140,7 @@ public class PlannerTests {
      * A plan repaired step by step is the supported shape: the flat plan keeps a pending step behind the failed one, so
      * the planner is asked once with that plan as its target and the stale-check fingerprint attached.
      */
-    @GameTest(maxTicks = 700)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 700)
     public void a_flat_plan_repair_asks_the_planner_once_with_its_target(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -203,7 +203,7 @@ public class PlannerTests {
      * and the plan stays where the owner can decide. The goal keeps the plan it linked, and the blocked report still
      * reaches the model turn.
      */
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void recovery_replan_leaves_a_started_plan_for_the_owners_decision(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -260,7 +260,7 @@ public class PlannerTests {
      * companion reports it from where it stands, retains the structured-plan continuation and does not start the idle
      * follow.
      */
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void a_failed_plan_is_reported_in_place_and_keeps_the_queue(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 12, 2, 2);

@@ -18,7 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public final class ResourceToolsTests {
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void unsupportedStrategyFailsBeforeATaskStarts(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -38,7 +38,7 @@ public final class ResourceToolsTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void resourceResolverAndKnownResourceScope(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -140,7 +140,7 @@ public final class ResourceToolsTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 40)
     public void modelResourceQueryCapsResultsAtThree(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -181,7 +181,7 @@ public final class ResourceToolsTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 60)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 60)
     public void searchResourceAcceptsWoodTag(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
