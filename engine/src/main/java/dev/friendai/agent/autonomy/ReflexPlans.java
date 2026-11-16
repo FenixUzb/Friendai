@@ -8,8 +8,8 @@ import java.util.Optional;
 
 /** Fixed step lists for routine needs, so the companion handles them without asking the model. */
 public final class ReflexPlans {
-    // A 5x5 floor and roof, plus three layers of perimeter walls with a two-block doorway.
-    private static final int SHELTER_BLOCKS = 96;
+    // A 5x5 floor and roof, plus two layers of perimeter walls with a two-block doorway.
+    private static final int SHELTER_BLOCKS = 80;
 
     private ReflexPlans() {}
 
@@ -109,19 +109,15 @@ public final class ReflexPlans {
 
     /** A simple house built from one material; BuildTask remembers it as a home. */
     private static ReflexStep buildShelterStep(String material) {
-        JsonObject generator = new JsonObject();
-        generator.addProperty("type", "house");
-        generator.addProperty("width", 5);
-        generator.addProperty("depth", 5);
-        generator.addProperty("walls", material);
-        generator.addProperty("floor", material);
-        generator.addProperty("roof", material);
-        generator.addProperty("roof_style", "flat");
-        generator.addProperty("windows", "none");
-        generator.addProperty("door", "none");
-        generator.addProperty("name", "shelter");
         JsonObject args = new JsonObject();
-        args.addProperty("generator", generator.toString());
+        args.addProperty("blueprint", """
+                {"name":"shelter","palette":{"B":"%s","A":"minecraft:air"},"ops":[
+                  {"op":"box","from":[0,0,0],"to":[4,0,4],"block":"B"},
+                  {"op":"walls","from":[0,1,0],"to":[4,2,4],"block":"B"},
+                  {"op":"box","from":[2,1,4],"to":[2,2,4],"block":"A"},
+                  {"op":"box","from":[0,3,0],"to":[4,3,4],"block":"B"}
+                ]}
+                """.formatted(material));
         return new ReflexStep("build_structure", args);
     }
 

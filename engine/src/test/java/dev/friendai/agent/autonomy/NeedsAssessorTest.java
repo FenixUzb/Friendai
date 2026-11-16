@@ -62,7 +62,7 @@ class NeedsAssessorTest {
 
     @Test
     void nightWithoutHomePrioritizesShelterOverRoutineWork() {
-        var agenda = needs(Facts.base().dark().oakPlanks(96).foodPoints(19));
+        var agenda = needs(Facts.base().dark().oakPlanks(80).foodPoints(19));
         assertEquals(NeedKind.SHELTER, agenda.get(0).kind());
         assertEquals(90, agenda.get(0).urgency());
         assertEquals(Executor.REFLEX, agenda.get(0).executor());
@@ -73,9 +73,9 @@ class NeedsAssessorTest {
         assertFalse(kinds(needs(Facts.base().dark().stock(StockKind.LOGS, 8))).contains(NeedKind.SHELTER));
         assertFalse(
                 kinds(needs(Facts.base().dark().stock(StockKind.TORCHES, 1))).contains(NeedKind.SHELTER));
-        assertFalse(kinds(needs(Facts.base().dark().oakPlanks(95))).contains(NeedKind.SHELTER));
+        assertFalse(kinds(needs(Facts.base().dark().oakPlanks(79))).contains(NeedKind.SHELTER));
         assertFalse(
-                kinds(needs(Facts.base().dark().stock(StockKind.PLANKS, 96))).contains(NeedKind.SHELTER));
+                kinds(needs(Facts.base().dark().stock(StockKind.PLANKS, 80))).contains(NeedKind.SHELTER));
     }
 
     @Test

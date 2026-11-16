@@ -3,8 +3,7 @@ package dev.friendai.agent.autonomy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.google.gson.JsonParser;
-import dev.friendai.features.construction.blueprint.Generators;
+import dev.friendai.features.construction.blueprint.BlueprintParser;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -88,18 +87,17 @@ class ReflexPlansTest {
     void nightShelterBuildsIfMaterialsAreAvailable() {
         var steps = ReflexPlans.plan(
                         need(NeedKind.SHELTER),
-                        Facts.base().dark().cobblestone(96).build(),
+                        Facts.base().dark().cobblestone(80).build(),
                         S)
                 .orElseThrow();
         assertEquals(List.of("build_structure"), tools(steps));
-        var spec = JsonParser.parseString(
-                        steps.getFirst().args().get("generator").getAsString())
-                .getAsJsonObject();
-        var blueprint = Generators.generate(spec, state -> true).blueprint().orElseThrow();
+        String spec = steps.getFirst().args().get("blueprint").getAsString();
+        var blueprint = BlueprintParser.parse(spec, state -> true).blueprint().orElseThrow();
         var solids = blueprint.blocks().stream()
                 .filter(block -> !block.state().equals("minecraft:air"))
                 .toList();
-        assertEquals(96, solids.size());
+        assertEquals(80, solids.size());
+        assertEquals(4, blueprint.height());
         assertTrue(solids.stream().allMatch(block -> block.state().equals("minecraft:cobblestone")));
     }
 

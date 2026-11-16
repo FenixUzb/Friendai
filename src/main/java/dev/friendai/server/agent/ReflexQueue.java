@@ -115,7 +115,8 @@ final class ReflexQueue {
                         level.dimension().identifier().toString(),
                         null)
                 .map(BlueprintStore.InProgress::origin)
-                .orElseGet(() -> newShelterOrigin(companion, level));
+                .orElseGet(
+                        () -> newShelterOrigin(companion, level, blueprint.get().height()));
         if (origin == null) return Optional.empty();
         buildArgs.addProperty("x", origin.getX());
         buildArgs.addProperty("y", origin.getY());
@@ -130,7 +131,7 @@ final class ReflexQueue {
                 new ReflexStep("stay", null)));
     }
 
-    private static BlockPos newShelterOrigin(CompanionEntity companion, ServerLevel level) {
+    private static BlockPos newShelterOrigin(CompanionEntity companion, ServerLevel level, int height) {
         BlockPos center = companion.blockPosition().north(5);
         if (!level.hasChunkAt(center.offset(-2, 0, -2))
                 || !level.hasChunkAt(center.offset(-2, 0, 2))
@@ -139,7 +140,7 @@ final class ReflexQueue {
             return null;
         }
         int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, center.getX(), center.getZ());
-        return y + 4 > level.getMaxY() ? null : new BlockPos(center.getX() - 2, y, center.getZ() - 2);
+        return y + height - 1 > level.getMaxY() ? null : new BlockPos(center.getX() - 2, y, center.getZ() - 2);
     }
 
     /**

@@ -1336,14 +1336,14 @@ public class FreeTimeTests {
         Vec3 start = h.absoluteVec(new Vec3(12.5, 121, 14.5));
         companion.snapTo(start.x, start.y, start.z, 0, 0);
         companion.inventory().addItem(new ItemStack(Items.COBBLESTONE, 64));
-        companion.inventory().addItem(new ItemStack(Items.COBBLESTONE, 32));
+        companion.inventory().addItem(new ItemStack(Items.COBBLESTONE, 16));
         driver(h).start(companion, dev.friendai.agent.autonomy.FreeTime.Origin.COMMAND, "");
         h.succeedWhen(() -> {
             var state = driver(h).state(owner.id());
             BlockPos feet = companion.blockPosition();
             h.assertTrue(
                     feet.distSqr(BlockPos.containing(start)) <= 64
-                            && h.getLevel().getBlockState(feet.above(3)).is(Blocks.COBBLESTONE),
+                            && h.getLevel().getBlockState(feet.above(2)).is(Blocks.COBBLESTONE),
                     "companion should be inside its new shelter near its starting point: " + feet + " " + state);
             driver(h).stop(owner.id(), "test over");
         });
