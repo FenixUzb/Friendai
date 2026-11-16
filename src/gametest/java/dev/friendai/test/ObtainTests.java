@@ -2021,10 +2021,16 @@ public class ObtainTests {
             h.assertTrue(
                     result.summary.startsWith(work.blocker()),
                     "the blocker is the failure text, not a second one: " + work.compact());
-            h.assertTrue(work.reasonCode().equals("blocked"), "nothing was finished: " + work.compact());
-            for (TaskWorkResult.Line line : work.lines()) {
-                h.assertValueEqual(line.verified(), 0, "no tool was finished: " + work.compact());
-            }
+            int carriedWooden = c.inventory().countItem(Items.WOODEN_PICKAXE)
+                    + (c.getMainHandItem().is(Items.WOODEN_PICKAXE)
+                            ? c.getMainHandItem().getCount()
+                            : 0);
+            h.assertValueEqual(
+                    work.reasonCode(), carriedWooden > 0 ? "partial" : "blocked", "reason matches the remaining work");
+            h.assertValueEqual(work.lines().size(), 2, "one result for each requested tool");
+            h.assertValueEqual(
+                    work.lines().get(0).verified(), carriedWooden, "the crafted wooden pickaxe stays accounted for");
+            h.assertValueEqual(work.lines().get(1).verified(), 0, "the missing stone tool cannot be reported as made");
             h.assertTrue(h.getLevel().getGameTime() - startTick <= 1600, "the order stayed inside its tick bound");
         });
     }
