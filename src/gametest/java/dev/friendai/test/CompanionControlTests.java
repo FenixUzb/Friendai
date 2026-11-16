@@ -55,7 +55,8 @@ public class CompanionControlTests {
     public void teleportDoesNotReturnToTheCancelledWorkSite(GameTestHelper h) {
         int floor = 50;
         GameTestSupport.platformAt(h, floor, 16);
-        ServerPlayer player = GameTestSupport.mockPlayerAt(h, 2, floor + 1, 2);
+        ServerPlayer player = GameTestSupport.onlinePlayer(h, "test-teleport", 2, floor + 1, 2)
+                .player();
         CompanionEntity companion =
                 CompanionManager.get(h.getLevel().getServer()).summon(player);
         Vec3 workSite = h.absoluteVec(new Vec3(12.5, floor + 1, 12.5));
@@ -100,7 +101,14 @@ public class CompanionControlTests {
                             }
                         },
                         "work_with_cleanup");
-        noControlRateLimit(h);
+        h.assertTrue(
+                companion
+                        .executionCoordinator()
+                        .current()
+                        .map(Task::type)
+                        .orElse("")
+                        .equals("work_with_cleanup"),
+                "the old task must be active before teleport");
         TestMenuRequests.handle(player, TestMenuRequests.menuRequest(TestMenuRequests.Action.TELEPORT));
         h.assertTrue(stopped[0], "teleport must stop the old task");
         h.assertTrue(companion.position().distanceTo(player.position()) <= 4.0, "not teleported to the owner");

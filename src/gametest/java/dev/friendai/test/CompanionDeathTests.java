@@ -415,7 +415,8 @@ public class CompanionDeathTests {
                     "the logs must be fetched back, carried="
                             + revived.inventory().countItem(Items.OAK_LOG));
             // The trip is guaranteed and reported; a drop the route could not reach stays on the ground and says so.
-            boolean bootsCarried = revived.inventory().countItem(Items.IRON_BOOTS) >= 1;
+            boolean bootsCarried = revived.inventory().countItem(Items.IRON_BOOTS) >= 1
+                    || revived.getItemBySlot(EquipmentSlot.FEET).is(Items.IRON_BOOTS);
             boolean bootsOnGround =
                     h
                             .getLevel()

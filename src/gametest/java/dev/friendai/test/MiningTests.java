@@ -22,6 +22,7 @@ import dev.friendai.task.TaskStatus;
 import dev.friendai.world.block.BlockMatcher;
 import dev.friendai.world.block.BreakAction;
 import dev.friendai.world.block.Scaffold;
+import dev.friendai.world.block.SupportSafety;
 import dev.friendai.world.movement.MaterialPicker;
 import dev.friendai.world.movement.Sight;
 import java.util.List;
@@ -36,6 +37,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.VineBlock;
 
 public class MiningTests {
+    private static final String ARENA = "friendai-gametest:mining_arena";
 
     private static final class Outcome implements TaskEventSink {
         TaskStatus status;
@@ -70,7 +72,7 @@ public class MiningTests {
     }
 
     /** The spendable count is the bag's total minus the reserve, however the stacks happen to be split. */
-    @GameTest(maxTicks = 20)
+    @GameTest(structure = ARENA, maxTicks = 20)
     public void theSpendableCountSubtractsTheReserveAcrossStacks(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -87,7 +89,7 @@ public class MiningTests {
     }
 
     /** Material the plan still needs is not scaffold material, however much of it the bag holds. */
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = ARENA, maxTicks = 100)
     public void reservedCobblestoneIsNotSpentOnAPillar(GameTestHelper h) {
         CompanionEntity c = scaffoldCompanion(h, new ItemStack(Items.COBBLESTONE, 8));
         c.setMaterialReserve(MaterialReserve.of(Map.of("minecraft:cobblestone", 8)));
@@ -105,7 +107,7 @@ public class MiningTests {
     }
 
     /** Material the plan does not need is spent first: the climb uses what is free. */
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = ARENA, maxTicks = 300)
     public void freeDirtIsSpentBeforeReservedCobblestone(GameTestHelper h) {
         CompanionEntity c = scaffoldCompanion(h, new ItemStack(Items.DIRT, 2), new ItemStack(Items.COBBLESTONE, 8));
         c.setMaterialReserve(MaterialReserve.of(Map.of("minecraft:cobblestone", 8)));
@@ -121,7 +123,7 @@ public class MiningTests {
     }
 
     /** Without a reserve the climb spends cobblestone as it always has. */
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = ARENA, maxTicks = 300)
     public void noReservePillarsWithCobblestone(GameTestHelper h) {
         CompanionEntity c = scaffoldCompanion(h, new ItemStack(Items.COBBLESTONE, 8));
         Scaffold scaffold = new Scaffold(c);
@@ -137,7 +139,7 @@ public class MiningTests {
     }
 
     /** A mining job's own target is what the tools are made of, so it must not be spendable on a climb. */
-    @GameTest(maxTicks = 60)
+    @GameTest(structure = ARENA, maxTicks = 60)
     public void aMiningJobReservesTheStoneItWasSentFor(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -152,7 +154,7 @@ public class MiningTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 20)
+    @GameTest(structure = ARENA, maxTicks = 20)
     public void singleBlockMiningRefusesOccupiedSupport(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -166,7 +168,7 @@ public class MiningTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 20)
+    @GameTest(structure = ARENA, maxTicks = 20)
     public void breakRefusalIsNotCountedAsMined(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -186,7 +188,7 @@ public class MiningTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 20)
+    @GameTest(structure = ARENA, maxTicks = 20)
     public void lostToolStopsOreExtraction(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -204,7 +206,7 @@ public class MiningTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 20)
+    @GameTest(structure = ARENA, maxTicks = 20)
     public void waterloggedNeighborRejectsCorridorBreak(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -231,7 +233,7 @@ public class MiningTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = ARENA, maxTicks = 100)
     public void vineIsNotASightObstruction(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         h.setBlock(new BlockPos(4, 3, 2), Blocks.CRIMSON_STEM);
@@ -244,7 +246,7 @@ public class MiningTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = ARENA, maxTicks = 1200)
     public void oreBelowFeetUsesSideStance(GameTestHelper h) {
         GameTestSupport.platform(h, 10);
         BlockPos ore = new BlockPos(4, 1, 4);
@@ -281,7 +283,7 @@ public class MiningTests {
      * "Mine that diamond" with only a wooden pickaxe: mine_block_at broke the ore and the diamond was gone. A valuable
      * block no carried tool can harvest is now refused and left whole; with the right pickaxe it is mined as before.
      */
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = ARENA, maxTicks = 600)
     public void aPointedOreWithoutAHarvestToolIsLeftWhole(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         BlockPos ore = new BlockPos(5, 2, 3);
@@ -316,7 +318,7 @@ public class MiningTests {
         });
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = ARENA, maxTicks = 100)
     public void inventoryFullStopsBeforeOreExtraction(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         BlockPos ore = new BlockPos(5, 2, 3);
@@ -346,7 +348,7 @@ public class MiningTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = ARENA, maxTicks = 300)
     public void stoneWithoutPickaxeRefusesInsteadOfMiningByHand(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         BlockPos stone = new BlockPos(4, 2, 2);
@@ -372,7 +374,7 @@ public class MiningTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = ARENA, maxTicks = 2400)
     public void minesTwentyStoneBlocksFromAHill(GameTestHelper h) {
         GameTestSupport.platformAt(h, 120, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 121, 6);
@@ -406,7 +408,7 @@ public class MiningTests {
      * The foot of a shaft the companion dug itself is still a place it can mine from: standing in a one-wide pocket
      * in solid stone, it takes the wall beside it instead of reporting that the resource is out of reach.
      */
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = ARENA, maxTicks = 1200)
     public void minesStoneFromTheBottomOfADugShaft(GameTestHelper h) {
         GameTestSupport.platformAt(h, 120, 12);
         for (int x = 2; x <= 9; x++) {
@@ -440,7 +442,7 @@ public class MiningTests {
      * The same pocket under the dirt shelf of a buried hill: the stone the companion stands on is whole, and the walls
      * beside it are all that is left to reach.
      */
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = ARENA, maxTicks = 1200)
     public void minesStoneUnderDirtFromTheBottomOfADugPocket(GameTestHelper h) {
         GameTestSupport.platformAt(h, 120, 16);
         for (int x = 2; x <= 13; x++) {
@@ -480,7 +482,7 @@ public class MiningTests {
      * mines anyway. From the air no stance accepts a target, so planning then is a wasted plan, and three of them in a
      * row used to turn a plain landing into "the resource cannot be reached safely".
      */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = ARENA, maxTicks = 400)
     public void minesAfterDroppingIntoItsOwnHole(GameTestHelper h) {
         GameTestSupport.platformAt(h, 120, 12);
         h.setBlock(6, 121, 5, Blocks.STONE);
@@ -507,7 +509,7 @@ public class MiningTests {
      * while the cell under its feet is empty. Every step away from there used to be refused as irreversible, so it
      * could not plan at all. It now steps onto the rim and mines the stone beside it.
      */
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = ARENA, maxTicks = 600)
     public void minesFromTheRimOfThePitItDugUnderItself(GameTestHelper h) {
         GameTestSupport.platformAt(h, 120, 12);
         h.setBlock(5, 120, 5, Blocks.AIR);
@@ -555,7 +557,7 @@ public class MiningTests {
         }
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = ARENA, maxTicks = 2400)
     public void reachesIronHighOnAHillFaceThroughAStaircase(GameTestHelper h) {
         GameTestSupport.platformAt(h, 120, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 121, 6);
@@ -583,7 +585,7 @@ public class MiningTests {
         });
     }
 
-    @GameTest(maxTicks = 3000)
+    @GameTest(structure = ARENA, maxTicks = 3000)
     public void reachesIronBuriedBelowTheStandingPointThroughAStaircase(GameTestHelper h) {
         GameTestSupport.platformAt(h, 120, 16);
         for (int x = 0; x <= 11; x++) {
@@ -622,7 +624,7 @@ public class MiningTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = ARENA, maxTicks = 2400)
     public void miningDrawsTheWholePlannedPassage(GameTestHelper h) {
         GameTestSupport.platformAt(h, 130, 10);
         for (int x = 3; x <= 5; x++) {
@@ -669,7 +671,7 @@ public class MiningTests {
     }
 
     /** A known ore face across a lava moat has no safe mining stance; route planning must give up promptly. */
-    @GameTest(maxTicks = 240)
+    @GameTest(structure = ARENA, maxTicks = 240)
     public void unreachableOreAcrossLavaMoatFailsAfterBoundedNoProgressPlans(GameTestHelper h) {
         GameTestSupport.platformAt(h, 120, 32);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 121, 6);
@@ -726,7 +728,7 @@ public class MiningTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = ARENA, maxTicks = 400)
     public void stoneBrokenByHandDropsNothing(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -744,7 +746,7 @@ public class MiningTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = ARENA, maxTicks = 400)
     public void stoneBrokenWithPickaxeDropsCobblestone(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -766,13 +768,16 @@ public class MiningTests {
      * The catch block is either gone, or kept because the companion stands on it and the drop below would hurt it -
      * the documented "load-bearing" case the cleanup reports instead of breaking.
      */
-    private static boolean removedOrLoadBearing(GameTestHelper h, BlockPos below, String summary) {
-        if (h.getLevel().getBlockState(below).isAir()) {
+    private static boolean removedOrLoadBearing(
+            GameTestHelper h, CompanionEntity companion, BlockPos below, String summary) {
+        var block = h.getLevel().getBlockState(below);
+        if (block.isAir() || block.is(Blocks.LAVA)) {
             return true;
         }
-        // The one allowed leftover: the block the companion's footprint occupies over a drop that would hurt it,
-        // which the summary names instead of removing it.
-        return summary.contains("kept 1 temporary block") || summary.contains("kept 1 catch block");
+        // The footprint can span multiple supports. Each one is retained only over an unsafe drop.
+        return SupportSafety.occupies(companion, below)
+                && !SupportSafety.safeDrop(h.getLevel(), below)
+                && summary.matches("(?s).*kept [1-9][0-9]* (temporary|catch) block.*");
     }
 
     /** Every diamond the companion still has or the world still holds: the drop must not be lost, taken or not. */
@@ -816,7 +821,7 @@ public class MiningTests {
 
     // ---- item 33: a valuable drop must have somewhere to land -------------------------------------------------
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = ARENA, maxTicks = 2400)
     public void valuableOreOverLavaGetsACatchBlockAndKeepsItsDrop(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         // A lava lake, two cells deep and wide enough that a drifting drop cannot land on a neighbouring block.
@@ -847,13 +852,13 @@ public class MiningTests {
                     companion.inventory().countItem(Items.DIAMOND) == 1,
                     "the diamond burned instead of landing on the catch block: " + outcome.summary);
             h.assertTrue(
-                    removedOrLoadBearing(h, below, outcome.summary),
+                    removedOrLoadBearing(h, companion, below, outcome.summary),
                     "the catch block was left behind: " + h.getLevel().getBlockState(below) + " / " + outcome.summary);
             h.assertTrue(companion.inventory().countItem(Items.DIRT) < 16, "no catch block was placed at all");
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = ARENA, maxTicks = 200)
     public void aBlockDirectlyAboveLavaIsNotBroken(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(new BlockPos(4, 1, 2), Blocks.LAVA);
@@ -876,7 +881,7 @@ public class MiningTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = ARENA, maxTicks = 2400)
     public void valuableOreOverARavineIsCaughtAndTheBlockIsTakenBack(GameTestHelper h) {
         GameTestSupport.platformAt(h, 20, 8);
         // Eight cells of air under the ore, as over a ravine: far below the sweep's reach.
@@ -900,13 +905,13 @@ public class MiningTests {
                     "the ore over the ravine was not mined: " + outcome.status + " " + outcome.summary);
             h.assertTrue(diamonds(h, companion) == 1, "the diamond fell into the ravine: " + outcome.summary);
             h.assertTrue(
-                    removedOrLoadBearing(h, below, outcome.summary),
+                    removedOrLoadBearing(h, companion, below, outcome.summary),
                     "the catch block was left behind: " + h.getLevel().getBlockState(below) + " / " + outcome.summary);
             h.assertTrue(companion.inventory().countItem(Items.DIRT) < 16, "no catch block was placed at all");
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = ARENA, maxTicks = 1200)
     public void cancellingAMineTakesItsCatchBlockDown(GameTestHelper h) {
         GameTestSupport.platformAt(h, 20, 8);
         for (int y = 20; y >= 13; y--) {
@@ -936,7 +941,7 @@ public class MiningTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = ARENA, maxTicks = 1200)
     public void valuableOreWithoutBuildingMaterialIsLeftUntouched(GameTestHelper h) {
         GameTestSupport.platformAt(h, 20, 8);
         for (int y = 20; y >= 13; y--) {
@@ -966,7 +971,7 @@ public class MiningTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = ARENA, maxTicks = 1200)
     public void aCatchBlockIsNeverBuiltInAProtectedPlace(GameTestHelper h) {
         GameTestSupport.platformAt(h, 20, 8);
         // Eight cells of air under the ore, as over a ravine: far below the sweep's reach.
@@ -996,7 +1001,7 @@ public class MiningTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = ARENA, maxTicks = 1200)
     public void ordinaryStoneOverAHoleIsMinedWithoutAPlatform(GameTestHelper h) {
         GameTestSupport.platformAt(h, 20, 8);
         h.setBlock(new BlockPos(4, 20, 2), Blocks.AIR);
@@ -1021,7 +1026,7 @@ public class MiningTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = ARENA, maxTicks = 2400)
     public void plannedMiningPathBuildsTheCatchPlatformToo(GameTestHelper h) {
         GameTestSupport.platformAt(h, 20, 8);
         for (int y = 20; y >= 13; y--) {
@@ -1048,7 +1053,7 @@ public class MiningTests {
                     "the planned path did not mine the ore: " + outcome.status + " " + outcome.summary);
             h.assertTrue(diamonds(h, companion) == 1, "the planned path lost the diamond: " + outcome.summary);
             h.assertTrue(
-                    removedOrLoadBearing(h, below, outcome.summary),
+                    removedOrLoadBearing(h, companion, below, outcome.summary),
                     "the catch block was left behind: " + h.getLevel().getBlockState(below) + " / " + outcome.summary);
             h.assertTrue(companion.inventory().countItem(Items.DIRT) < 16, "no catch block was placed at all");
             h.assertTrue(companion.inventory().countItem(Items.DIRT) < 16, "no catch block was placed at all");
@@ -1059,7 +1064,7 @@ public class MiningTests {
      * The live boundary in miniature: mud over stone, a cave pocket below, and a dug staircase that is the only way
      * back. Every descent must pass the inverse-route check, and the check must accept this one.
      */
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = ARENA, maxTicks = 2400)
     public void aMudCappedCaveKeepsAReversibleStairBackToTheSurface(GameTestHelper h) {
         ResourceWorkFixture.MudCave fixture = ResourceWorkFixture.mudCave(h);
         CompanionEntity companion = h.spawn(
@@ -1114,7 +1119,7 @@ public class MiningTests {
      * The same terrain with one mud fall dropped into the corridor behind the companion. No route home is left, so the
      * next descent must be refused, named by its cause, and retried a bounded number of times before failing.
      */
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = ARENA, maxTicks = 1600)
     public void aMudFallThatBlocksTheCorridorStopsTheDescentWithItsCause(GameTestHelper h) {
         ResourceWorkFixture.MudCave fixture = ResourceWorkFixture.mudCave(h);
         CompanionEntity companion = h.spawn(
