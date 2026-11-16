@@ -14,6 +14,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 
 /** The persisted anchor that lets a companion keep (and restore) its own loaded chunk. */
 public class CompanionChunkLoadingTests {
@@ -89,31 +90,26 @@ public class CompanionChunkLoadingTests {
         anchors.put(first, new CompanionAnchors.Anchor(level.dimension(), firstChunk));
         h.runAfterDelay(60, () -> {
             h.assertTrue(loader.awaitingChunk(first), "a later tick should re-arm the saved anchor");
-            awaitChunk(h, level, firstChunk, 2400, () -> {
-                // Phase 2: restore() over an anchor whose chunk is not in memory must not generate it
-                // synchronously; the pending ticket loads it a few ticks later.
-                UUID second = UUID.randomUUID();
-                anchors.put(second, new CompanionAnchors.Anchor(level.dimension(), secondChunk));
-                loader.restore();
-                h.assertTrue(
-                        level.getChunkSource().getChunkNow(secondChunk.x(), secondChunk.z()) == null,
-                        "restore must not generate the anchored chunk on the server thread");
-                h.assertTrue(loader.awaitingChunk(second), "restore should arm the anchored chunk");
-
-                awaitChunk(
-                        h,
-                        level,
-                        secondChunk,
-                        2400,
-                        () -> h.runAfterDelay(120, () -> {
-                            h.assertTrue(
-                                    loader.anchorFor(first).isEmpty(),
-                                    "an anchor with no companion should be dropped after the grace period");
-                            h.assertTrue(
-                                    loader.anchorFor(second).isEmpty(),
-                                    "an anchor with no companion should be dropped after the grace period");
-                            h.succeed();
-                        }));
+            requireTicket(h, level, firstChunk);
+            // Phase 2: restore() only arms the anchor. A subsequent tick installs its ticket.
+            UUID second = UUID.randomUUID();
+            anchors.put(second, new CompanionAnchors.Anchor(level.dimension(), secondChunk));
+            loader.restore();
+            h.assertTrue(
+                    level.getChunkSource().getChunkNow(secondChunk.x(), secondChunk.z()) == null,
+                    "restore must not generate the anchored chunk on the server thread");
+            h.assertTrue(loader.awaitingChunk(second), "restore should arm the anchored chunk");
+            h.runAfterDelay(5, () -> {
+                requireTicket(h, level, secondChunk);
+                h.runAfterDelay(120, () -> {
+                    h.assertTrue(
+                            loader.anchorFor(first).isEmpty(),
+                            "an anchor with no companion should be dropped after the grace period");
+                    h.assertTrue(
+                            loader.anchorFor(second).isEmpty(),
+                            "an anchor with no companion should be dropped after the grace period");
+                    h.succeed();
+                });
             });
         });
     }
@@ -135,14 +131,12 @@ public class CompanionChunkLoadingTests {
         h.succeed();
     }
 
-    private static void awaitChunk(GameTestHelper h, ServerLevel level, ChunkPos chunk, int remaining, Runnable then) {
-        if (level.getChunkSource().getChunkNow(chunk.x(), chunk.z()) != null) {
-            then.run();
-        } else if (remaining <= 0) {
-            h.assertTrue(false, "the pending ticket should load the anchored chunk");
-        } else {
-            h.runAfterDelay(5, () -> awaitChunk(h, level, chunk, remaining - 5, then));
-        }
+    private static void requireTicket(GameTestHelper h, ServerLevel level, ChunkPos chunk) {
+        // Await I/O without spending simulated ticks. Passing false keeps the probe from adding its own ticket.
+        var result = level.getChunkSource()
+                .getChunkFuture(chunk.x(), chunk.z(), ChunkStatus.FULL, false)
+                .join();
+        h.assertTrue(result.isSuccess(), "the pending ticket must make " + chunk + " loadable: " + result.getError());
     }
 
     private static ChunkPos farChunk(GameTestHelper h) {

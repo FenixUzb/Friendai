@@ -248,8 +248,11 @@ public class ExcavationTests {
             for (int z = 0; z <= 7; z++) {
                 h.setBlock(x, 1, z, Blocks.COARSE_DIRT);
                 h.setBlock(x, 0, z, Blocks.COARSE_DIRT);
+                h.setBlock(x, -1, z, Blocks.STONE);
             }
         }
+        Result result = new Result();
+        c.executionCoordinator().setEventSink(result);
         var tools = GameTestToolRegistry.create(c, () -> 32).bind(c);
         String json = "{\"shape\":\"shaft\",\"run\":{\"direction\":\"down\",\"length\":2,\"width\":3,\"height\":3},"
                 + "\"start\":{\"near\":\"self\"}}";
@@ -260,17 +263,19 @@ public class ExcavationTests {
                 json,
                 null));
         h.assertTrue(!started.error(), "excavate starts: " + started.content());
-        h.succeedWhen(() -> {
-            c.executionCoordinator().tick();
-            int left = 0;
+        TaskTrace.of(h, c.executionCoordinator(), c).succeedWhen(() -> {
+            List<BlockPos> left = new ArrayList<>();
             for (int x = 2; x <= 4; x++) {
                 for (int z = 2; z <= 4; z++) {
                     for (int y = 0; y <= 1; y++) {
-                        if (h.getBlockState(new BlockPos(x, y, z)).is(Blocks.COARSE_DIRT)) left++;
+                        BlockPos pos = new BlockPos(x, y, z);
+                        if (h.getBlockState(pos).is(Blocks.COARSE_DIRT)) {
+                            left.add(pos);
+                        }
                     }
                 }
             }
-            h.assertValueEqual(left, 0, "earth left in the pit's two layers");
+            h.assertTrue(left.isEmpty(), "earth left in the pit's two layers: " + left + "; " + result.summary);
         });
     }
 
