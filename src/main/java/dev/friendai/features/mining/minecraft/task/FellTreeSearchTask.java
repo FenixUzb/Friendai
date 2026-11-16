@@ -29,6 +29,8 @@ public final class FellTreeSearchTask implements Task {
      * "chop some wood" fail beside a tree in plain view.
      */
     static final int TREE_SEARCH_WAIT_TICKS = 300;
+    /** A loaded server may drain a sweep slowly; cap the grace so a stalled observer cannot hold the task forever. */
+    private static final int TREE_SEARCH_MAX_WAIT_TICKS = 1_200;
 
     private static final int MAX_OBSERVATIONS = 1_024;
     /** Rebuilding the observation maps every tick spends the same 1024 entries for no new evidence. */
@@ -96,13 +98,13 @@ public final class FellTreeSearchTask implements Task {
             summary = delegate.resultSummary();
             return status;
         }
-        if (waited++ > TREE_SEARCH_WAIT_TICKS) {
-            summary = "no " + logs.label() + " tree observed or remembered within " + radius
-                    + " blocks; use search_resource to search for it, or look_around for a visible exposure";
-            return TaskStatus.FAILED;
-        }
+        waited++;
+        boolean pending = remaining <= 0
+                && waited > TREE_SEARCH_WAIT_TICKS
+                && c.observations().observer(c.companion()).queuedJobs() > 0;
+        boolean timedOut = waited > TREE_SEARCH_WAIT_TICKS && (!pending || waited > TREE_SEARCH_MAX_WAIT_TICKS);
         long now = c.level().getGameTime();
-        if (lastScan != 0 && now - lastScan < SCAN_INTERVAL_TICKS) {
+        if (!timedOut && lastScan != 0 && now - lastScan < SCAN_INTERVAL_TICKS) {
             return TaskStatus.RUNNING;
         }
         lastScan = now;
@@ -130,6 +132,12 @@ public final class FellTreeSearchTask implements Task {
                 .filter(tree -> !treesOnly || tree.kind() != TreeFinder.Kind.LOG_STRUCTURE)
                 .toList();
         if (found.isEmpty()) {
+            if (timedOut) {
+                summary = (pending ? "observation incomplete; " : "") + "no " + logs.label()
+                        + " tree observed or remembered within " + radius
+                        + " blocks; use search_resource to search for it, or look_around for a visible exposure";
+                return TaskStatus.FAILED;
+            }
             c.observations()
                     .observer(c.companion())
                     .scheduleSweep(c.level().getServer().overworld().getGameTime());

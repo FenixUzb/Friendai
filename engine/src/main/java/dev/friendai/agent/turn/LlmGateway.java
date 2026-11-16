@@ -10,6 +10,19 @@ import java.util.concurrent.CompletableFuture;
 public interface LlmGateway {
     CompletableFuture<LlmResponse> complete(String system, List<Message> messages, List<ToolSpec> tools);
 
+    /**
+     * The tokens the configured model accepts in one request, or 0 when this gateway cannot say. The brain then uses a
+     * conservative fallback, so an unknown provider only shortens a long history.
+     */
+    default int contextTokens() {
+        return 0;
+    }
+
+    /** The tokens reserved for the reply, or 0 when the profile does not state a limit. */
+    default int maxOutputTokens() {
+        return 0;
+    }
+
     /** Requests a JSON object when the gateway supports it; older and fake gateways remain compatible. */
     default CompletableFuture<LlmResponse> completeJson(String system, List<Message> messages, int outputMultiplier) {
         return complete(system, messages, List.of());

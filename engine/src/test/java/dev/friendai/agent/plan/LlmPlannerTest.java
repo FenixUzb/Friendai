@@ -46,6 +46,12 @@ class LlmPlannerTest {
             queue.add(CompletableFuture.completedFuture(FakeGateway.text(json)));
         }
 
+        CompletableFuture<LlmResponse> pending() {
+            CompletableFuture<LlmResponse> future = new CompletableFuture<>();
+            queue.add(future);
+            return future;
+        }
+
         @Override
         public CompletableFuture<LlmResponse> complete(String system, List<Message> messages, List<ToolSpec> tools) {
             throw new UnsupportedOperationException("the planner only asks for JSON");
@@ -124,11 +130,32 @@ class LlmPlannerTest {
     @Test
     void aReplyThatNeverArrivesTimesOut() {
         CompletableFuture<?> pending = gateway.enqueuePending();
-        LlmPlanner quick = new LlmPlanner(() -> gateway, text -> text, 1, 12, 8192, 49152);
+        LlmPlanner quick = new LlmPlanner(() -> gateway, text -> text, 1, 12, 8192, 49152, 1, event -> {});
         ExecutionException e = assertThrows(
                 ExecutionException.class, () -> quick.propose(input()).get());
         assertTrue(e.getCause() instanceof PlannerException, String.valueOf(e.getCause()));
-        pending.cancel(true);
+        assertEquals(
+                PlanFailure.Code.TIMEOUT,
+                ((PlannerException) e.getCause()).failure().code(),
+                "a passed deadline is its own failure, not an unreachable provider");
+        assertTrue(pending.isDone(), "the deadline settles the abandoned call");
+    }
+
+    @Test
+    void aCallThatOutlivesThePlannerDeadlineIsRetried() throws Exception {
+        ScriptedGateway slow = new ScriptedGateway();
+        CompletableFuture<LlmResponse> abandoned = slow.pending();
+        slow.enqueue(GOOD);
+        List<LlmPlanner.Event> events = new ArrayList<>();
+        LlmPlanner retrying = new LlmPlanner(() -> slow, text -> text, 1, 12, 8192, 49152, 2, events::add);
+
+        PlanProposal proposal = retrying.propose(input()).get(5, TimeUnit.SECONDS);
+
+        assertEquals("r", proposal.rationale());
+        assertEquals(2, slow.jsonRequests.size(), "a passed deadline is sent once more");
+        assertTrue(abandoned.isDone(), "the deadline settles the abandoned request");
+        assertEquals(PlanFailure.Code.TIMEOUT, events.getFirst().failure().code());
+        assertEquals("transport-retry", events.getFirst().disposition());
     }
 
     @Test

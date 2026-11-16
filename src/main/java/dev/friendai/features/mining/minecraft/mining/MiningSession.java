@@ -74,6 +74,9 @@ public final class MiningSession {
     /** Ticks a fall is waited out before planning from mid-air, so a body that never lands still reports a failure. */
     private static final int MAX_AIRBORNE_TICKS = 40;
 
+    /** How much of the typed refusal is carried into a task summary the model reads. */
+    private static final int MAX_FAILURE_DETAIL = 220;
+
     private final CompanionEntity companion;
     private final MiningBounds bounds;
     private final int maxBlocks;
@@ -125,6 +128,10 @@ public final class MiningSession {
     private String phase = "";
     /** Which plan attempt last gave up, for the debug line; empty while the session is getting on with the job. */
     private String diagnostic = "";
+    /** The typed cause of the last refused return route, recorded beside the diagnostic so the log names it. */
+    private String returnRefusal = "";
+    /** The first refused inverse leg, as {@code x,y,z->x,y,z}, when the refusal is about one leg. */
+    private String returnLeg = "";
     /** The current break is the fallback descent of the support cell, which the normal target guard refuses. */
     private boolean descent;
 
@@ -290,6 +297,81 @@ public final class MiningSession {
     private static String shortKey(String key) {
         int dot = key.lastIndexOf('.');
         return dot < 0 ? key : key.substring(dot + 1);
+    }
+
+    /**
+     * The typed cause of the last refusal as one bounded sentence the model can act on: what failed, at which block,
+     * what the refused return edge was and how much work is left. Empty when the session recorded no refusal.
+     */
+    public String failureDetail() {
+        if (diagnostic.isEmpty() && returnRefusal.isEmpty() && primaryFailure == null) {
+            return "";
+        }
+        String why = diagnostic.isEmpty() ? "refused-" + shortKey(primaryFailure.key()) : diagnostic;
+        return detailText(why, target == null ? "" : coords(target), targets.size(), excludedTargets.size());
+    }
+
+    /** The bounded sentence itself, kept separate so its wording and its bound are testable without a world. */
+    static String detailText(String diagnostic, String at, int candidates, int refused) {
+        StringBuilder text = new StringBuilder(describeDiagnostic(diagnostic));
+        if (at != null && !at.isBlank()) {
+            text.append(" at ").append(at);
+        }
+        if (candidates > 0) {
+            text.append("; ").append(candidates).append(" candidate(s) left");
+        }
+        if (refused > 0) {
+            text.append("; ").append(refused).append(" refused");
+        }
+        return text.length() > MAX_FAILURE_DETAIL ? text.substring(0, MAX_FAILURE_DETAIL) : text.toString();
+    }
+
+    /** One readable phrase per recorded diagnostic token; an unknown token is shown as it was recorded. */
+    static String describeDiagnostic(String token) {
+        if (token.startsWith("return-route") || token.startsWith("return-needs-supports")) {
+            return returnPhrase(token);
+        }
+        if (token.startsWith("refused-")) {
+            return "the plan was refused (" + token.substring("refused-".length()) + ")";
+        }
+        if (token.startsWith("target-refused-")) {
+            return "the block cannot be taken here (" + token.substring("target-refused-".length()) + ")";
+        }
+        return switch (token) {
+            case "no-path", "no-path-close" -> "no route to a stance that can break it";
+            case "cut-passage" -> "the planned passage is no longer walkable";
+            case "blind-stance" -> "the stance cannot see the block";
+            case "no-route" -> "no route to the block";
+            case "walk-failed" -> "the walk to the block failed";
+            case "target-gone" -> "the block is gone";
+            case "inventory-full" -> "the inventory is full";
+            case "catch-refused", "platform-refused" -> "there is no safe place for the drops";
+            case "break-blocked" -> "the break was refused";
+            case "break-failed" -> "the break failed";
+            default -> token;
+        };
+    }
+
+    static String returnPhrase(String token) {
+        if (token.startsWith("return-needs-supports")) {
+            return "the way back needs more support blocks than are free";
+        }
+        if (token.startsWith("return-route-unloaded") || token.equals("return-route-anchor-unloaded")) {
+            return "the way back crosses an unloaded chunk";
+        }
+        if (token.startsWith("return-route-obstructed")) {
+            return "the way back is obstructed";
+        }
+        if (token.startsWith("return-route-chain")) {
+            return "the way back no longer connects to where the companion stands";
+        }
+        if (token.startsWith("return-route-anchor")) {
+            return "the way back does not end at the safe anchor";
+        }
+        if (token.equals("return-route-dimension")) {
+            return "the way back is in another dimension";
+        }
+        return "the way back cannot be verified";
     }
 
     private String cell(BlockPos pos) {
@@ -474,7 +556,7 @@ public final class MiningSession {
         }
         Node current = node();
         if (passage.steps().isEmpty()) {
-            var visibleTarget = goal.targetAt(current, guard(context).planningView(context, context.pathingConfig()));
+            var visibleTarget = goal.targetAt(current, ExcavationGuard.planningView(context, context.pathingConfig()));
             if (visibleTarget.isEmpty()) {
                 excludedStances.add(current);
                 diagnostic = "blind-stance";
@@ -528,7 +610,7 @@ public final class MiningSession {
                 refusedExplorationSteps.clear();
                 explorationRetryFrom = current;
             }
-            var view = guard(context).planningView(context, context.pathingConfig());
+            var view = ExcavationGuard.planningView(context, context.pathingConfig());
             exploration = new ExplorationPlanner(
                     view,
                     current,
@@ -619,24 +701,39 @@ public final class MiningSession {
     /** Checks every inverse edge in the current excavation route against the live, loaded terrain. */
     private boolean assessReturnBeforeDescent(TaskContext context, PathStep next) {
         Node current = node();
-        if (verifiedReturnRoute.isEmpty()
-                || !verifiedReturnRoute.get(verifiedReturnRoute.size() - 1).equals(current)
-                || verifiedReturnRoute.size() >= 64
-                || !explorationDimension.equals(
-                        context.level().dimension().identifier().toString())) {
-            diagnostic = "return-route-stale";
+        returnRefusal = "";
+        returnLeg = "";
+        if (verifiedReturnRoute.isEmpty()) {
+            diagnostic = "return-route-stale-empty";
+            requiredReturnSupports = 0;
+            return false;
+        }
+        if (!verifiedReturnRoute.get(verifiedReturnRoute.size() - 1).equals(current)) {
+            diagnostic = "return-route-stale-chain";
+            requiredReturnSupports = 0;
+            return false;
+        }
+        if (verifiedReturnRoute.size() >= 64) {
+            diagnostic = "return-route-stale-long";
+            requiredReturnSupports = 0;
+            return false;
+        }
+        if (!explorationDimension.equals(
+                context.level().dimension().identifier().toString())) {
+            diagnostic = "return-route-dimension";
+            returnRefusal = ReturnAssessment.Refusal.DIMENSION_CHANGED.name();
             requiredReturnSupports = 0;
             return false;
         }
         List<Node> forward = new ArrayList<>(verifiedReturnRoute);
         if (!forward.get(forward.size() - 1).equals(next.from())) {
-            diagnostic = "return-route-stale";
+            diagnostic = "return-route-stale-chain";
             requiredReturnSupports = 0;
             return false;
         }
         forward.add(next.to());
 
-        CellView live = guard(context).planningView(context, context.pathingConfig());
+        CellView live = ExcavationGuard.planningView(context, context.pathingConfig());
         Set<Pos> newlyBroken = Set.copyOf(next.breaks());
         CellView afterDescent = (x, y, z) -> {
             Pos pos = new Pos(x, y, z);
@@ -662,13 +759,35 @@ public final class MiningSession {
         ReturnAssessment.Result result = ReturnAssessment.assess(evidence, spare);
         if (result.status() != ReturnAssessment.Status.SAFE) {
             requiredReturnSupports = 0;
-            diagnostic = result.status() == ReturnAssessment.Status.NEEDS_SUPPORTS
-                    ? "return-needs-supports-" + result.requiredSupports() + "-spare-" + spare
-                    : "return-route-blocked-or-unknown";
+            diagnostic = returnDiagnostic(result, spare);
+            returnRefusal = result.refusal() == null ? "" : result.refusal().name();
+            returnLeg = legText(result.failedLeg());
             return false;
         }
         requiredReturnSupports = result.requiredSupports();
+        diagnostic = "";
         return true;
+    }
+
+    /** One bounded line naming the first refused inverse edge and its cause, for the debug trace and the log. */
+    private static String returnDiagnostic(ReturnAssessment.Result result, int spare) {
+        return switch (result.refusal()) {
+            case SUPPORTS -> "return-needs-supports-" + result.requiredSupports() + "-spare-" + spare;
+            case LEG_UNLOADED -> "return-route-unloaded-" + legText(result.failedLeg());
+            case LEG_OBSTRUCTED -> "return-route-obstructed-" + legText(result.failedLeg());
+            case LEG_BROKEN_CHAIN -> "return-route-chain-" + legText(result.failedLeg());
+            case ANCHOR_UNREACHED -> "return-route-anchor-" + legText(result.failedLeg());
+            case ANCHOR_UNLOADED -> "return-route-anchor-unloaded";
+            case DIMENSION_CHANGED -> "return-route-dimension";
+            case STALE -> "return-route-stale";
+            case null -> "return-route-unknown";
+        };
+    }
+
+    private static String legText(ReturnAssessment.Leg leg) {
+        if (leg == null) return "none";
+        return leg.from().x() + "," + leg.from().y() + "," + leg.from().z() + "->"
+                + leg.to().x() + "," + leg.to().y() + "," + leg.to().z();
     }
 
     private ReturnAssessment.Leg probeInverse(CellView view, Node from, Node to) {
@@ -921,7 +1040,7 @@ public final class MiningSession {
     }
 
     private void createTargetSearch(TaskContext context) {
-        var view = guard(context).planningView(context, context.pathingConfig());
+        var view = ExcavationGuard.planningView(context, context.pathingConfig());
         List<Pos> candidates = new ArrayList<>();
         for (BlockPos candidate : targets) {
             Pos plain = plain(candidate);
@@ -998,15 +1117,15 @@ public final class MiningSession {
 
     private State retryPlan(TaskContext context, UserMessage reason) {
         if (!diagnostic.isEmpty()) {
-            context.decision(
-                    LogEvents.RESOURCE_DECISION,
-                    "diagnostic",
-                    Map.of(
-                            "diagnostic", diagnostic,
-                            "target", target == null ? "none" : coords(target),
-                            "excludedTargets", Integer.toString(excludedTargets.size()),
-                            "excludedStances", Integer.toString(excludedStances.size()),
-                            "candidates", Integer.toString(targets.size())));
+            Map<String, String> facts = new java.util.LinkedHashMap<>();
+            facts.put("diagnostic", diagnostic);
+            facts.put("target", target == null ? "none" : coords(target));
+            facts.put("excludedTargets", Integer.toString(excludedTargets.size()));
+            facts.put("excludedStances", Integer.toString(excludedStances.size()));
+            facts.put("candidates", Integer.toString(targets.size()));
+            if (!returnRefusal.isEmpty()) facts.put("returnRefusal", returnRefusal);
+            if (!returnLeg.isEmpty()) facts.put("returnLeg", returnLeg);
+            context.decision(LogEvents.RESOURCE_DECISION, "diagnostic", facts);
         }
         noProgressPlans++;
         if (primaryFailure == null) {

@@ -597,8 +597,9 @@ public class ToolTests {
         ToolResult r = run(tools(c), "find_blocks", "{\"block\":\"minecraft:iron_block\",\"limit\":2}");
         h.assertTrue(!r.error(), "error: " + r.content());
         h.assertTrue(
-                r.content().startsWith("2 observed/remembered minecraft:iron_block nearest first: "),
+                r.content().startsWith("2 minecraft:iron_block nearest first (2 observed, 0 remembered): "),
                 "content was " + r.content());
+        h.assertTrue(r.content().contains("observed now"), "evidence is not named: " + r.content());
         String nearest = coords(h.absolutePos(new BlockPos(5, 2, 2))) + " (";
         String second = coords(h.absolutePos(new BlockPos(9, 2, 2))) + " (";
         String cut = coords(h.absolutePos(new BlockPos(12, 2, 2))) + " (";
@@ -617,13 +618,15 @@ public class ToolTests {
     public void findBlocksNamesTheNearestBlockJustPastTheRadius(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos far = new BlockPos(13, 2, 4);
-        h.setBlock(far, Blocks.IRON_BLOCK);
+        h.setBlock(far, Blocks.CHISELED_RESIN_BRICKS);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 4);
         h.assertTrue(GameTestSupport.observeVisible(h, c, h.absolutePos(far)), "fixture block should be visible");
-        ToolResult r = run(tools(c), "find_blocks", "{\"block\":\"minecraft:iron_block\",\"radius\":8}");
+        ToolResult r = run(tools(c), "find_blocks", "{\"block\":\"minecraft:chiseled_resin_bricks\",\"radius\":8}");
         h.assertTrue(!r.error(), "error: " + r.content());
         h.assertTrue(
-                r.content().startsWith("no minecraft:iron_block within 8 blocks, but the nearest")
+                r.content()
+                                .startsWith(
+                                        "no minecraft:chiseled_resin_bricks observed or remembered within 8 blocks, but the nearest")
                         && r.content().contains(coords(h.absolutePos(far))),
                 "content was " + r.content());
         h.succeed();
@@ -651,6 +654,28 @@ public class ToolTests {
         h.assertTrue(!r.error() && r.content().contains(coords(h.absolutePos(inView))), "content was " + r.content());
         h.assertTrue(
                 !r.content().contains(coords(h.absolutePos(sealed))), "sealed ore must stay unseen: " + r.content());
+        h.succeed();
+    }
+
+    @GameTest(maxTicks = 100)
+    public void findBlocksReportsAnIncompleteFocusedLook(GameTestHelper h) {
+        GameTestSupport.platform(h, 32);
+        for (int x = 4; x < 20; x++) {
+            for (int y = 1; y < 17; y++) {
+                for (int z = 4; z < 20; z++) {
+                    boolean shell = x == 4 || x == 19 || y == 1 || y == 16 || z == 4 || z == 19;
+                    h.setBlock(x, y, z, shell ? Blocks.STONE : Blocks.CHISELED_TUFF_BRICKS);
+                }
+            }
+        }
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        c.setOwner(java.util.UUID.randomUUID());
+        ToolResult r = run(tools(c), "find_blocks", "{\"block\":\"minecraft:chiseled_tuff_bricks\",\"radius\":32}");
+        h.assertTrue(
+                !r.error()
+                        && r.content().contains("focused look")
+                        && r.content().contains("incomplete"),
+                "a bounded search must disclose an incomplete look: " + r.content());
         h.succeed();
     }
 

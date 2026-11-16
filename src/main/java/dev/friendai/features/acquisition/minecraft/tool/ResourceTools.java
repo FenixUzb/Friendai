@@ -15,6 +15,8 @@ import dev.friendai.execution.tool.ToolResult;
 import dev.friendai.features.acquisition.minecraft.ResourceSearchTaskFactory;
 import dev.friendai.features.acquisition.minecraft.search.ResourceResolver;
 import dev.friendai.features.acquisition.minecraft.search.SearchTargets;
+import dev.friendai.features.acquisition.minecraft.task.SearchResourceCheckpoints;
+import dev.friendai.features.acquisition.minecraft.task.SearchResourceTask;
 import dev.friendai.features.knowledge.ResourceKnowledgeText;
 import dev.friendai.features.knowledge.ResourceQuery;
 import dev.friendai.features.knowledge.minecraft.LandmarkScanner;
@@ -448,14 +450,14 @@ public final class ResourceTools implements FeatureToolContributor {
         return new TaskContext(companion, (ServerLevel) companion.level());
     }
 
-    private static void registerSearchTask(
+    private void registerSearchTask(
             FeatureToolRegistry registry,
             String name,
             String description,
             JsonObject schema,
             TaskToolDefinition.Factory factory,
             TaskToolDefinition.CallerFactory callerFactory) {
-        registry.registerTask(new TaskToolDefinition(
+        TaskToolDefinition definition = new TaskToolDefinition(
                 name,
                 description,
                 schema,
@@ -466,7 +468,15 @@ public final class ResourceTools implements FeatureToolContributor {
                 TaskToolDefinition.QueueTraits.DEFAULT,
                 true,
                 true,
-                metadata(name)));
+                metadata(name));
+        // The four search tools all produce one task type, so its checkpoint decoder is contributed exactly once;
+        // the registry rejects a second definition claiming the same type.
+        if (SearchResourceTask.TYPE.equals(name)) {
+            definition = definition.withCheckpoint(
+                    SearchResourceTask.TYPE,
+                    (state, context) -> SearchResourceCheckpoints.search(state, context, taskFactory));
+        }
+        registry.registerTask(definition);
     }
 
     private static void registerTool(
@@ -539,6 +549,22 @@ public final class ResourceTools implements FeatureToolContributor {
                         "- Use search_hint only after look_around or survey_area gave you evidence: a direction, landmark, biome or rough area with one line of reason. It steers the next search; it never issues a waypoint, and a bad hint costs one leg.",
                         java.util.List.of(),
                         Cost.LOW);
+            case "search_resource" ->
+                new ToolMeta(
+                        name,
+                        ToolGroup.RESOURCE,
+                        false,
+                        "- Use search_resource when the material is not visible or remembered nearby: it runs a bounded trip that explores, inspects and returns, then reports what it found and where. Use find_blocks for the question alone and known_resources for remembered sites. Taking the material is a separate mine_blocks, excavate or obtain_item call.",
+                        java.util.List.of(),
+                        Cost.HIGH);
+            case "known_resources" ->
+                new ToolMeta(
+                        name,
+                        ToolGroup.RESOURCE,
+                        false,
+                        "- Use known_resources to list what you already remember about a material and where it was seen: read-only, no travel. Use find_blocks for the nearest visible or remembered blocks and search_resource to go looking when nothing is known.",
+                        java.util.List.of(),
+                        Cost.HIGH);
             default -> new ToolMeta(name, ToolGroup.RESOURCE, false, "", java.util.List.of(), Cost.HIGH);
         };
     }

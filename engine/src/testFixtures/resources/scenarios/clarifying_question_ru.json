@@ -1,0 +1,21 @@
+{
+  "name": "clarifying_question_ru",
+  "access": "owner",
+  "language": "ru",
+  "playerSays": "Принеси немного дерева.",
+  "replies": [
+    {
+      "text": "Сколько дерева тебе нужно?",
+      "tools": []
+    }
+  ],
+  "expect": {
+    "maxRequests": 1,
+    "maxClarifications": 1,
+    "maxFalseConfirmations": 0,
+    "toolsNotCalled": [
+      "mine_blocks",
+      "queue_add"
+    ]
+  }
+}

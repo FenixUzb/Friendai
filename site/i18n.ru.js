@@ -94,11 +94,11 @@ const RU = {
     "Добыть до 64 блоков одного типа за один вызов; древесину получает из целых сваленных деревьев; один раз ищет цель, которую ещё не видел.",
   "Mine the block you point at, follow its vein, and report what was taken.":
     "Добыть указанный блок, пройти по его жиле и сообщить, что подобрано.",
-  "Mine a box, tunnel, stair, shaft or strip mine in one call, with drops and safety; a stair is carved as a walkable passage, fallback descents stay within the target depth, and uncleared solid cells are reported.":
-    "Выкопать котлован, тоннель, лестницу, шахту или штрек с безопасным сбором добычи. По лестнице можно пройти, запасные спуски ограничены глубиной цели, а неубранные твёрдые блоки указываются в отчёте.",
+  "Mine a box, tunnel, stair, shaft or strip mine in one call, with drops and safety; a stair is carved as a walkable passage, fallback descents stay within the target depth, and uncleared solid cells are reported; a count larger than the region is capped and the result names both numbers.":
+    "Выкопать котлован, тоннель, лестницу, шахту или штрек с безопасным сбором добычи. По лестнице можно пройти, запасные спуски ограничены глубиной цели, а неубранные твёрдые блоки указываются в отчёте; запрос больше области ограничивается её объёмом, и результат называет оба числа.",
   "Collect every drop in the radius in one call.": "Подобрать все выпавшие предметы в радиусе за один вызов.",
   "Scan for trees.": "Найти деревья.",
-  "Scan for blocks and ore veins.": "Найти блоки и рудные жилы.",
+  "Scan for blocks and ore veins, naming what is observed now, what is only remembered, and whether a stance could start each one.": "Найти блоки и рудные жилы, указывая, что видно сейчас, что только запомнено и можно ли начать добычу с соседней позиции.",
   "List blocks the companion placed earlier.": "Список блоков, поставленных компаньоном раньше.",
   "Vein follower": "Следование за жилой",
   "Mines a whole vein, not one block.": "Добывает всю жилу, а не один блок.",
@@ -235,14 +235,14 @@ const RU = {
   /* ---- Acquisition ---- */
   "Resource Acquisition": "Добыча ресурсов",
   "Ask for an item and it works out how: inventory, chests, craft, smelt, mine, hunt, harvest, shear, milk or explore.": "Попросите предмет, и он сам решит как: инвентарь, сундуки, крафт, плавка, добыча, охота, урожай, стрижка, дойка или разведка.",
-  "Get an item by any means; wood is felled as whole trees.":
-    "Получить предмет любым способом; древесину добывает, свалив деревья целиком.",
+  "Get an item by any means, using the room left in the stacks it already carries; wood is felled as whole trees.":
+    "Получить предмет любым способом, используя свободное место в уже переносимых стопках; древесину добывает, свалив деревья целиком.",
   "Gather every material for a set of items once, then craft them all; accepts the item/count aliases; mines a mineable item instead of crafting it from a rarer one; wood is felled as whole trees.":
     "Собрать все материалы для набора предметов один раз, а потом создать их все; принимает псевдонимы item/count; добывает предмет, который можно добыть, вместо крафта из более редкого; древесину добывает, свалив деревья целиком.",
   "Gather shared materials once for a set of items, then craft them all; accepts item/count aliases; mines a mineable item instead of crafting it from a rarer one; wood is felled as whole trees.":
     "Один раз собрать общие материалы для набора предметов, а затем создать их все; принимает псевдонимы item/count; добывает доступный материал вместо крафта из более редкого; древесину добывает, свалив деревья целиком.",
   "Show the plan without doing it.": "Показать план, не выполняя его.",
-  "Explore to find a resource.": "Отправиться на поиск ресурса.",
+  "Explore to find a resource when nothing is visible or remembered; read-only questions use find_blocks or known_resources.": "Отправиться на поиск ресурса, когда рядом ничего не видно и не запомнено; для вопроса без похода есть find_blocks и known_resources.",
   "What it already knows about.": "Что ему уже известно.",
   "Show up to three remembered resource sites with their age and uncertainty.": "Показать до трёх запомненных мест с ресурсами, их возраст и неопределённость.",
   "Prioritizes verified approaches, usable tools and lower estimated trip cost.": "Сначала выбирает проверенный подход, подходящий инструмент и меньшую расчётную стоимость пути.",
@@ -257,7 +257,8 @@ const RU = {
   "Frontier search": "Поиск по границе",
   "Biome edges, water, hazards and trails.": "Границы биомов, вода, опасности и следы.",
   "Search budget": "Бюджет поиска",
-  "Gives up sensibly.": "Вовремя сдаётся.",
+  "Gives up sensibly; a restart resumes the same trip with the budget it already spent.":
+    "Вовремя сдаётся; после перезапуска тот же поход продолжается с уже потраченным бюджетом.",
 
   /* ---- Trading ---- */
   "Trading": "Торговля",
@@ -347,7 +348,7 @@ const RU = {
   "Merge duplicate facts safely, dry run first (owner only).": "Безопасно слить дубликаты фактов, сначала пробный запуск (только владелец).",
   "Drop a manner the owner dislikes and never drift back into it (owner only).": "Убрать манеру, которая не нравится владельцу, и не возвращаться к ней (только владелец).",
   "Conversation transcript": "Запись разговоров",
-  "Both sides of every chat, redacted, capped by count and age.": "Обе стороны каждого разговора, секреты скрыты, ограничено по числу и возрасту.",
+  "Both sides of every chat, redacted, capped by count and age; a recreated companion restores the last few delivered lines.": "Обе стороны каждого разговора, секреты скрыты, ограничено по числу и возрасту; пересозданный компаньон восстанавливает последние произнесённые реплики.",
   "Store a fact.": "Запомнить факт.",
   "List the owner's skills with ids, versions and on/off state.":
     "Показать навыки владельца: идентификаторы, версии и включённость.",
@@ -459,14 +460,18 @@ const RU = {
   "Streamed sentences": "Предложения потоком",
   "Ordered per stream and session, with one cut-off report.": "По порядку в потоке и сессии, с одним сообщением об обрыве.",
   "Early sentence": "Ранняя фраза",
-  "The first safe sentence speaks before the provider finishes; the full reply stays authoritative.": "Первая безопасная фраза звучит до завершения ответа; полный ответ остаётся главным.",
+  "Only ordinary conversation speaks its first safe sentence before the provider finishes; a claim about work waits for the tool result.": "Только обычный разговор озвучивает первую безопасную фразу до завершения ответа; утверждение о работе ждёт результата инструмента.",
+  "Grounded reply": "Ответ по факту",
+  "A reply that arrives with tool calls is spoken only after every call is accepted, so a refused order is answered by what really happened.": "Ответ, пришедший вместе с вызовом инструмента, звучит только после того, как принят каждый вызов, поэтому на отклонённый приказ отвечает то, что произошло на самом деле.",
+  "One line per plan": "Одна строка на план",
+  "A successful step inside a plan stays quiet; the plan's final result is what the owner hears.": "Успешный шаг внутри плана молчит; владелец слышит итог плана.",
   "OpenAI TTS": "OpenAI TTS",
   "Cloud speech.": "Облачная речь.",
   "ElevenLabs": "ElevenLabs",
   "Yandex SpeechKit": "Yandex SpeechKit",
   "Spatial audio": "Пространственный звук",
-  "Voice chat output": "Вывод через голосовой чат",
-  "Optional: plays through Simple Voice Chat from the companion, so Sound Physics Remastered can shape it.": "Необязательно: голос идёт через Simple Voice Chat от компаньона, и Sound Physics Remastered может его обработать.",
+  "Voice chat": "Голосовой чат",
+  "Optional: with Simple Voice Chat installed the voice plays through it from the companion, so Sound Physics Remastered can shape it, and the wake word listens to what you say in voice chat; without it the built-in output and microphone are used.": "Необязательно: с установленным Simple Voice Chat голос идёт через него от компаньона, поэтому Sound Physics Remastered может его обработать, а слово-пробуждение слушает то, что вы говорите в голосовой чат; без него используются встроенные вывод и микрофон.",
   "Equal-power pan and distance level.": "Панорама равной мощности и уровень по расстоянию.",
   "Stop speaking key": "Клавиша «замолчать»",
   "Cuts playback instantly.": "Мгновенно прерывает воспроизведение.",
@@ -509,7 +514,7 @@ const RU = {
   "Detects whether the companion is addressed.": "Определяет, обращаются ли к компаньону.",
   "Own companion in hearing range, else the nearest other whose owner is online.": "Свой компаньон в зоне слышимости, иначе ближайший другой, чей владелец в сети.",
   "CompanionBrain": "CompanionBrain",
-  "The per-owner agent loop. One principal per turn; late replies are dropped by a generation counter.": "Цикл агента для каждого владельца. Один принципал на ход; запоздалые ответы отбрасывает счётчик поколений.",
+  "The per-owner agent loop. One principal per turn; late replies are dropped by a generation counter. A blocked job that fails three times without a new fact pauses the turn that carries it and asks the owner, instead of starting unrelated work. Every request is fitted into one conservative token budget, and a committed plan is acknowledged without a second round trip. A recreated companion restores the last few delivered lines of the owner's conversation.": "Цикл агента для каждого владельца. Один принципал на ход; запоздалые ответы отбрасывает счётчик поколений. Заблокированная работа, трижды сорвавшаяся без новых фактов, приостанавливает свой ход и спрашивает владельца, вместо того чтобы начинать постороннюю работу. Каждый запрос укладывается в один осторожный бюджет токенов, а принятый план подтверждается без второго обращения к модели. Пересозданный компаньон восстанавливает последние произнесённые реплики разговора владельца.",
   "TurnRouter": "TurnRouter",
   "Picks chat, action, goal, recovery or event, and which tool groups are visible; PlanningPolicy then names what a plan-worthy turn is about.": "Выбирает режим: чат, действие, цель, восстановление или событие, и какие группы инструментов видны; затем PlanningPolicy решает, о чём стоит планировать.",
   "Planner": "Планировщик",
@@ -595,6 +600,8 @@ const RU = {
   "Become an error result, never an exception.": "Становятся результатом-ошибкой, а не исключением.",
   "Ordered tool calls": "Упорядоченные вызовы",
   "Anthropic and Gemini get one merged result message.": "Anthropic и Gemini получают одно объединённое сообщение с результатами.",
+  "Repeated failures": "Повторные неудачи",
+  "An identical failing call runs once more, then reuses its recorded error.": "Идентичный неудачный вызов выполняется ещё раз, затем переиспользует записанную ошибку.",
   "Keys never leak": "Ключи не утекают",
   "Not in logs, URLs, toasts or toString.": "Ни в логах, ни в URL, ни в уведомлениях, ни в toString.",
   "Layer boundary": "Граница слоёв",
@@ -606,8 +613,8 @@ const RU = {
   "Per-owner files": "Файлы владельца",
   "<world>/friendai/ - one file per owner UUID, atomic writes, .bak recovery": "<world>/friendai/ — по файлу на UUID владельца, атомарная запись, восстановление из .bak",
   "Owner data": "Данные владельца",
-  "Memory, profile, goals and free-time stores share one bounded runtime writer; it flushes latest-revision snapshots on a 5 s server-tick cadence. Unsupported versions are never overwritten.":
-    "Память, профиль, цели и свободное время пишет один ограниченный по работе компонент: он сбрасывает снимки последней ревизии раз в 5 секунд по тикам сервера. Неподдерживаемые версии никогда не перезаписываются.",
+  "Memory, profile, goals and free-time stores share one bounded runtime writer; it flushes latest-revision snapshots on a 5 s server-tick cadence, one store per tick and at most 64 records per flush. Unsupported versions are never overwritten.":
+    "Память, профиль, цели и свободное время пишет один ограниченный по работе компонент: он сбрасывает снимки последней ревизии раз в 5 секунд по тикам сервера, по одному хранилищу за тик и не более 64 записей за сброс. Неподдерживаемые версии никогда не перезаписываются.",
   "Facts about players, trust, learned language, food rules.": "Факты об игроках, доверие, выученный язык, правила питания.",
   "Companion profile": "Профиль компаньона",
   "Name, description, language and address.": "Имя, описание, язык и обращение.",
@@ -1124,7 +1131,8 @@ Object.assign(RU, {
   "A rejected frame closes that viewer's menu with a warning instead of escaping into the tick.":
     "Отклонённый кадр закрывает меню этого зрителя с предупреждением, а не утекает в тик.",
   "10-tick cadence": "Шаг в 10 тиков",
-  "Framed control views while the menu is open.": "Кадры control-видов, пока меню открыто.",
+  "One open viewer per server tick in rotation; each keeps its ten-tick cadence.":
+    "Один открытый экран за серверный тик по кругу; каждый сохраняет шаг в десять тиков.",
   "Subscribe and close": "Подписка и закрытие",
   "One typed request, and the same path a disconnect and a ten-tick sweep take.":
     "Один типизированный запрос и тот же путь, что у отключения и десятитиковой проверки.",

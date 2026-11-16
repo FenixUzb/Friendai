@@ -17,8 +17,8 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
- * Drafts a bounded plan in one provider request. A rejected reply is final; only a transient transport fault is
- * re-sent. No tools execute on this worker thread.
+ * Drafts a bounded plan in one provider request. A rejected reply is final; only a transient transport fault or the
+ * planner's own deadline is re-sent. No tools execute on this worker thread.
  */
 public final class LlmPlanner implements Planner {
     public record Event(int attempt, String reply, PlanFailure failure, String disposition) {}
@@ -96,8 +96,8 @@ public final class LlmPlanner implements Planner {
         return request.orTimeout(timeoutSec, TimeUnit.SECONDS)
                 .handle((response, error) -> {
                     if (error != null) {
-                        // A timed-out HTTP call is abandoned, not waited on: the retry must not race a live request.
-                        if (PlanFailure.unwrap(error) instanceof TimeoutException) request.cancel(true);
+                        // The deadline completes this future itself, so the abandoned provider call runs on to its
+                        // own HTTP timeout and its answer is dropped; the retry below never waits on it.
                         throw new CompletionException(error);
                     }
                     if (response == null) throw new CompletionException(new IllegalStateException());
@@ -143,9 +143,9 @@ public final class LlmPlanner implements Planner {
     }
 
     /**
-     * A provider fault is re-sent while a send can work, the configured total attempts still leave one and nobody has
-     * stopped the turn; otherwise it is the answer. A rejected reply never reaches this path. The retry repeats the
-     * same request, so a transient fault never costs the plan its drafting chance.
+     * A provider fault or a passed deadline is re-sent while a send can work, the configured total attempts still
+     * leave one and nobody has stopped the turn; otherwise it is the answer. A rejected reply never reaches this
+     * path. The retry repeats the same request, so a transient fault never costs the plan its drafting chance.
      */
     private CompletableFuture<PlanProposal> transportFailed(
             Throwable error,
@@ -155,9 +155,15 @@ public final class LlmPlanner implements Planner {
             int number,
             BooleanSupplier cancelled) {
         Throwable cause = PlanFailure.unwrap(error);
+        boolean timedOut = cause instanceof TimeoutException;
         var failure = new PlanFailure(
-                PlanFailure.Code.REQUEST_FAILED, cause.getClass().getSimpleName(), number);
-        boolean transientFault = cause instanceof LlmException llm && llm.kind().retryable();
+                timedOut ? PlanFailure.Code.TIMEOUT : PlanFailure.Code.REQUEST_FAILED,
+                cause.getClass().getSimpleName(),
+                number);
+        // The planner's own deadline is a transient fault even though it never reached the HTTP layer as an
+        // LlmException; the abandoned call's answer can no longer reach this turn, so a second send is safe.
+        boolean transientFault =
+                timedOut || (cause instanceof LlmException llm && llm.kind().retryable());
         if (!transientFault || number >= attempts) {
             emit(new Event(number, "", failure, "given up"));
             return CompletableFuture.failedFuture(new PlannerException(failure));

@@ -577,6 +577,30 @@ public class StorageTests {
         });
     }
 
+    @GameTest(maxTicks = 1200, environment = "friendai-gametest:storage_tour")
+    public void obtainChecksChestBeforeCrafting(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        h.setBlock(6, 2, 6, Blocks.CHEST);
+        Container chest = containerAt(h, 6, 2, 6);
+        chest.setItem(0, new ItemStack(Items.OAK_PLANKS, 4));
+        chest.setChanged();
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 3, 2, 6);
+        c.setOwner(UUID.randomUUID());
+        c.inventory().addItem(new ItemStack(Items.OAK_LOG));
+        Result result = new Result();
+        ExecutionCoordinator runner = runner(c, result);
+        runner.start(
+                new ObtainTask("minecraft:oak_planks", 4, true, false, new MinecraftObtainSubtaskFactory()),
+                "obtain_item");
+        h.succeedWhen(() -> {
+            runner.tick();
+            h.assertTrue(result.status == TaskStatus.SUCCESS, "not finished: " + result.status + " " + result.summary);
+            h.assertValueEqual(c.inventory().countItem(Items.OAK_LOG), 1, "log preserved");
+            h.assertValueEqual(chest.countItem(Items.OAK_PLANKS), 0, "planks taken from chest");
+            h.assertValueEqual(c.inventory().countItem(Items.OAK_PLANKS), 4, "planks carried");
+        });
+    }
+
     /**
      * For five minutes after the companion opened a chest it still sees what the owner puts in; past that window what
      * it remembers is a hint that may have changed, and something new is not seen until it looks again.
@@ -615,6 +639,74 @@ public class StorageTests {
             String remembered = find(tools, "minecraft:ender_pearl");
             h.assertTrue(remembered.contains("may have changed"), "the pearl is only remembered now: " + remembered);
         });
+    }
+
+    @GameTest(maxTicks = 400)
+    public void liveViewDoesNotReadAfterProtectionIsApplied(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        h.setBlock(6, 2, 6, Blocks.CHEST);
+        Container chest = containerAt(h, 6, 2, 6);
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 4, 2, 4);
+        c.setOwner(UUID.randomUUID());
+        BlockPos target = h.absolutePos(new BlockPos(6, 2, 6));
+        Result result = new Result();
+        ExecutionCoordinator runner = runner(c, result);
+        runner.start(new CheckContainerTask(target), "check_container");
+        var tools = GameTestToolRegistry.create(c, () -> 32).bind(c);
+        h.succeedWhen(() -> {
+            runner.tick();
+            h.assertTrue(result.status == TaskStatus.SUCCESS, "not opened yet: " + result.status);
+            c.hands().overrideProtection(target::equals);
+            chest.setItem(0, new ItemStack(Items.DIAMOND));
+            String answer = find(tools, "minecraft:diamond");
+            h.assertTrue(answer.startsWith("I have no record"), "protected contents leaked: " + answer);
+        });
+    }
+
+    @GameTest(maxTicks = 400)
+    public void liveViewDoesNotReadAfterChestIsLocked(GameTestHelper h) {
+        GameTestSupport.platform(h, 16);
+        h.setBlock(6, 2, 6, Blocks.CHEST);
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 4, 2, 4);
+        c.setOwner(UUID.randomUUID());
+        BlockPos target = h.absolutePos(new BlockPos(6, 2, 6));
+        Result result = new Result();
+        ExecutionCoordinator runner = runner(c, result);
+        runner.start(new CheckContainerTask(target), "check_container");
+        var tools = GameTestToolRegistry.create(c, () -> 32).bind(c);
+        h.succeedWhen(() -> {
+            runner.tick();
+            h.assertTrue(result.status == TaskStatus.SUCCESS, "not opened yet: " + result.status);
+            ChestBlockEntity chest = (ChestBlockEntity) h.getLevel().getBlockEntity(target);
+            chest.setItem(0, new ItemStack(Items.DIAMOND));
+            var registry = h.getLevel().registryAccess();
+            var tag = chest.saveWithFullMetadata(registry);
+            var lockTag = new net.minecraft.nbt.CompoundTag();
+            lockTag.putString("items", "minecraft:stick");
+            tag.put(LockCode.TAG_LOCK, lockTag);
+            chest.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, registry, tag));
+            String answer = find(tools, "minecraft:diamond");
+            h.assertTrue(answer.startsWith("I have no record"), "locked contents leaked: " + answer);
+        });
+    }
+
+    @GameTest
+    public void liveViewDoesNotActivateTrappedChest(GameTestHelper h) {
+        GameTestSupport.platform(h, 12);
+        h.setBlock(6, 2, 6, Blocks.TRAPPED_CHEST);
+        BlockPos pos = h.absolutePos(new BlockPos(6, 2, 6));
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 4, 2, 4);
+        companion.setOwner(UUID.randomUUID());
+        Container chest = containerAt(h, 6, 2, 6);
+        // Prime a prior authorized observation without a real open that would schedule its own recheck.
+        ContainerAccess.recordContents(new TaskContext(companion, h.getLevel()), pos, chest);
+        chest.setItem(0, new ItemStack(Items.DIAMOND));
+        var tools = GameTestToolRegistry.create(companion, () -> 32).bind(companion);
+        h.assertTrue(find(tools, "minecraft:diamond").contains("still in view"), "the live view must update");
+        h.assertFalse(
+                h.getLevel().getBlockTicks().hasScheduledTick(pos, Blocks.TRAPPED_CHEST),
+                "a read-only refresh must not open the trapped chest");
+        h.succeed();
     }
 
     private static String find(dev.friendai.execution.tool.ToolExecutor tools, String item) {

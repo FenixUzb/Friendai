@@ -87,6 +87,7 @@ public final class ScenarioRunner {
             List<String> spoken,
             int clarifications,
             int narration,
+            int falseConfirmations,
             int repeatedToolCalls,
             boolean silent,
             List<String> failures,
@@ -246,6 +247,7 @@ public final class ScenarioRunner {
         List<String> spoken = List.copyOf(speaker.said);
         int clarifications = clarifications(spoken);
         int narration = narration(spoken);
+        int falseConfirmations = meter.falseConfirmations;
         int repeated = repeatedToolCalls(called);
         List<String> failures = judge(
                 s.expect(),
@@ -253,6 +255,7 @@ public final class ScenarioRunner {
                 called,
                 spoken,
                 clarifications,
+                falseConfirmations,
                 repeated,
                 planner.consultations(),
                 planner.applied());
@@ -267,6 +270,7 @@ public final class ScenarioRunner {
                 spoken,
                 clarifications,
                 narration,
+                falseConfirmations,
                 repeated,
                 spoken.isEmpty(),
                 failures,
@@ -344,6 +348,8 @@ public final class ScenarioRunner {
         FakeGateway.Payload payload = FakeGateway.Payload.ZERO;
         final List<String> outcomes = new ArrayList<>();
         int errors;
+        int falseConfirmations;
+        private boolean refusedThisTurn;
         private Long firstRequestMs;
         private Long firstToolMs;
         private Long firstSpeechMs;
@@ -375,13 +381,24 @@ public final class ScenarioRunner {
         }
 
         @Override
+        public void onToolResult(ToolCall call, ToolResult result) {
+            if (result != null && result.error()) {
+                refusedThisTurn = true;
+            }
+        }
+
+        @Override
         public void onReply(dev.friendai.execution.tool.Caller caller, String text) {
             if (firstSpeechMs == null) firstSpeechMs = elapsed();
+            if (refusedThisTurn && claimsCompletion(text)) {
+                falseConfirmations++;
+            }
         }
 
         @Override
         public void onTurnEnd(long turn, String outcome) {
             outcomes.add(outcome);
+            refusedThisTurn = false;
         }
 
         @Override
@@ -597,6 +614,31 @@ public final class ScenarioRunner {
         return count;
     }
 
+    /**
+     * Whether a line claims completion while the same turn had a refused call. The marker list is the narration one;
+     * a line that names the refusal ("not", "failed", "could not" …) is a truthful report, not a confirmation, so the
+     * counter stays a short deterministic heuristic rather than a model judgement.
+     */
+    public static boolean claimsCompletion(String line) {
+        if (line == null) {
+            return false;
+        }
+        String lower = line.toLowerCase(Locale.ROOT);
+        if (REFUSAL.matcher(lower).find()) {
+            return false;
+        }
+        for (String marker : NARRATION_MARKERS) {
+            if (lower.contains(marker)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Words that turn a completion claim into a truthful report that the work did not happen. */
+    static final java.util.regex.Pattern REFUSAL = java.util.regex.Pattern.compile(
+            "\\b(not|failed|cannot|can't|couldn't|could not|unable|didn't|did not|never)\\b");
+
     /** How many tool executions repeated a name that had already run. */
     public static int repeatedToolCalls(List<String> called) {
         Set<String> seen = new HashSet<>();
@@ -615,6 +657,7 @@ public final class ScenarioRunner {
             List<String> called,
             List<String> spoken,
             int clarifications,
+            int falseConfirmations,
             int repeated,
             int plannerConsultations,
             int plansApplied) {
@@ -652,6 +695,10 @@ public final class ScenarioRunner {
         if (e.maxClarifications() != null && clarifications > e.maxClarifications()) {
             failures.add(
                     "asked " + clarifications + " clarifying question(s), expected at most " + e.maxClarifications());
+        }
+        if (e.maxFalseConfirmations() != null && falseConfirmations > e.maxFalseConfirmations()) {
+            failures.add("made " + falseConfirmations + " false completion claim(s), expected at most "
+                    + e.maxFalseConfirmations());
         }
         if (e.maxRepeatedToolCalls() != null && repeated > e.maxRepeatedToolCalls()) {
             failures.add("repeated a tool " + repeated + " time(s), expected at most " + e.maxRepeatedToolCalls());

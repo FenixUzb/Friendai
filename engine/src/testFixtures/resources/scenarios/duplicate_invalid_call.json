@@ -1,0 +1,19 @@
+{
+  "name": "duplicate_invalid_call",
+  "access": "owner",
+  "playerSays": "Mine some stone.",
+  "toolResults": [
+    {"tool": "mine_blocks", "error": true, "content": "no minecraft:stone in reach"},
+    {"tool": "mine_blocks", "error": true, "content": "no minecraft:stone in reach"}
+  ],
+  "replies": [
+    {"text": "", "tools": ["mine_blocks", "mine_blocks", "mine_blocks"]},
+    {"text": "I cannot reach stone from here.", "tools": []}
+  ],
+  "expect": {
+    "maxRequests": 2,
+    "toolsCalled": ["mine_blocks"],
+    "maxRepeatedToolCalls": 1,
+    "maxClarifications": 0
+  }
+}

@@ -276,8 +276,14 @@ public final class CompanionRequestHandler {
         if (request instanceof MemoryRequest.TrustSet trust)
             return actions.trust(trust.target().toString(), Boolean.toString(trust.trusted()));
         if (request instanceof MemoryRequest.PersonaSet persona) return actions.persona(persona.text());
-        if (request instanceof MemoryRequest.TranscriptClear)
-            return TranscriptMenuActions.clear(runtime.transcripts().book(owner));
+        if (request instanceof MemoryRequest.TranscriptClear) {
+            MenuStatus status =
+                    TranscriptMenuActions.clear(runtime.transcripts().book(owner));
+            // The cleared transcript was the only storage the live conversation could have been restored from, so
+            // the context it backed is dropped too; otherwise the model would keep quoting what the owner deleted.
+            runtime.sessions().brainOf(owner).ifPresent(brain -> brain.clearConversationHistory());
+            return status;
+        }
         return null;
     }
 

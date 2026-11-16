@@ -15,7 +15,19 @@ public final class CompanionSpeechPolicy {
 
     /** Player messages always earn a reply; outcome-only turns may use tools for learning without narration. */
     public static boolean maySpeak(List<BrainEvent> events, boolean owesPlayerReply) {
-        return owesPlayerReply || events.stream().anyMatch(event -> !(event instanceof BrainEvent.SkillOutcome));
+        return owesPlayerReply || events.stream().anyMatch(CompanionSpeechPolicy::worthSpeaking);
+    }
+
+    /**
+     * A successful step inside a plan is intermediate: the plan's own terminal event speaks once, so narrating every
+     * step would repeat the same outcome. Direct work, failures, blockers, world notices and player lines keep their
+     * voice, and the panel keeps the intermediate progress visible.
+     */
+    static boolean worthSpeaking(BrainEvent event) {
+        if (event instanceof BrainEvent.SkillOutcome) {
+            return false;
+        }
+        return !(event instanceof BrainEvent.TaskFinished task && task.success() && task.planId() > 0);
     }
 
     /** Cancellation is already kept in task history and does not need a model turn by itself. */

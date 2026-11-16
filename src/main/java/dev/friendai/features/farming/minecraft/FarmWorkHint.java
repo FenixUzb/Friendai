@@ -48,7 +48,7 @@ public final class FarmWorkHint {
                 .map(work ->
                         "; the nearest " + work.what() + " is at " + work.at().getX() + " "
                                 + work.at().getY() + " " + work.at().getZ() + ", " + work.blocks()
-                                + " blocks away: the order covers going there, so farm around it")
+                                + " blocks away: farm around it with another order")
                 .orElse("; nothing to farm within " + RADIUS + " blocks either");
     }
 

@@ -27,8 +27,8 @@ const CATS = [
   { id: "mining", domain: "hands", name: "Mining & Gathering", icon: "⛏️", color: COLORS.iron,
     desc: "Collects raw materials: trees, ores, drops. Tool choice comes from item data components, never hard-coded tiers.",
     items: [
-      "fell_tree|Fell a whole tree from the base when one stance reaches it, or from the crown; a partly felled tree reports the logs left standing.", "mine_blocks|Mine up to 64 blocks of a type in one call; wood comes from whole felled trees; searches once for a target you have not seen.", "mine_block_at|Mine the block you point at, follow its vein, and report what was taken.", "excavate|Mine a box, tunnel, stair, shaft or strip mine in one call, with drops and safety; a stair is carved as a walkable passage, fallback descents stay within the target depth, and uncleared solid cells are reported.",
-      "pickup_items|Collect every drop in the radius in one call.", "find_trees|Scan for trees.", "find_blocks|Scan for blocks and ore veins.",
+      "fell_tree|Fell a whole tree from the base when one stance reaches it, or from the crown; a partly felled tree reports the logs left standing.", "mine_blocks|Mine up to 64 blocks of a type in one call; wood comes from whole felled trees; searches once for a target you have not seen.", "mine_block_at|Mine the block you point at, follow its vein, and report what was taken.", "excavate|Mine a box, tunnel, stair, shaft or strip mine in one call, with drops and safety; a stair is carved as a walkable passage, fallback descents stay within the target depth, and uncleared solid cells are reported; a count larger than the region is capped and the result names both numbers.",
+      "pickup_items|Collect every drop in the radius in one call.", "find_trees|Scan for trees.", "find_blocks|Scan for blocks and ore veins, naming what is observed now, what is only remembered, and whether a stance could start each one.",
       "find_placed|List blocks the companion placed earlier.",
       "~Vein follower|Mines a whole vein, not one block.", "~Tool selection|Picks the best tool from the stack's tool component.", "~Safe digging|Checks support and hazards before approaching.",
       "~Catch platform|Builds a block under a valuable drop over lava, a hole or the void, mines, then takes it back." ] },
@@ -80,9 +80,9 @@ const CATS = [
   { id: "acquire", domain: "hands", name: "Resource Acquisition", icon: "🧭", color: COLORS.diamond,
     desc: "Ask for an item and it works out how: inventory, chests, craft, smelt, mine, hunt, harvest, shear, milk or explore.",
     items: [
-      "obtain_item|Get an item by any means; wood is felled as whole trees.", "obtain_items|Gather shared materials once for a set of items, then craft them all; accepts item/count aliases; mines a mineable item instead of crafting it from a rarer one; wood is felled as whole trees.", "plan_obtain|Show the plan without doing it.", "search_resource|Explore to find a resource.",
+      "obtain_item|Get an item by any means, using the room left in the stacks it already carries; wood is felled as whole trees.", "obtain_items|Gather shared materials once for a set of items, then craft them all; accepts item/count aliases; mines a mineable item instead of crafting it from a rarer one; wood is felled as whole trees.", "plan_obtain|Show the plan without doing it.", "search_resource|Explore to find a resource when nothing is visible or remembered; read-only questions use find_blocks or known_resources.",
       "known_resources|Show up to three remembered resource sites with their age and uncertainty.", "search_hint|Give it a hint where to look.", "find_target|Resolve a search target.", "find_structure|Find a village, fortress or stronghold by markers.", "search_structure|Travel to a verified structure instance.",
-      "~Obtain planner|Depth up to 8, nine step kinds.", "~Resource ranking|Prioritizes verified approaches, usable tools and lower estimated trip cost.", "~Safe return|Checks a route and support reserve before automatic descent.", "~Measured results|Reports carried, delivered and remaining item counts separately.", "~Frontier search|Biome edges, water, hazards and trails.", "~Search budget|Gives up sensibly." ] },
+      "~Obtain planner|Depth up to 8, nine step kinds.", "~Resource ranking|Prioritizes verified approaches, usable tools and lower estimated trip cost.", "~Safe return|Checks a route and support reserve before automatic descent.", "~Measured results|Reports carried, delivered and remaining item counts separately.", "~Frontier search|Biome edges, water, hazards and trails.", "~Search budget|Gives up sensibly; a restart resumes the same trip with the budget it already spent." ] },
   { id: "trading", domain: "hands", name: "Trading", icon: "💎", color: COLORS.lapis,
     desc: "Villager and piglin trading with a pure policy and an authority check on spending.",
     items: [
@@ -145,8 +145,8 @@ const CATS = [
   { id: "voiceout", domain: "senses", name: "Speech Output", icon: "🔊", color: COLORS.gold,
     desc: "Replies can be spoken locally or through a cloud voice, panned and attenuated by where the companion is.",
     items: [
-      "~Streamed sentences|Ordered per stream and session, with one cut-off report.", "~Early sentence|The first safe sentence speaks before the provider finishes; the full reply stays authoritative.", "~Local Piper voices|Five catalogued voices via sherpa-onnx.", "~OpenAI TTS|Cloud speech.", "~ElevenLabs|Cloud speech.", "~Yandex SpeechKit|Cloud speech.",
-      "~Spatial audio|Equal-power pan and distance level.", "~Voice chat output|Optional: plays through Simple Voice Chat from the companion, so Sound Physics Remastered can shape it.", "~Stop speaking key|Cuts playback instantly.", "~Off by default|Opt in from settings." ] },
+      "~Streamed sentences|Ordered per stream and session, with one cut-off report.", "~Early sentence|Only ordinary conversation speaks its first safe sentence before the provider finishes; a claim about work waits for the tool result.", "~Grounded reply|A reply that arrives with tool calls is spoken only after every call is accepted, so a refused order is answered by what really happened.", "~One line per plan|A successful step inside a plan stays quiet; the plan's final result is what the owner hears.", "~Local Piper voices|Five catalogued voices via sherpa-onnx.", "~OpenAI TTS|Cloud speech.", "~ElevenLabs|Cloud speech.", "~Yandex SpeechKit|Cloud speech.",
+      "~Spatial audio|Equal-power pan and distance level.", "~Voice chat|Optional: with Simple Voice Chat installed the voice plays through it from the companion, so Sound Physics Remastered can shape it, and the wake word listens to what you say in voice chat; without it the built-in output and microphone are used.", "~Stop speaking key|Cuts playback instantly.", "~Off by default|Opt in from settings." ] },
   { id: "menu", domain: "senses", name: "Companion Menu", icon: "🖥️", color: COLORS.iron,
     desc: "A tabbed control screen that pauses the companion while open. Operator-only tabs are filtered on the server.",
     items: [
@@ -425,7 +425,7 @@ const FLOW = {
     { id: "voice", x: 270, y: 120, label: "Voice STT", icon: "🎤", color: COLORS.redstone, kind: "cat", desc: "Local Whisper or a cloud recogniser; the transcript is sent to the server." },
     { id: "chat", x: 270, y: 300, label: "ChatRouter", icon: "💬", color: COLORS.water, kind: "cat", desc: "Detects whether the companion is addressed." },
     { id: "picker", x: 270, y: 480, label: "Companion picker", icon: "👥", color: COLORS.water, kind: "cat", desc: "Own companion in hearing range, else the nearest other whose owner is online." },
-    { id: "brain", x: 500, y: 300, label: "CompanionBrain", icon: "🧠", color: COLORS.amethyst, kind: "hub", desc: "The per-owner agent loop. One principal per turn; late replies are dropped by a generation counter." },
+    { id: "brain", x: 500, y: 300, label: "CompanionBrain", icon: "🧠", color: COLORS.amethyst, kind: "hub", desc: "The per-owner agent loop. One principal per turn; late replies are dropped by a generation counter. A blocked job that fails three times without a new fact pauses the turn that carries it and asks the owner, instead of starting unrelated work. Every request is fitted into one conservative token budget, and a committed plan is acknowledged without a second round trip. A recreated companion restores the last few delivered lines of the owner's conversation." },
     { id: "router", x: 500, y: 110, label: "TurnRouter", icon: "🚦", color: COLORS.gold, kind: "cat", desc: "Picks chat, action, goal, recovery or event, and which tool groups are visible; PlanningPolicy then names what a plan-worthy turn is about." },
     { id: "planner", x: 500, y: 500, label: "Planner", icon: "📋", color: COLORS.nether, kind: "cat", desc: "Ordinary orders with enough context can answer and queue in one request. Complex orders retain preliminary planning; troubled plans, unmet goals and free time also use the planner. It runs once, before the model answers, never after a step. agent.plannerMode decides whether it runs at all: auto, off, or always for diagnosis." },
     { id: "prompt", x: 730, y: 110, label: "PromptBuilder", icon: "📜", color: COLORS.gold, kind: "cat", desc: "Identity, memory, perception, skills and mission, cut to a character budget." },
@@ -448,9 +448,9 @@ const FLOW = {
 /* ---- memory & data + architecture cards ---- */
 const MEM_CARDS = [
   { title: "Per-owner files", sub: "<world>/friendai/ - one file per owner UUID, atomic writes, .bak recovery", wide: true,
-    hub: { label: "Owner data", icon: "🗂️", color: COLORS.amethyst, desc: "Memory, profile, goals and free-time stores share one bounded runtime writer; it flushes latest-revision snapshots on a 5 s server-tick cadence. Unsupported versions are never overwritten." },
+    hub: { label: "Owner data", icon: "🗂️", color: COLORS.amethyst, desc: "Memory, profile, goals and free-time stores share one bounded runtime writer; it flushes latest-revision snapshots on a 5 s server-tick cadence, one store per tick and at most 64 records per flush. Unsupported versions are never overwritten." },
     color: COLORS.amethyst, items: [
-      "~Memory|Facts about players, trust, learned language, food rules.", "~Conversation transcript|Both sides of every chat, redacted, capped by count and age.", "~Companion profile|Name, description, language and address.", "~Goals|One primary and three background goals, lessons, replan budget.",
+      "~Memory|Facts about players, trust, learned language, food rules.", "~Conversation transcript|Both sides of every chat, redacted, capped by count and age; a recreated companion restores the last few delivered lines.", "~Companion profile|Name, description, language and address.", "~Goals|One primary and three background goals, lessons, replan budget.",
       "~Free time|Shifts, history, cooldowns, away summaries, and shift.start/end/report records in the durable log.", "~Instruction skills|19 builtins, global and owner records; list_skills and skill_help read, manage_skill writes.", "~Places|Named places with aliases, dimension and visits.",
       "~Placed blocks|Ledger of blocks it placed (cap 512).", "~Knowledge|Observed resources.", "~Trades|Known villager trades.", "~Blueprints|Saved layouts as JSON." ] },
   { title: "In the world save", sub: "Companion entity + SavedData",
@@ -512,7 +512,7 @@ const ARCH_CARDS = [
     hub: { label: "Rules", icon: "📜", color: COLORS.gold, desc: "Violating any of these breaks the mod in subtle ways." },
     color: COLORS.gold, items: [
       "~Server thread only|World access never leaves it.", "~Late replies dropped|Generation counter after stop or logout.", "~Bad tool args|Become an error result, never an exception.",
-      "~Ordered tool calls|Anthropic and Gemini get one merged result message.", "~Keys never leak|Not in logs, URLs, toasts or toString.", "~Layer boundary|Pure code never imports Minecraft.",
+      "~Ordered tool calls|Anthropic and Gemini get one merged result message.", "~Repeated failures|An identical failing call runs once more, then reuses its recorded error.", "~Keys never leak|Not in logs, URLs, toasts or toString.", "~Layer boundary|Pure code never imports Minecraft.",
       "~Cheap per tick|Bounded work, resumable state." ] }
 ];
 
@@ -760,7 +760,7 @@ const DOC = {
       { title: "Debug stream", sub: "Live views for the menu and the movement overlay", color: COLORS.iron,
         hub: { label: "Stream", icon: "📡", color: COLORS.iron, desc: "A rejected frame closes that viewer's menu with a warning instead of escaping into the tick." },
         items: [
-          "~10-tick cadence|Framed control views while the menu is open.",
+          "~10-tick cadence|One open viewer per server tick in rotation; each keeps its ten-tick cadence.",
           "~Subscribe and close|One typed request, and the same path a disconnect and a ten-tick sweep take.",
           "~Movement overlay|The active task's work snapshot plus independent route obstacle cells.",
           "~Off by default|The overlay switch resets per connection and is never saved.",

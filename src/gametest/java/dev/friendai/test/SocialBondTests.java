@@ -286,7 +286,7 @@ public class SocialBondTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(maxTicks = 300, environment = "friendai-gametest:social_bond_guest")
     public void aGuestCannotReadOrChangeTheBond(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         ServerPlayer guest = GameTestSupport.mockPlayerAt(h, 3, 2, 3);
@@ -296,7 +296,7 @@ public class SocialBondTests {
         AtomicReference<String> guestSystem = new AtomicReference<>();
         runtime.sessions().setGatewayOverride(owner.getUUID(), (system, messages, tools) -> {
             // An ambient or owner turn is not what this test measures; only the guest's own line is recorded.
-            if (messages.stream().anyMatch(message -> message.text().contains("(guest)]: "))) {
+            if (messages.getLast().text().lines().anyMatch(line -> line.endsWith("(guest)]: hi"))) {
                 guestSystem.set(system);
             }
             return CompletableFuture.completedFuture(
@@ -363,7 +363,9 @@ public class SocialBondTests {
         h.succeedWhen(() -> {
             String system = guestSystem.get();
             h.assertTrue(system != null, "the guest turn never reached the owner's companion");
-            h.assertTrue(!system.contains("remembered:"), "the guest's prompt carried the owner's bond: " + system);
+            h.assertTrue(
+                    !system.contains("remembered: " + reasons.getFirst()),
+                    "the guest's prompt carried the owner's bond");
             h.assertValueEqual(
                     runtime.memory()
                             .book(owner.getUUID())

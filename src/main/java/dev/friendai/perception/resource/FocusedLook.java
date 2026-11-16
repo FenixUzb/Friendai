@@ -28,14 +28,19 @@ public final class FocusedLook {
     /** The widest look, in blocks: a deliberate glance, not a survey of the whole loaded world. */
     public static final int MAX_RADIUS = 32;
 
-    /** How many of the nearest candidates get a sight ray. */
-    private static final int MAX_CANDIDATES = 24;
+    /** Independent hard limits keep a glance bounded even on a stalled clock. */
+    public static final int MAX_SCANNED_CELLS = 8_192;
 
-    /** A cap on the cells collected before sorting, so a common block cannot turn a glance into a full scan. */
-    private static final int MAX_COLLECTED = 2_048;
-
+    public static final int MAX_RAYS = 64;
+    private static final int MAX_SEEN = 24;
     private static final int RAY_CELLS = 128;
-    private static final int RAY_STEPS = 4;
+    // Give a cold glance enough work to examine the eye's section before applying the soft deadline.
+    private static final int MIN_SCANNED_CELLS = 4_096;
+    private static final int MIN_RAYS = 4;
+    private static final long SOFT_BUDGET_NANOS = 1_000_000L;
+
+    /** An incomplete glance cannot establish absence; counts expose the actual bounded work. */
+    public record Result(int seen, boolean complete, int scannedCells, int rays) {}
 
     /** Aim points inside the block: its centre, then the middle of each face, so a block seen edge-on still counts. */
     private static final double[][] AIM = {
@@ -50,110 +55,157 @@ public final class FocusedLook {
 
     private FocusedLook() {}
 
-    /** Looks for blocks the predicate accepts within the radius; returns how many were seen and recorded. */
-    public static int lookFor(
+    /** Looks only in loaded chunks, and reports when the bounded glance did not finish. */
+    public static Result lookFor(
             ServerLevel level,
             CompanionEntity companion,
             ResourceCandidates resources,
             Predicate<BlockState> wanted,
             int radius) {
-        if (companion.ownerUuid() == null) return 0;
+        if (companion.ownerUuid() == null) return new Result(0, true, 0, 0);
         int reach = Math.max(1, Math.min(MAX_RADIUS, radius));
         Vec3 eye = companion.getEyePosition();
         BlockPos center = BlockPos.containing(eye);
-        List<BlockPos> candidates = candidates(level, center, reach, wanted);
-        candidates.sort(Comparator.<BlockPos>comparingDouble(pos -> pos.distToCenterSqr(eye))
-                .thenComparingInt(BlockPos::getX)
-                .thenComparingInt(BlockPos::getY)
-                .thenComparingInt(BlockPos::getZ));
-        String dimension = level.dimension().identifier().toString();
-        BlockPos viewpoint = companion.blockPosition();
-        long tick = level.getServer().overworld().getGameTime();
-        int seen = 0;
-        for (int i = 0; i < Math.min(MAX_CANDIDATES, candidates.size()); i++) {
-            BlockPos pos = candidates.get(i);
-            if (!visible(level, eye, pos)) continue;
-            resources.observe(
-                    companion,
-                    new ResourceObservation(
-                            BuiltInRegistries.BLOCK
-                                    .getKey(level.getBlockState(pos).getBlock())
-                                    .toString(),
-                            new ResourceObservation.Location(dimension, new Pos(pos.getX(), pos.getY(), pos.getZ())),
-                            new Pos(viewpoint.getX(), viewpoint.getY(), viewpoint.getZ()),
-                            tick));
-            seen++;
-        }
-        return seen;
-    }
-
-    /**
-     * Matching cells within reach that have an open face, nearest chunk first: a buried block cannot be seen, and in a
-     * desert the near pile must not lose its place to sand under the dunes before the collection cap is reached.
-     */
-    private static List<BlockPos> candidates(
-            ServerLevel level, BlockPos center, int reach, Predicate<BlockState> wanted) {
-        List<BlockPos> found = new ArrayList<>();
-        double limit = (double) reach * reach;
         int centerChunkX = center.getX() >> 4;
         int centerChunkZ = center.getZ() >> 4;
         List<int[]> chunks = new ArrayList<>();
-        for (int chunkX = (center.getX() - reach) >> 4; chunkX <= (center.getX() + reach) >> 4; chunkX++) {
-            for (int chunkZ = (center.getZ() - reach) >> 4; chunkZ <= (center.getZ() + reach) >> 4; chunkZ++) {
-                chunks.add(new int[] {chunkX, chunkZ});
+        for (int x = (center.getX() - reach) >> 4; x <= (center.getX() + reach) >> 4; x++) {
+            for (int z = (center.getZ() - reach) >> 4; z <= (center.getZ() + reach) >> 4; z++) {
+                chunks.add(new int[] {x, z});
             }
         }
         chunks.sort(Comparator.comparingInt(
                 chunk -> Math.max(Math.abs(chunk[0] - centerChunkX), Math.abs(chunk[1] - centerChunkZ))));
+        long deadline = System.nanoTime() + SOFT_BUDGET_NANOS;
+        int scanned = 0;
+        int rays = 0;
+        int seen = 0;
+        boolean complete = true;
+        String dimension = level.dimension().identifier().toString();
+        BlockPos viewpoint = companion.blockPosition();
+        long tick = level.getServer().overworld().getGameTime();
         BlockPos.MutableBlockPos neighbour = new BlockPos.MutableBlockPos();
+        List<BlockPos> missedCenters = new ArrayList<>();
         for (int[] at : chunks) {
-            int chunkX = at[0];
-            int chunkZ = at[1];
-            BlockPos sample = new BlockPos(chunkX << 4, center.getY(), chunkZ << 4);
-            if (!level.hasChunkAt(sample)) continue;
+            BlockPos sample = new BlockPos(at[0] << 4, center.getY(), at[1] << 4);
+            if (!level.hasChunkAt(sample)) {
+                complete = false;
+                continue;
+            }
             LevelChunk chunk = level.getChunkAt(sample);
             LevelChunkSection[] sections = chunk.getSections();
-            for (int index = 0; index < sections.length; index++) {
-                LevelChunkSection section = sections[index];
-                if (section == null || section.hasOnlyAir() || !section.maybeHas(wanted)) continue;
+            // Visit the eye's section first, then work outward vertically.
+            int centerSection = SectionPos.blockToSectionCoord(center.getY()) - chunk.getSectionYFromSectionIndex(0);
+            for (int delta = 0; delta < sections.length * 2; delta++) {
+                int index = centerSection + (delta % 2 == 0 ? delta / 2 : -(delta + 1) / 2);
+                if (index < 0 || index >= sections.length) continue;
                 int baseY = SectionPos.sectionToBlockCoord(chunk.getSectionYFromSectionIndex(index));
                 if (baseY + 15 < center.getY() - reach || baseY > center.getY() + reach) continue;
-                for (int y = 0; y < 16; y++) {
+                LevelChunkSection section = sections[index];
+                if (section == null || section.hasOnlyAir() || !section.maybeHas(wanted)) continue;
+                int minY = Math.max(0, center.getY() - baseY - reach);
+                int maxY = Math.min(15, center.getY() - baseY + reach);
+                int eyeY = Math.clamp(center.getY() - baseY, minY, maxY);
+                for (int offset = 0; offset < 31; offset++) {
+                    int y = eyeY + (offset % 2 == 0 ? offset / 2 : -(offset + 1) / 2);
+                    if (y < minY || y > maxY) continue;
                     for (int z = 0; z < 16; z++) {
                         for (int x = 0; x < 16; x++) {
+                            if (scanned >= MAX_SCANNED_CELLS
+                                    || (scanned >= MIN_SCANNED_CELLS
+                                            && scanned % 64 == 0
+                                            && System.nanoTime() >= deadline))
+                                return new Result(seen, false, scanned, rays);
+                            scanned++;
                             if (!wanted.test(section.getBlockState(x, y, z))) continue;
-                            BlockPos pos = new BlockPos((chunkX << 4) + x, baseY + y, (chunkZ << 4) + z);
-                            if (center.distSqr(pos) > limit || !exposed(level, pos, neighbour)) continue;
-                            found.add(pos);
-                            if (found.size() >= MAX_COLLECTED) return found;
+                            BlockPos pos = new BlockPos((at[0] << 4) + x, baseY + y, (at[1] << 4) + z);
+                            if (center.distSqr(pos) > (double) reach * reach) continue;
+                            Exposure exposure = exposed(level, pos, neighbour);
+                            if (exposure == Exposure.UNKNOWN) complete = false;
+                            if (exposure != Exposure.OPEN) continue;
+                            if (rays >= MAX_RAYS || (rays >= MIN_RAYS && System.nanoTime() >= deadline))
+                                return new Result(seen, false, scanned, rays);
+                            rays++;
+                            ResourceSight.Outcome outcome = ray(level, eye, pos, AIM[0]);
+                            if (outcome == ResourceSight.Outcome.PENDING || outcome == ResourceSight.Outcome.UNLOADED)
+                                return new Result(seen, false, scanned, rays);
+                            if (outcome == ResourceSight.Outcome.VISIBLE) {
+                                record(level, companion, resources, dimension, viewpoint, tick, pos);
+                                if (++seen >= MAX_SEEN) return new Result(seen, false, scanned, rays);
+                            } else {
+                                missedCenters.add(pos);
+                            }
                         }
                     }
                 }
             }
         }
-        return found;
+        // Test each candidate's centre before spending the remaining rays on alternate faces.
+        for (int aim = 1; aim < AIM.length; aim++) {
+            for (int i = 0; i < missedCenters.size(); i++) {
+                BlockPos pos = missedCenters.get(i);
+                if (pos == null) continue;
+                if (rays >= MAX_RAYS || (rays >= MIN_RAYS && System.nanoTime() >= deadline))
+                    return new Result(seen, false, scanned, rays);
+                rays++;
+                ResourceSight.Outcome outcome = ray(level, eye, pos, AIM[aim]);
+                if (outcome == ResourceSight.Outcome.PENDING || outcome == ResourceSight.Outcome.UNLOADED)
+                    return new Result(seen, false, scanned, rays);
+                if (outcome == ResourceSight.Outcome.VISIBLE) {
+                    record(level, companion, resources, dimension, viewpoint, tick, pos);
+                    missedCenters.set(i, null);
+                    if (++seen >= MAX_SEEN) return new Result(seen, false, scanned, rays);
+                }
+            }
+        }
+        return new Result(seen, complete, scanned, rays);
     }
 
-    /** Whether at least one face of the block opens onto something a sight ray can pass through. */
-    private static boolean exposed(ServerLevel level, BlockPos pos, BlockPos.MutableBlockPos neighbour) {
+    private static ResourceSight.Outcome ray(ServerLevel level, Vec3 eye, BlockPos pos, double[] aim) {
+        Vec3 endpoint = new Vec3(pos.getX() + aim[0], pos.getY() + aim[1], pos.getZ() + aim[2]);
+        ResourceSight.Job sight = ResourceSight.rayTo(level, eye, endpoint, pos);
+        ResourceSight.Outcome outcome = sight.step(RAY_CELLS);
+        return outcome == ResourceSight.Outcome.VISIBLE && !pos.equals(sight.hitBlock())
+                ? ResourceSight.Outcome.OCCLUDED
+                : outcome;
+    }
+
+    private static void record(
+            ServerLevel level,
+            CompanionEntity companion,
+            ResourceCandidates resources,
+            String dimension,
+            BlockPos viewpoint,
+            long tick,
+            BlockPos pos) {
+        resources.observe(
+                companion,
+                new ResourceObservation(
+                        BuiltInRegistries.BLOCK
+                                .getKey(level.getBlockState(pos).getBlock())
+                                .toString(),
+                        new ResourceObservation.Location(dimension, new Pos(pos.getX(), pos.getY(), pos.getZ())),
+                        new Pos(viewpoint.getX(), viewpoint.getY(), viewpoint.getZ()),
+                        tick));
+    }
+
+    private enum Exposure {
+        OPEN,
+        CLOSED,
+        UNKNOWN
+    }
+
+    /** Unloaded neighbours are unknown, so they cannot make a buried block appear exposed. */
+    private static Exposure exposed(ServerLevel level, BlockPos pos, BlockPos.MutableBlockPos neighbour) {
+        boolean unknown = false;
         for (net.minecraft.core.Direction direction : net.minecraft.core.Direction.values()) {
             neighbour.setWithOffset(pos, direction);
-            if (!level.getBlockState(neighbour).canOcclude()) return true;
-        }
-        return false;
-    }
-
-    /** Whether a sight ray from the eye reaches the block before anything else stops it. */
-    private static boolean visible(ServerLevel level, Vec3 eye, BlockPos pos) {
-        for (double[] aim : AIM) {
-            Vec3 endpoint = new Vec3(pos.getX() + aim[0], pos.getY() + aim[1], pos.getZ() + aim[2]);
-            ResourceSight.Job sight = ResourceSight.rayTo(level, eye, endpoint, pos);
-            ResourceSight.Outcome outcome = ResourceSight.Outcome.PENDING;
-            for (int step = 0; step < RAY_STEPS && outcome == ResourceSight.Outcome.PENDING; step++) {
-                outcome = sight.step(RAY_CELLS);
+            if (!level.hasChunkAt(neighbour)) {
+                unknown = true;
+            } else if (!level.getBlockState(neighbour).canOcclude()) {
+                return Exposure.OPEN;
             }
-            if (outcome == ResourceSight.Outcome.VISIBLE && pos.equals(sight.hitBlock())) return true;
         }
-        return false;
+        return unknown ? Exposure.UNKNOWN : Exposure.CLOSED;
     }
 }

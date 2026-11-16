@@ -137,17 +137,17 @@ class ConfigStoresTest {
     }
 
     @Test
-    void schema22MovesTheOldPlannerTimeoutDefaultToTwenty() throws IOException {
+    void schema22MovesTheOldPlannerTimeoutDefaultToForty() throws IOException {
         Path path = dir.resolve("server-22-old-timeout.json");
         Files.writeString(path, "{\"version\":22,\"agent\":{\"plannerTimeoutSec\":60}}");
-        assertEquals(20, ConfigStores.server(path).load().agent.plannerTimeoutSec);
+        assertEquals(40, ConfigStores.server(path).load().agent.plannerTimeoutSec);
     }
 
     @Test
     void aFreshFileTakesThePlannerDefaults() {
         ServerConfig config = ConfigStores.server(dir.resolve("absent.json")).load();
         assertEquals("auto", config.agent.plannerMode);
-        assertEquals(20, config.agent.plannerTimeoutSec);
+        assertEquals(40, config.agent.plannerTimeoutSec);
     }
 
     @Test

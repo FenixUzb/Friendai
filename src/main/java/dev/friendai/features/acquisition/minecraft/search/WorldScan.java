@@ -95,7 +95,7 @@ public final class WorldScan {
         Map<String, Integer> counts = new LinkedHashMap<>();
         var book = context.ownerKnowledge();
         // What changed inside a container opened a few minutes ago is still seen; older records are a hint.
-        ContainerAccess.refreshLive(level, book);
+        ContainerAccess.refreshLive(level, companion, book);
         String dimension = level.dimension().identifier().toString();
         BlockPos origin = companion.blockPosition();
         long now = level.getServer().overworld().getGameTime();

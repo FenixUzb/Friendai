@@ -1,0 +1,30 @@
+{
+  "name": "brief_acknowledgement_ru",
+  "access": "owner",
+  "language": "ru",
+  "playerSays": "Добудь три угля.",
+  "replies": [
+    {
+      "text": "Сейчас.",
+      "tools": [
+        "mine_blocks"
+      ]
+    },
+    {
+      "text": "Добыл три угля.",
+      "tools": []
+    }
+  ],
+  "expect": {
+    "maxRequests": 2,
+    "toolsCalled": [
+      "mine_blocks"
+    ],
+    "maxRepeatedToolCalls": 0,
+    "maxFalseConfirmations": 0,
+    "spokenContains": [
+      "Сейчас.",
+      "три угля"
+    ]
+  }
+}

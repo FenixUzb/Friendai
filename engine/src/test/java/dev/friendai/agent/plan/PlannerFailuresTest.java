@@ -198,6 +198,13 @@ class PlannerFailuresTest {
     }
 
     @Test
+    void aPassedDeadlineIsExplainedAsATimeout() {
+        var message = PlanFailure.ownerMessage(
+                new PlannerException(new PlanFailure(PlanFailure.Code.TIMEOUT, "TimeoutException", 2)));
+        assertEquals("friendai.freetime.no_plan.timeout", message.key());
+    }
+
+    @Test
     void rejectedStepIsTranslatedInsteadOfEchoingQueueDiagnostic() {
         var message = PlanFailure.ownerMessage(new PlannerException(
                 new PlanFailure(PlanFailure.Code.STEPS_INVALID, "step 3: unknown tool 'private_tool'", 1)));

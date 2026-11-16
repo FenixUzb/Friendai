@@ -170,7 +170,10 @@ public final class InventoryTools implements FeatureToolContributor {
                         ToolGroup.INVENTORY,
                         false,
                         "- Give items only to the authenticated owner. For an order set, use one exact item per step"
-                                + " with count=<owner share>, retain=<companion share>, and strict=true.",
+                                + " with count=<owner share>, retain=<companion share>, and strict=true. When you finish"
+                                + " a job that was for the owner, give them the items it produced: their request is the"
+                                + " permission, so never ask whether to hand them over. A hand-over is not storage: use"
+                                + " store_items for a container and drop_items to drop at your feet.",
                         List.of(),
                         Cost.LOW);
             case "drop_items", "equip_item" -> new ToolMeta(name, ToolGroup.INVENTORY, false, "", List.of(), Cost.LOW);

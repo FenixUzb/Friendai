@@ -7,6 +7,7 @@ import dev.friendai.features.acquisition.minecraft.search.WorldScan;
 import dev.friendai.features.crafting.Station;
 import dev.friendai.features.knowledge.ResourceObservation;
 import dev.friendai.foundation.spatial.Pos;
+import dev.friendai.perception.resource.CaveEntranceObservation;
 import dev.friendai.perception.resource.ObservationScheduler;
 import dev.friendai.perception.resource.ResourceObserver;
 import dev.friendai.perception.resource.ResourceSight;
@@ -785,6 +786,82 @@ public class ResourceObservationTests {
                 state.resourceCandidates().confirmedRecent(companion, 16).stream()
                         .noneMatch(observation -> observation.location().pos().equals(position)),
                 "a replaced block must not survive confirmed evidence");
+        h.succeed();
+    }
+
+    @GameTest(maxTicks = 20)
+    public void unloadingCompanionReleasesItsTransientSight(GameTestHelper h) {
+        GameTestSupport.platform(h, 12);
+        var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 3);
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
+        companion.setOwner(owner.getUUID());
+        CompanionManager.get(h.getLevel().getServer()).register(companion);
+        var state = GameTestSupport.runtime(h.getLevel().getServer());
+        ServerLevel level = h.getLevel();
+        String dimension = level.dimension().identifier().toString();
+        BlockPos target = h.absolutePos(new BlockPos(5, 3, 5));
+        h.setBlock(5, 3, 5, Blocks.COAL_ORE);
+        state.resourceCandidates()
+                .observe(
+                        companion,
+                        new ResourceObservation(
+                                "minecraft:coal_ore",
+                                new ResourceObservation.Location(dimension, pos(target)),
+                                pos(companion.blockPosition()),
+                                level.getServer().overworld().getGameTime()));
+        state.resourceCandidates()
+                .observeCaveEntrance(
+                        companion,
+                        new CaveEntranceObservation(
+                                dimension,
+                                pos(target),
+                                pos(target),
+                                pos(target),
+                                level.getServer().overworld().getGameTime()));
+        h.assertFalse(
+                state.resourceCandidates().recentVisible(companion, 16).isEmpty(),
+                "the fixture must have recent sight");
+        h.assertFalse(
+                state.resourceCandidates().observedCaveEntrances(companion).isEmpty(),
+                "the fixture must have an observed entrance");
+        state.onEntityUnloaded(companion);
+        h.assertTrue(
+                state.resourceCandidates().recentVisible(companion, 16).isEmpty(),
+                "an unloaded companion keeps no recent sight");
+        h.assertTrue(
+                state.resourceCandidates().observedCaveEntrances(companion).isEmpty(),
+                "an unloaded companion keeps no observed entrances");
+        h.assertTrue(
+                state.knowledge().book(owner.getUUID()).snapshot().records().stream()
+                        .anyMatch(record -> record.x() == target.getX()
+                                && record.y() == target.getY()
+                                && record.z() == target.getZ()),
+                "durable knowledge must survive the unload");
+        h.succeed();
+    }
+
+    @GameTest(maxTicks = 100)
+    public void focusedLookKeepsScanningBounded(GameTestHelper h) {
+        GameTestSupport.platform(h, 32);
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        companion.setOwner(java.util.UUID.randomUUID());
+        for (int x = 0; x < 24; x++) {
+            for (int y = 0; y < 16; y++) {
+                for (int z = 0; z < 24; z++) h.setBlock(x, y + 1, z, Blocks.STONE);
+            }
+        }
+        int[] tested = {0};
+        var resources = GameTestSupport.runtime(h.getLevel().getServer()).resourceCandidates();
+        dev.friendai.perception.resource.FocusedLook.lookFor(
+                h.getLevel(),
+                companion,
+                resources,
+                state -> {
+                    tested[0]++;
+                    return state.is(Blocks.STONE);
+                },
+                32);
+        h.assertTrue(tested[0] <= 9000, "focused look exceeded its cell budget: " + tested[0]);
         h.succeed();
     }
 

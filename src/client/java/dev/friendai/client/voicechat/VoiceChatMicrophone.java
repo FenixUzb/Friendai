@@ -4,6 +4,7 @@ import de.maxhenkel.voicechat.api.VoicechatClientApi;
 import dev.friendai.client.voice.WakeWordHandler;
 import dev.friendai.features.speech.StreamDecimator;
 import dev.friendai.integration.voicechat.FriendaiVoicechatPlugin;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BooleanSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,16 +58,16 @@ public final class VoiceChatMicrophone implements WakeWordHandler.Capture {
     }
 
     @Override
-    public synchronized void startMonitoring(int preRollSeconds, WakeWordHandler.ChunkSink chunks) throws Exception {
+    public synchronized CompletableFuture<Void> startMonitoring(int preRollSeconds, WakeWordHandler.ChunkSink chunks) {
         this.preRollSeconds = preRollSeconds;
         this.sink = chunks;
         monitoring = true;
         if (wantsVoiceChat()) {
             useVoiceChat();
-        } else {
-            // The handler reports a device that will not open, exactly as without voice chat.
-            useBuiltin();
+            return CompletableFuture.completedFuture(null);
         }
+        // The handler reports a device that will not open, exactly as without voice chat.
+        return useBuiltin();
     }
 
     @Override
@@ -88,10 +89,13 @@ public final class VoiceChatMicrophone implements WakeWordHandler.Capture {
         } else if (!wanted && source != Source.BUILTIN && System.nanoTime() >= retryAtNanos) {
             release();
             try {
-                useBuiltin();
-            } catch (Exception unavailable) {
-                LOGGER.warn("Could not open the microphone for the wake word: {}", unavailable.toString());
-                retryAtNanos = System.nanoTime() + RETRY_NANOS;
+                useBuiltin().whenComplete((opened, error) -> {
+                    if (error != null) {
+                        builtinRefused(error);
+                    }
+                });
+            } catch (RuntimeException unavailable) {
+                builtinRefused(unavailable);
             }
         }
         if (source == Source.VOICE_CHAT && !gapMarked && System.nanoTime() - lastFrameNanos > GAP_NANOS) {
@@ -138,14 +142,24 @@ public final class VoiceChatMicrophone implements WakeWordHandler.Capture {
         source = Source.VOICE_CHAT;
     }
 
-    private void useBuiltin() throws Exception {
-        builtin.startMonitoring(preRollSeconds, (pcm, length) -> {
+    private CompletableFuture<Void> useBuiltin() {
+        CompletableFuture<Void> opening = builtin.startMonitoring(preRollSeconds, (pcm, length) -> {
             WakeWordHandler.ChunkSink chunks = sink;
             if (chunks != null) {
                 chunks.onChunk(pcm, length);
             }
         });
         source = Source.BUILTIN;
+        return opening;
+    }
+
+    /** The client's own device refused to open on a switch: leave it alone for a while, then the next tick retries. */
+    private synchronized void builtinRefused(Throwable error) {
+        LOGGER.warn("Could not open the microphone for the wake word: {}", error.toString());
+        retryAtNanos = System.nanoTime() + RETRY_NANOS;
+        if (source == Source.BUILTIN) {
+            source = Source.NONE;
+        }
     }
 
     private void release() {

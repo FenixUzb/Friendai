@@ -140,11 +140,8 @@ public final class MineBlocksTask implements Task {
     /** Whether this job already took its one deliberate look for a target it had not seen yet. */
     private boolean lookedAround;
 
-    /** How far the deliberate look reaches around the companion, whatever smaller radius the job was given. */
-    private static final int NEAR_LOOK = 16;
-
-    /** The radius the deliberate look found targets in, or zero; it widens this job's own radius from then on. */
-    private int lookReach;
+    /** A bounded focused look may finish without checking the whole area. */
+    private boolean incompleteLook;
 
     /** Whether the job takes every matching block in view and treats running out of them as done. */
     private boolean allNearby;
@@ -310,16 +307,15 @@ public final class MineBlocksTask implements Task {
      */
     private String moreInView(TaskContext c) {
         if (placedOnly || untilMatcher != null) return "";
-        int reach = Math.max(radius, lookReach);
         int more = 0;
         try {
-            for (BlockPos pos : c.resources().knownOrVisible(c.companion(), matcher, reach, CANDIDATES * 4)) {
+            for (BlockPos pos : c.resources().knownOrVisible(c.companion(), matcher, radius, CANDIDATES * 4)) {
                 if (!excluded(pos) && matcher.test(c.level().getBlockState(pos))) more++;
             }
         } catch (RuntimeException unavailable) {
             return "";
         }
-        return more == 0 ? "" : "; " + more + " more in view within " + reach + " blocks";
+        return more == 0 ? "" : "; " + more + " more in view within " + radius + " blocks";
     }
 
     /** The principal this job's delegated search runs with; package-private so a test can pin it to the call. */
@@ -650,6 +646,10 @@ public final class MineBlocksTask implements Task {
                 String reason = miningSession.failure() == null
                         ? "the resource became unreachable"
                         : failureText(miningSession.failure());
+                String detail = miningSession.failureDetail();
+                if (!detail.isEmpty()) {
+                    reason = reason + " (" + detail + ")";
+                }
                 summary = "mined " + mined + " of " + count + ", " + reason;
                 yield TaskStatus.FAILED;
             }
@@ -689,25 +689,23 @@ public final class MineBlocksTask implements Task {
                 }
                 var evidence = c.resources();
                 int evidenceRadius = around == null
-                        ? Math.max(reach, lookReach)
+                        ? reach
                         : Math.min(128, c.companion().blockPosition().distManhattan(around) + reach);
                 candidates = new ArrayList<>(evidence.knownOrVisible(
                         c.companion(), matcher, evidenceRadius, evidenceLimit(around == null ? CANDIDATES * 4 : 64)));
                 candidates.removeIf(this::excluded);
-                // Nothing seen yet is not nothing there: right after arriving, a cactus beside the owner was passed
-                // over for a search that broke a wild one far off. One deliberate look comes first, and around the
-                // companion it looks a little past a guessed radius ("this sand here" with radius 4, the pile five
-                // blocks off); a point the player named keeps its own radius.
-                int lookRadius = around == null ? Math.max(evidenceRadius, NEAR_LOOK) : evidenceRadius;
-                if (candidates.isEmpty()
-                        && !lookedAround
-                        && !afterSearch
-                        && FocusedLook.lookFor(c.level(), c.companion(), evidence, matcher::test, lookRadius) > 0) {
-                    candidates = new ArrayList<>(evidence.knownOrVisible(
-                            c.companion(), matcher, lookRadius, evidenceLimit(around == null ? CANDIDATES * 4 : 64)));
-                    candidates.removeIf(this::excluded);
-                    // What the look found is this job's ground now: later rounds and the mining bounds include it.
-                    if (!candidates.isEmpty() && around == null) lookReach = lookRadius;
+                if (candidates.isEmpty() && !lookedAround && !afterSearch) {
+                    FocusedLook.Result look =
+                            FocusedLook.lookFor(c.level(), c.companion(), evidence, matcher::test, evidenceRadius);
+                    incompleteLook = !look.complete();
+                    if (look.seen() > 0) {
+                        candidates = new ArrayList<>(evidence.knownOrVisible(
+                                c.companion(),
+                                matcher,
+                                evidenceRadius,
+                                evidenceLimit(around == null ? CANDIDATES * 4 : 64)));
+                        candidates.removeIf(this::excluded);
+                    }
                 }
                 lookedAround = true;
                 if (around != null) {
@@ -779,8 +777,10 @@ public final class MineBlocksTask implements Task {
             pendingObservation = null;
             if (allNearby && mined > 0 && blacklist.isEmpty() && lastRefusal == null && !toolSkipped) {
                 // Everything in view is taken: that is the whole order, not a shortfall, and no search follows.
-                summary = "mined " + mined + " " + matcher.label() + ": all that was in view within "
-                        + Math.max(radius, lookReach) + " blocks";
+                summary = "mined " + mined + " " + matcher.label()
+                        + (incompleteLook
+                                ? "; the focused look was incomplete"
+                                : ": all that was in view within " + radius + " blocks");
                 return TaskStatus.SUCCESS;
             }
             String searchReason = "";
@@ -836,6 +836,7 @@ public final class MineBlocksTask implements Task {
             if (lastRefusal != null) {
                 summary += "; " + lastRefusal.describe() + "; " + lastRefusal.remedy();
             }
+            if (incompleteLook && !placedOnly) summary += "; the focused look was incomplete";
             return TaskStatus.FAILED;
         }
         pendingObservation = null;
@@ -867,8 +868,7 @@ public final class MineBlocksTask implements Task {
                 BlockPos start = around != null ? around : c.companion().blockPosition();
                 miningSession = new MiningSession(
                         c.companion(),
-                        new MiningBounds(
-                                new Node(start.getX(), start.getY(), start.getZ()), Math.max(reach, lookReach)),
+                        new MiningBounds(new Node(start.getX(), start.getY(), start.getZ()), reach),
                         128,
                         6_000,
                         placements);

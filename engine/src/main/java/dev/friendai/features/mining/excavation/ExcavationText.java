@@ -16,6 +16,14 @@ public final class ExcavationText {
     }
 
     public static String describe(ExcavationSpec spec) {
+        return describe(spec, spec.count());
+    }
+
+    /**
+     * The same sentence, naming a request the region could not honour. The effective cap is already what the task
+     * enforces; saying how many blocks were asked for keeps a capped request from looking like a silent change.
+     */
+    public static String describe(ExcavationSpec spec, int requested) {
         ExcavationGeometry geometry = spec.geometry();
         String where = geometry.shape() == ExcavationShape.BOX
                 ? geometry.x1() + " " + geometry.y1() + " " + geometry.z1() + " to " + geometry.x2() + " "
@@ -26,6 +34,9 @@ public final class ExcavationText {
                                 ? ""
                                 : geometry.direction().name().toLowerCase(java.util.Locale.ROOT))
                         + " " + geometry.length();
-        return "excavating " + where + " (cap " + spec.count() + ")";
+        String cap = "excavating " + where + " (cap " + spec.count() + ")";
+        return requested > spec.count()
+                ? cap + "; requested " + requested + ", capped to the region's " + spec.count() + " cells"
+                : cap;
     }
 }

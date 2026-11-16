@@ -105,9 +105,24 @@ public final class SearchLedger {
         changed();
     }
 
+    /** Marks the sessions a reload interrupted, keeping the phase each one must resume from. */
     public synchronized void interruptActive() {
-        sessions.values().stream().filter(session -> !session.terminal()).forEach(SearchSession::interrupt);
+        sessions.values().stream().filter(session -> !session.terminal()).forEach(SearchSession::interruptForReload);
         changed();
+    }
+
+    /**
+     * Resumes exactly the interrupted trip a checkpoint names, with its spent budget, limits and origin. A
+     * session that is gone, finished, stopped on purpose or recorded under another goal or dimension is not
+     * resumed, so a malformed checkpoint can neither borrow another search's budget nor reopen old work.
+     */
+    public synchronized SearchSession resume(UUID sessionId, UUID owner, String dimension, String goal, long now) {
+        if (sessionId == null || owner == null || dimension == null || goal == null || goal.isBlank()) return null;
+        SearchSession session = sessions.get(new Key(owner, dimension, normalize(goal)));
+        if (session == null || !session.snapshot().id().equals(sessionId) || !session.resumable()) return null;
+        session.resumeAfterReload(now);
+        changed();
+        return session;
     }
 
     public synchronized long logicalTick() {
@@ -140,6 +155,9 @@ public final class SearchLedger {
                     row.addProperty("spent_ticks", s.spentTicks());
                     row.addProperty("excavated", s.excavationBlocks());
                     row.addProperty("blocked", s.blockedLegs());
+                    row.addProperty("discovered", s.discovered());
+                    if (s.interruptedFrom() != null)
+                        row.addProperty("interrupted_from", s.interruptedFrom().name());
                     return row;
                 })
                 .toList();
@@ -204,10 +222,23 @@ public final class SearchLedger {
                     row.get("spent_travel").getAsDouble(),
                     row.get("spent_ticks").getAsLong(),
                     row.get("excavated").getAsInt(),
-                    row.get("blocked").getAsInt());
+                    row.get("blocked").getAsInt(),
+                    row.has("discovered")
+                            && !row.get("discovered").isJsonNull()
+                            && row.get("discovered").getAsBoolean(),
+                    interruptedFrom(row));
             SearchSession session = SearchSession.restore(snapshot);
             session.onChange(this::changed);
             sessions.put(new Key(owner, dimension, goal), session);
+        }
+    }
+
+    private static SearchSession.Phase interruptedFrom(JsonObject row) {
+        if (!row.has("interrupted_from") || row.get("interrupted_from").isJsonNull()) return null;
+        try {
+            return SearchSession.Phase.valueOf(row.get("interrupted_from").getAsString());
+        } catch (IllegalArgumentException unknownPhase) {
+            return null;
         }
     }
 

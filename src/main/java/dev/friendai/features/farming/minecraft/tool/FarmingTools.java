@@ -73,10 +73,9 @@ public final class FarmingTools implements FeatureToolContributor {
                     Optional<Place> place = place(places, c, a);
                     FarmTask task = new FarmTask(
                             center(c, a, place), radius(a, place, 8), crop(a), till(a), flag(a, "bonemeal"));
-                    // A remembered place keeps its own ground. Anywhere else an empty pass moves once to the nearest
-                    // work: the model often passes the companion's own position as the point, and "plant wheat" then
-                    // ended beside a pond six blocks away with a question to the owner.
-                    return place.isEmpty() ? task.movingToNearestWork() : task;
+                    // Explicit coordinates and remembered places bound the work. Only an unspecified centre may
+                    // follow nearby work beyond its initial radius.
+                    return place.isEmpty() && optionalPos(a).isEmpty() ? task.movingToNearestWork() : task;
                 },
                 true,
                 TaskToolDefinition.QueueTraits.DEFAULT,

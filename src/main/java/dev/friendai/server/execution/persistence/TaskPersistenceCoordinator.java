@@ -148,9 +148,12 @@ public final class TaskPersistenceCoordinator {
         Task activeTask = null;
         TaskState checkpoint = saved.activeTask();
         Job activeJob = activeJobId == 0 ? null : queue.job(activeJobId).orElse(null);
+        String activeOutcome = null;
         if (activeJobId > 0 && activeJob != null && activeJob.state() == JobState.RUNNING) {
-            if (registry.interruptedSearch(activeJob)
-                    || checkpoint != null && checkpoint.type().equals(SearchResourceTask.TYPE)) {
+            // A resource search is recoverable: its ledger session keeps the spent budget, and its checkpoint names
+            // the exact trip. Marking the live sessions as reload-interrupted lets either path resume them.
+            if (registry.recoverableSearch(activeJob)) searchLedger.apply(owner).interruptActive();
+            if (registry.interruptedSearch(activeJob)) {
                 searchLedger.apply(owner).interruptActive();
                 if (activeJob.planId() > 0) {
                     queue.cancelPlan(activeJob.planId());
@@ -158,8 +161,10 @@ public final class TaskPersistenceCoordinator {
                 } else queue.cancel(activeJob.id(), "resource search interrupted by restart");
                 rejected.add("job #" + activeJob.id() + ": resource search interrupted by restart");
             } else if (checkpoint != null) {
+                boolean searchCheckpoint = checkpoint.type().equals(SearchResourceTask.TYPE);
                 activeTask = registry.restore(checkpoint, companion).orElse(null);
                 if (activeTask == null) rejected.add("active task: checkpoint could not be restored");
+                else if (searchCheckpoint) activeOutcome = "resource search resumed after restart";
             }
             if (activeTask == null
                     && queue.job(activeJobId)
@@ -170,6 +175,8 @@ public final class TaskPersistenceCoordinator {
                     try {
                         activeTask =
                                 factory.create(companion.executionCoordinator().activeTaskContext());
+                        if (registry.recoverableSearch(activeJob))
+                            activeOutcome = "resource search retried after restart";
                     } catch (RuntimeException invalidTask) {
                         queue.cancel(activeJobId, "saved task could not be reconstructed");
                         rejected.add("job #" + activeJobId + ": saved task could not be reconstructed");
@@ -182,7 +189,9 @@ public final class TaskPersistenceCoordinator {
             else rejected.add("active task: task type is unavailable");
         }
 
-        if (activeJobId > 0 && activeTask != null) restored.add("job #" + activeJobId);
+        if (activeJobId > 0 && activeTask != null) {
+            restored.add("job #" + activeJobId + (activeOutcome == null ? "" : ": " + activeOutcome));
+        }
         for (Job job : queue.jobs()) {
             if (job.state() == JobState.PENDING && factories.containsKey(job.id())) restored.add("job #" + job.id());
         }

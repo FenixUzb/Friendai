@@ -6,13 +6,23 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ## [Unreleased]
 
-## [0.214.0] - 2026-11-14
+## [0.221.0] - 2026-11-16
 
 ### Added
 
 - **Simple Voice Chat** in Settings → Voice → Synthesis (`voice.tts.playback`, Auto by default): with the optional Simple Voice Chat mod installed and connected, the companion's spoken replies play through it from the companion's position, so Sound Physics Remastered adds reverb and muffles the voice behind walls, and the wake word listens to what you say in voice chat instead of opening the microphone a second time. Remove the mod, or disconnect, mute or switch off voice chat, and the built-in output and microphone take over on their own; Off never uses the mod.
 
-## [0.213.0] - 2026-11-14
+## [0.220.1] - 2026-11-15
+
+### Changed
+
+- The planner gets 40 seconds per call instead of 20, so a slower planning model can finish instead of leaving the companion to its fallback.
+
+### Fixed
+
+- A planner call that runs past its timeout is retried like any other transient provider fault instead of ending the shift on the first timeout, and the companion says the planner did not answer in time instead of telling you to check the API key.
+
+## [0.220.0] - 2026-11-14
 
 ### Added
 
@@ -21,6 +31,8 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 - A generated house takes `"windows": "none"` for solid walls and `"door": "none"` for an open doorway, so "build a small plank house" no longer stops for a missing door and glass panes.
 
 ### Fixed
+
+- The companion waits to land before jumping onto scaffolding, so a tower build can continue after approaching the pillar over a step. If a scaffold occupies a planned cell directly under its feet, it checks the landing before taking the scaffold down.
 
 - The companion now notices dead bushes, flowers, saplings and other thin plants its eyes pass over, so "take the bushes we are standing on" finds them instead of answering that there are none nearby. A plant behind a wall stays unseen.
 - An idle companion near a villager or wandering trader it cannot reach no longer walks to it every ten seconds and no longer interrupts the conversation to report it; it checks each trader's offers at most once every five minutes, quietly.
@@ -40,13 +52,13 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 - Taking an item from storage during an obtain order goes to the chest the item was seen in, not to whichever chest is nearest.
 - The companion no longer stops remembering the chests it opens once it has looked at a lot of the world: the oldest memories make room instead.
 - A farm pass that finds nothing in its radius, and its preview, now say where the nearest ripe crop, empty farmland or soil beside water is, so a too-small guess around the companion is corrected instead of ending the order.
-- Right after it arrives, the companion no longer says it sees no diamond ore (or any other block) standing in plain view: asked about a block it has not seen yet, it takes a deliberate look, and only what its eyes actually reach counts — ore sealed in stone stays unseen.
-- "Break the cactus near us" right after a summon breaks the cactus in view instead of searching and breaking a wild one far off, and "clear this sand away" with a too-small radius still finds the pile a few blocks past it: a mining order takes the same deliberate look first.
+- Asked about a block it has not seen yet, the companion takes a bounded deliberate look and records only what its eyes reach; if the look cannot finish, it says so.
+- A mining order takes a bounded deliberate look for unseen targets within its requested radius before searching farther away.
 - "Plant wheat" with nothing to plant right around the companion now walks to the nearest grass by the water within sixteen blocks and plants there, instead of asking whether it should.
 - "Pick the flowers" or "clear this sand away" no longer stop after one block: an order with no number takes every matching block in view (the new `all_nearby` mode of mining), and a job that was asked for fewer says how many are still in view.
 - Right after finishing a job the companion reports on it and can carry the order on, instead of opening small talk in the same breath and asking whether to continue; its own subjects now wait ten seconds after a job's report.
-- "Plant wheat" also walks to the nearest soil when the companion was told to farm at the spot it stands on.
-- "Harvest the wheat" takes the whole field when the plot lies on the edge of the pass's circle: a farm pass follows the field for up to three more passes instead of taking two ears and saying nothing ripe is left.
+- A farm pass without a specified centre can walk to the nearest soil; explicit coordinates and remembered places keep the pass within their requested area.
+- "Harvest the wheat" takes the whole field when the plot lies on the edge of an unbounded pass: the pass follows the field for up to three more passes instead of taking two ears and saying nothing ripe is left.
 - The companion wins a fair melee fight: its sword now recharges on every tick of the fight, as a player's does, instead of only while the enemy is in reach, so a husk that kept knocking it back no longer out-hit an iron sword and killed it.
 - The companion no longer destroys an ore it cannot harvest: told to mine a diamond (or any valuable block) while carrying only a wooden pickaxe, it now refuses, leaves the ore whole and says it needs a better pickaxe first, where it used to break the ore and lose the diamond.
 - "Dig a 3x3 pit, 2 deep" digs two layers of earth: a shaft down started from where someone stands begins with the ground under their feet, where it used to spend its first layer on air.
@@ -57,6 +69,131 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 - A number or an on/off value the model wrote in quotes (`"count": "2"`) is accepted in a tool call, a plan step and a queue edit instead of failing the order.
 - When the model calls a tool that was hidden for the current message, the companion loads that tool's group for the rest of the turn, so a refused call can be repeated correctly instead of failing again and again.
 - Russian orders with "take", "pick up", "chop", "mine" and "collect" verb forms, and English "take", "grab", "cut" and "break", now keep the gathering tools available; "eat" and "sleep" orders show the eating and sleeping tools.
+
+## [0.219.0] - 2026-11-14
+
+### Changed
+
+- Gathering now measures what the next step really needs before deciding that space is short: it counts the room left in a stack it is already carrying, the slot an ingredient frees when the recipe consumes it, and the expected drop of a mined block.
+
+### Fixed
+
+- The companion no longer reports a full inventory while a carried stack still has room for the item it is about to gather, so a 63-item stack takes the 64th without opening a chest.
+- Crafting no longer stops in a full bag when the recipe consumes the very stack its result will occupy.
+- When a step genuinely needs a free slot, the companion moves only the unrelated stacks it must into a nearby container instead of unloading the rest of the bag.
+
+## [0.218.0] - 2026-11-14
+
+### Added
+
+- The companion now remembers the last few lines of your conversation after a restart, a death or a re-summon: a follow-up like "and the other one?" can refer to the exchange just before it. Only lines you actually heard are restored, at most four exchanges, and clearing the conversation in the memory tab removes them for good.
+
+## [0.217.0] - 2026-11-14
+
+### Changed
+
+- A request can no longer overflow the model: the system prompt, the recent conversation and the tool descriptions now share one conservative budget, the oldest finished exchanges and optional tool groups give way first, and a request that still cannot fit is answered with one clear line instead of a failed network call.
+- A plan the companion queues without saying anything is acknowledged once and starts immediately, without an extra round trip to the model.
+
+## [0.216.1] - 2026-11-14
+
+### Fixed
+
+- The companion no longer says that work started before the tool call that starts it is accepted: a reply that arrives with tool calls is spoken only after every call succeeds, so a refused order is answered by what really happened.
+- Streamed speech no longer announces a start before the call is accepted; only ordinary conversation streams its first sentence ahead of the complete answer.
+- A successful step inside a plan is no longer narrated separately: the plan's final result is the one line the owner hears, while direct tasks, failures and blockers keep speaking.
+
+## [0.216.0] - 2026-11-14
+
+### Changed
+
+- Repeating the same failing tool call in one answer no longer repeats the work: an identical call is retried once, then reports the earlier failure and asks for different arguments or a changed world.
+- `excavate` now says when a requested count was larger than the region and what number it actually mined to.
+- Tool guidance now explains when to use `find_blocks`, `known_resources` and `search_resource` instead of one another, and that handing items to the owner is a delivery, not storage.
+
+## [0.215.0] - 2026-11-14
+
+### Changed
+
+- `find_blocks` now says what it actually knows about each listed block: whether it is observed now or only remembered, how old the sighting is, whether its chunk is loaded, and whether a stance could start it today.
+- A failed mining or excavation job now names the exact cause in its result — an obstructed way back, missing support blocks, a stance that cannot see the block, or a target that cannot be taken — instead of only "unreachable".
+
+## [0.214.4] - 2026-11-14
+
+### Fixed
+
+- A blocked job can no longer spawn a chain of unrelated jobs. After three failed attempts without a new fact the companion stops starting work for it, says in one line what blocks it and asks the owner for a decision; a changed world fact, an applied repair or the owner's own answer lets it try again.
+
+## [0.214.3] - 2026-11-14
+
+### Fixed
+
+- A dig that cannot be safely exited now says why: the companion names the exact step of the way back it refused — a stale or unloaded route, a blockade in the tunnel or missing support material — instead of reporting one vague "return route blocked or unknown".
+- A companion that failed to reach one kind of stone now tries another valid stone or a different site instead of digging the same unreachable hole again, while still retrying a source that is the only way to get the item.
+
+## [0.214.2] - 2026-11-14
+
+### Fixed
+
+- A companion that is pressed against a wall, pushed sideways or shuffling in place no longer looks like it is walking: it notices the missing forward progress within half a second, tries a jump, and then finds another route instead of waiting out the step.
+
+## [0.214.1] - 2026-11-14
+
+### Fixed
+
+- The companion no longer confuses worlds: a "welcome back" line is said only in the world the owner actually left, and a dismissed or reloaded companion stops holding on to the surroundings it saw last session.
+
+## [0.214.0] - 2026-11-14
+
+### Changed
+
+- A resource search now survives a restart: the companion continues the same trip with the budget it already spent instead of starting over or giving up, reacquires only the chunks its next leg needs, and walks home with a find it had already made. A save written before this change still retries the search without resetting its spend.
+
+## [0.213.2] - 2026-11-14
+
+### Changed
+
+- Several things that used to run in one server tick now share it: a second open companion menu no longer rebuilds every snapshot at once, a large owner-record save is spread over several ticks, and the companion menu and the perception tool reuse one detailed look per tick, so a busy world stays smooth while the menus and saves stay current.
+
+## [0.213.1] - 2026-11-14
+
+### Changed
+
+- Stopping the companion's speech now takes effect at once: the reply that was being synthesized is cancelled instead of being left to finish and delay the next one.
+- A voice service answer is read in bounded pieces and refused as soon as it grows past the limit, so an oversized answer can no longer stall the game while it is buffered.
+
+### Fixed
+
+- Holding push-to-talk no longer has its recording cut short while the wake word is armed.
+- Starting, stopping and closing the microphone no longer runs on the game thread, so a slow audio device cannot freeze a frame, and a read that was already under way cannot leak into the next recording.
+- A microphone that cannot be opened is reported once and retried later instead of failing again on every tick.
+
+## [0.213.0] - 2026-11-14
+
+### Added
+
+- `set_routine` accepts `report: true` when the owner wants to be told after every successful run; a routine is quiet on success by default.
+
+### Changed
+
+- A scheduled routine now runs when its time comes even if a queued order is only waiting on the world, a retry or your decision, which used to postpone it indefinitely; work that can start right now still goes first, and the companion's pause still stops everything.
+- A routine that fails tells you once with the reason instead of repeating the same line every time it runs, and the next success clears it.
+
+## [0.212.4] - 2026-11-14
+
+### Changed
+
+- A large build no longer freezes the game while the companion checks the site: it reads the footprint a small slice at a time and reports whether it is checking the site, gathering materials or placing blocks.
+
+### Fixed
+
+- The companion saves its build progress in the background, so a big scaffold no longer stalls the game to write the resume file, and a save that fails no longer stops the build.
+
+## [0.212.3] - 2026-11-14
+
+### Fixed
+
+- A companion that stops following its owner, because the owner logged out, changed dimension, or can no longer be found, releases the chunk its long-distance route was keeping loaded instead of holding it until the lease expires.
 
 ## [0.212.2] - 2026-11-14
 
