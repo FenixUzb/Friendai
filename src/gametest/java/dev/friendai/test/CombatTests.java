@@ -145,7 +145,11 @@ public class CombatTests {
      * A fair fight: the live battery's "kill that zombie" ended with the companion slain by a husk while holding an iron
      * sword at full health. With the owner beside it and a husk walking in to fight back, the companion must win.
      */
-    @GameTest(maxTicks = 1200, skyAccess = true, environment = "friendai-gametest:combat_duel")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = 1200,
+            skyAccess = true,
+            environment = "friendai-gametest:combat_duel")
     public void winsAFairFightAgainstAHuskWithAnIronSword(GameTestHelper h) {
         GameTestSupport.platform(h, 20);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -172,7 +176,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void fightsBackZombie(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -209,7 +213,7 @@ public class CombatTests {
      * The stack a fight displaces stays in the inventory, where death, saving and the menu already look for it; the swap
      * restores it to the hand instead of keeping it in a controller field.
      */
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void swappedWeaponWaitsInTheInventory(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -242,7 +246,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void defendsOwner(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -273,7 +277,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void guardAttacksUnprovoked(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -295,7 +299,7 @@ public class CombatTests {
      * parallel, and the controller's eight-block threat scan otherwise reaches a monster of another test that can pick
      * this companion as its target, which is a fight this test never asked for.
      */
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void defensiveIgnoresUnprovoked(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         GameTestSupport.enclose(h, 1, 15, 3);
@@ -324,7 +328,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void guardIgnoresProtected(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -345,7 +349,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void neverHitsOwner(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -363,7 +367,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void targetKilledByOthersEndsFight(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -386,7 +390,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void shootsFarSkeleton(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -410,7 +414,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void passiveRunsAway(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 7, 2, 7);
@@ -432,7 +436,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void zombieTargetsTheCompanionUnprovoked(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 7, 2, 7);
@@ -444,7 +448,7 @@ public class CombatTests {
                         + c.position()));
     }
 
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void creativeCompanionIsIgnoredUnlessGivenAnAttackOrder(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 7, 2, 7);
@@ -465,7 +469,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void retreatsAtLowHealth(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 7, 2, 7);
@@ -490,7 +494,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void fleesSwellingCreeper(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 7, 2, 7);
@@ -512,7 +516,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void unreachableTargetIsDropped(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         boxIn(h, 6, 2, 2);
@@ -531,7 +535,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void eatsWhenHurt(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -549,7 +553,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void doesNotEatUnsafe(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -564,7 +568,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void foodChoiceFollowsTheOwnerRules(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -581,7 +585,7 @@ public class CombatTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void eatTaskEatsFoodTheOwnerAllowed(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -600,7 +604,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void eatingHoldsFoodInTheUsingHand(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -618,7 +622,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void eatingInterruptedKeepsFood(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -639,7 +643,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void wearsBetterArmor(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -657,7 +661,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void armorDoesNotFlipFlop(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -691,7 +695,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void huntKillsChickens(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -719,7 +723,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void ownerOrderedHuntAttacksGolem(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -750,7 +754,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void huntSkipsNamedMob(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -781,7 +785,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void huntNothingNearby(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -798,7 +802,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void attackPlayerHits(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -840,7 +844,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void equipArmorAndOffhand(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -871,7 +875,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void equipWrongSlot(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -889,7 +893,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void eatTaskResults(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -937,7 +941,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void avoidCombatDoesNotCancelOwnerOrderedAttack(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -965,7 +969,7 @@ public class CombatTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void stopCancelsOrderedAttackWithoutAutonomousReengagement(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -1027,7 +1031,7 @@ public class CombatTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void miningResumesAfterFight(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         h.setBlock(8, 2, 2, Blocks.CRIMSON_STEM);
@@ -1072,7 +1076,7 @@ public class CombatTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void attackTaskLimitEndsFight(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -1104,7 +1108,7 @@ public class CombatTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void visibleUnreachableTargetIsDropped(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         glassPen(h, 2, 2);

@@ -128,7 +128,7 @@ public class CompanionDeathTests {
      * A live session: the world spawn of a desert sat inside sand, the respawned companion was put there and
      * suffocated at once. The respawn now looks for a free surface cell around a shared spawn that is not one.
      */
-    @GameTest(skyAccess = true)
+    @GameTest(structure = GameTestArenas.ARENA_16, skyAccess = true)
     public void aRespawnPointInsideSandMovesToTheSurface(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int x = 2; x <= 6; x++) {
@@ -149,7 +149,7 @@ public class CompanionDeathTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void deathDropsLootButKeepsBodyState(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());
@@ -240,7 +240,7 @@ public class CompanionDeathTests {
         });
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void aSecondDeathCallIsNotRecordedTwice(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());
@@ -256,7 +256,7 @@ public class CompanionDeathTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void deathResumesAStandaloneTask(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());
@@ -278,7 +278,7 @@ public class CompanionDeathTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void deathKeepsTheQueue(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());
@@ -305,7 +305,7 @@ public class CompanionDeathTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void summonAfterDeathRestoresWhenAutoRespawnIsOff(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());
@@ -337,7 +337,7 @@ public class CompanionDeathTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void deathDropsEveryCarriedStackExactlyOnce(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());
@@ -394,7 +394,7 @@ public class CompanionDeathTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void recoveryWalksBackAndCollectsTheDrops(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());
@@ -415,7 +415,8 @@ public class CompanionDeathTests {
                     "the logs must be fetched back, carried="
                             + revived.inventory().countItem(Items.OAK_LOG));
             // The trip is guaranteed and reported; a drop the route could not reach stays on the ground and says so.
-            boolean bootsCarried = revived.inventory().countItem(Items.IRON_BOOTS) >= 1;
+            boolean bootsCarried = revived.inventory().countItem(Items.IRON_BOOTS) >= 1
+                    || revived.getItemBySlot(EquipmentSlot.FEET).is(Items.IRON_BOOTS);
             boolean bootsOnGround =
                     h
                             .getLevel()
@@ -431,7 +432,7 @@ public class CompanionDeathTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void aSummonedBodyFetchesTheDropsItLeftBehind(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());
@@ -461,7 +462,7 @@ public class CompanionDeathTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void aRefusalLeavesTheDropsAlone(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());
@@ -484,7 +485,7 @@ public class CompanionDeathTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void aSecondDeathReplacesTheOpenRecovery(GameTestHelper h) {
         ready(h);
         CompanionCarryData store = CompanionCarryData.get(h.getLevel().getServer());
@@ -521,7 +522,7 @@ public class CompanionDeathTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void dropsTakenBeforeTheTripClearTheRecord(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());
@@ -552,7 +553,7 @@ public class CompanionDeathTests {
         });
     }
 
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 900)
     public void aFullInventoryLeavesTheDropsOnTheGround(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());
@@ -587,7 +588,7 @@ public class CompanionDeathTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void deathKeepsPerOwnerStores(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());
@@ -663,7 +664,7 @@ public class CompanionDeathTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void deathKeepsAFreeTimeShiftPlan(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());
@@ -705,7 +706,7 @@ public class CompanionDeathTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void deathRecordReachesThePrompt(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());
@@ -729,7 +730,7 @@ public class CompanionDeathTests {
         });
     }
 
-    @GameTest(maxTicks = 3600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 3600)
     public void firstTurnAfterDeathIsAnswered(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());

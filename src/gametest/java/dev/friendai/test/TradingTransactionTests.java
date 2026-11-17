@@ -153,7 +153,7 @@ public final class TradingTransactionTests {
         return total;
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void two_input_trade_uses_vanilla_result_and_preserves_components(GameTestHelper helper) {
         Fixture f = setup(helper, "success");
         try (f) {
@@ -219,7 +219,7 @@ public final class TradingTransactionTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void quote_for_another_pricing_actor_is_denied_before_payment(GameTestHelper helper) {
         Fixture f = setup(helper, "actor-change");
         try (f) {
@@ -259,7 +259,7 @@ public final class TradingTransactionTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void semantic_duplicate_after_reordering_is_rejected(GameTestHelper helper) {
         Fixture f = setup(helper, "reordered-duplicate");
         try (f) {
@@ -299,7 +299,7 @@ public final class TradingTransactionTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void authorized_order_can_continue_one_fill_per_session(GameTestHelper helper) {
         Fixture f = setup(helper, "two-fills");
         try (f) {
@@ -347,7 +347,7 @@ public final class TradingTransactionTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void current_price_increase_within_cap_is_charged(GameTestHelper helper) {
         Fixture f = setup(helper, "price-within-cap");
         try (f) {
@@ -383,7 +383,7 @@ public final class TradingTransactionTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void current_price_increase_over_cap_is_denied_without_payment(GameTestHelper helper) {
         Fixture f = setup(helper, "price-over-cap");
         try (f) {
@@ -416,7 +416,7 @@ public final class TradingTransactionTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void custom_named_payment_is_protected_without_explicit_allowance(GameTestHelper helper) {
         Fixture f = setup(helper, "protected-payment");
         try (f) {
@@ -450,7 +450,7 @@ public final class TradingTransactionTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void wrong_exact_enchantment_cannot_pay_offer(GameTestHelper helper) {
         Fixture f = setup(helper, "wrong-enchantment");
         try (f) {
@@ -497,7 +497,7 @@ public final class TradingTransactionTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void full_inventory_denies_output_before_payment(GameTestHelper helper) {
         Fixture f = setup(helper, "full-inventory");
         try (f) {
@@ -530,7 +530,7 @@ public final class TradingTransactionTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void exhausted_offer_does_not_charge_a_second_fill(GameTestHelper helper) {
         Fixture f = setup(helper, "exhausted-stock");
         try (f) {
@@ -572,7 +572,7 @@ public final class TradingTransactionTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void busy_human_merchant_is_not_taken_over(GameTestHelper helper) {
         Fixture f = setup(helper, "busy-human");
         try (f) {
@@ -611,7 +611,7 @@ public final class TradingTransactionTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void protection_denial_does_not_open_or_spend(GameTestHelper helper) {
         Fixture f = setup(helper, "protection-denial");
         try (f) {
@@ -654,7 +654,7 @@ public final class TradingTransactionTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void paused_task_guard_closes_session_and_releases_lease(GameTestHelper helper) {
         Fixture f = setup(helper, "paused-guard");
         try (f) {
@@ -691,7 +691,7 @@ public final class TradingTransactionTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void exception_after_escrow_returns_payment_and_releases_reservation(GameTestHelper helper) {
         Fixture f = setup(helper, "escrow-exception", true);
         try (f) {

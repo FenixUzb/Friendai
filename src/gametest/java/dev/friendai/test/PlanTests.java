@@ -282,7 +282,7 @@ public class PlanTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void runPlanEndToEnd(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -304,7 +304,7 @@ public class PlanTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void planSurvivesReload(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -419,7 +419,7 @@ public class PlanTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void planTakeThenPlace(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(8, 2, 2, Blocks.CHEST);
@@ -474,7 +474,7 @@ public class PlanTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void planTakeLogsThenCraft(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(11, 2, 11, Blocks.CHEST);
@@ -519,7 +519,7 @@ public class PlanTests {
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void planShearThenStore(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.spawn(EntityTypes.SHEEP, 4, 2, 4);

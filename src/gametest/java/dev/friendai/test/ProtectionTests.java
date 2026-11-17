@@ -111,7 +111,7 @@ public class ProtectionTests {
                         companion.level().getGameTime());
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void placeProtectionLeavesTheStoneOutsideAndMinesIt(GameTestHelper h) {
         GameTestSupport.platformAt(h, 290, 16);
         CompanionEntity c = companionAt(h, 290);
@@ -138,7 +138,7 @@ public class ProtectionTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void placeProtectionNamesThePlaceAndTheWayOut(GameTestHelper h) {
         GameTestSupport.platformAt(h, 290, 16);
         CompanionEntity c = companionAt(h, 290);
@@ -162,7 +162,7 @@ public class ProtectionTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void serverProtectionNamesTheServerAndNotAPlace(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(new BlockPos(6, 2, 2), Blocks.PRISMARINE_BRICKS);
@@ -186,7 +186,7 @@ public class ProtectionTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void theBlockUnderTheCompanionIsMinedWhenTheDropIsSafe(GameTestHelper h) {
         GameTestSupport.platformAt(h, 310, 16);
         h.setBlock(new BlockPos(2, 309, 2), Blocks.STONE);
@@ -210,7 +210,7 @@ public class ProtectionTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void theBlockUnderTheCompanionIsRefusedOverLava(GameTestHelper h) {
         GameTestSupport.platformAt(h, 310, 16);
         h.setBlock(new BlockPos(2, 309, 2), Blocks.LAVA);

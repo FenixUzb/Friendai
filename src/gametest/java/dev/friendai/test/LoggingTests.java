@@ -1,5 +1,6 @@
 package dev.friendai.test;
 
+import com.google.gson.JsonParser;
 import dev.friendai.debug.LogWriterScope;
 import dev.friendai.execution.log.TaskLogEvents;
 import dev.friendai.foundation.diagnostics.LogCategory;
@@ -112,16 +113,18 @@ public class LoggingTests {
                         net.fabricmc.loader.api.FabricLoader.getInstance().getGameDir())
                 .resolve("index.jsonl");
         h.assertTrue(Files.exists(index), "the world index must record this load: " + index);
-        long age = System.currentTimeMillis() - Files.getLastModifiedTime(index).toMillis();
-        h.assertTrue(age < 120_000L, "the index line is stale by " + age + " ms, so this boot did not write it");
-        String recorded = Files.readString(index);
-        h.assertTrue(recorded.contains("\"event\":\"world.load\""), recorded);
-        h.assertTrue(
-                recorded.contains("\"world\":\""
-                        + dev.friendai.debug.LogPaths.worldName(
-                                server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT))
-                        + "\""),
-                recorded);
+        String worldName = dev.friendai.debug.LogPaths.worldName(worldPath);
+        try (Stream<String> lines = Files.lines(index)) {
+            boolean foundLoad = lines.map(line -> JsonParser.parseString(line).getAsJsonObject())
+                    .anyMatch(entry -> "world.load".equals(entry.get("event").getAsString())
+                            && fileLog.boot().equals(entry.get("boot").getAsString())
+                            && worldName.equals(entry.get("world").getAsString())
+                            && worldPath
+                                    .normalize()
+                                    .toString()
+                                    .equals(entry.get("path").getAsString()));
+            h.assertTrue(foundLoad, "the world index must record this writer's boot: " + fileLog.boot());
+        }
         h.assertTrue(fileLog.flushStatus().join().durable(), "server logs did not flush");
         boolean foundStart = false;
         for (Path path : files(fileLog.root().resolve("server"))) {

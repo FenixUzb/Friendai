@@ -27,7 +27,7 @@ import net.minecraft.world.phys.Vec3;
 
 /** Turning, gestures, sneaking, sitting, short relative moves and tossing items. One floor band per test. */
 public class BodyLanguageTests {
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void turnReachesRequestedYaw(GameTestHelper h) {
         int floor = 140;
         GameTestSupport.platformAt(h, floor, 12);
@@ -40,7 +40,7 @@ public class BodyLanguageTests {
         });
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void emoteFinishesAndSneakClears(GameTestHelper h) {
         int floor = 150;
         GameTestSupport.platformAt(h, floor, 12);
@@ -64,7 +64,7 @@ public class BodyLanguageTests {
         });
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void sitCrouchesUntilStopped(GameTestHelper h) {
         int floor = 160;
         GameTestSupport.platformAt(h, floor, 12);
@@ -81,7 +81,7 @@ public class BodyLanguageTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 200)
     public void stepMovesRelativeToFacing(GameTestHelper h) {
         int floor = 170;
         GameTestSupport.platformAt(h, floor, 20);
@@ -102,7 +102,7 @@ public class BodyLanguageTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void sneakingMoveReleasesSneakOnArrival(GameTestHelper h) {
         int floor = 200;
         GameTestSupport.platformAt(h, floor, 16);
@@ -116,7 +116,7 @@ public class BodyLanguageTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void timedOutSneakingStepReleasesSneak(GameTestHelper h) {
         int floor = 220;
         GameTestSupport.platformAt(h, floor, 12);
@@ -143,7 +143,7 @@ public class BodyLanguageTests {
                 .orElse(false);
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void throwItemDropsItems(GameTestHelper h) {
         int floor = 180;
         GameTestSupport.platformAt(h, floor, 12);
@@ -164,7 +164,7 @@ public class BodyLanguageTests {
         });
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void waitFinishesAfterTicks(GameTestHelper h) {
         int floor = 190;
         GameTestSupport.platformAt(h, floor, 12);
@@ -183,7 +183,7 @@ public class BodyLanguageTests {
         });
     }
 
-    @GameTest(maxTicks = 160)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 160)
     public void brokenBlockIsFacedByBodyAndHead(GameTestHelper h) {
         int floor = 240;
         GameTestSupport.platformAt(h, floor, 12);
@@ -227,7 +227,7 @@ public class BodyLanguageTests {
         });
     }
 
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void placementFacesTheClickedBlock(GameTestHelper h) {
         int floor = 260;
         GameTestSupport.platformAt(h, floor, 12);
@@ -246,7 +246,7 @@ public class BodyLanguageTests {
         });
     }
 
-    @GameTest(maxTicks = 60)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 60)
     public void throwItemUsesBodyFacing(GameTestHelper h) {
         int floor = 250;
         GameTestSupport.platformAt(h, floor, 12);

@@ -18,7 +18,7 @@ import net.minecraft.world.item.Items;
 public class CombatDefenseTests {
 
     /** A shooter's draw raises the shield before the arrow exists, so the released arrow does no damage. */
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void skeletonDrawRaisesShieldBeforeArrow(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 4, 2, 4);
@@ -52,7 +52,7 @@ public class CombatDefenseTests {
     }
 
     /** A bow draw yields the use slot when a shooter starts drawing: the shield is really up, not only claimed. */
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void shieldInterruptsABowDraw(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 4, 2, 4);
@@ -92,7 +92,7 @@ public class CombatDefenseTests {
     }
 
     /** A displaced offhand stack comes back after the fight, and the shield is not duplicated. */
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void shieldRestoresOffhandOnStop(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 3, 2, 3);
@@ -123,7 +123,7 @@ public class CombatDefenseTests {
     }
 
     /** Switching to avoid-combat during a reflex fight releases the paused task and clears combat state. */
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void protectionChangeEndsReflexFightAndResumesTask(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 3, 2, 3);

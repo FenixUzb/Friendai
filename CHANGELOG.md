@@ -6,6 +6,16 @@ The file starts at 0.87.0. Earlier versions predate it, so their history stays i
 
 ## [Unreleased]
 
+## [0.220.2] - 2026-11-15
+
+### Fixed
+
+- The companion waits to land before plotting a walking route, turns toward its first step before walking and keeps moving through vertical descents.
+- The companion centres itself over the supporting block before jumping to place scaffolding, so it can start the climb from the edge of a ledge.
+- If a scaffold block is protected or unreachable, the companion still removes the other scaffold blocks it can reach and reports any that remain.
+- In Creative mode, the companion can fly upward inside a one-block shaft to place a block below itself.
+- At night, the companion only starts a shelter reflex when it has a known home to head to, torches and a dark interior to light, or enough blocks to build and enter a shelter nearby. Missing torches no longer prevent it from eating when its health is low.
+
 ## [0.220.1] - 2026-11-15
 
 ### Changed

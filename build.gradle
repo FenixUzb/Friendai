@@ -48,9 +48,15 @@ fabricApi {
 	}
 }
 
+tasks.register('resetGameTestWorld', Delete) {
+	// The test server otherwise reopens the previous world's chunks and Friendai companion anchors.
+	delete layout.projectDirectory.dir('build/run/gameTest/world')
+}
+
 // Forwards `-Dfabric-api.gametest.filter=<glob>` (for example `friendai-gametest:build_tests_*`) from the Gradle
 // command line to the GameTest server; without this the property stays in the Gradle JVM and the whole suite runs.
 tasks.named('runGameTest') {
+	dependsOn tasks.named('resetGameTestWorld')
 	def gameTestFilter = providers.systemProperty("fabric-api.gametest.filter")
 	if (gameTestFilter.isPresent()) {
 		systemProperty "fabric-api.gametest.filter", gameTestFilter.get()

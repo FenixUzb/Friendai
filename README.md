@@ -278,9 +278,9 @@ exactly one mod jar, `friendai-<version>.jar`, and `friendai-<version>.jar.sha25
 (`sha256sum -c friendai-<version>.jar.sha256`, or `shasum -a 256 -c` on macOS), and put the jar in `mods/` on the client
 and on the server. The release notes are the `CHANGELOG.md` section for that version.
 
-Only the maintainer creates a tag. Pushing `vX.Y.Z` starts the release workflow, which refuses a tag that does not match
-`mod_version`, a commit that is not on `main`, or a commit whose CI run is not green; it then runs the full build and
-publishes the verified jar. See `CONTRIBUTING.md` for the dry run and the local checks.
+When `mod_version` changes on `main`, a green `CI gate` triggers the release workflow. It takes the verified jar
+from that CI run, tags the tested commit `vX.Y.Z` and publishes the release with notes for that version.
+See `CONTRIBUTING.md` for the dry run and local checks.
 
 ## Contributing
 

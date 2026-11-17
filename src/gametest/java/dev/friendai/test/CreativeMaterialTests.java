@@ -85,7 +85,7 @@ public final class CreativeMaterialTests {
     }
 
     /** Creative wood is taken by the count miner: a felling would raise a scaffold it does not need. */
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void creativeWoodStepUsesTheCountMinerNotTheFeller(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 5, 2, 3);
@@ -103,7 +103,7 @@ public final class CreativeMaterialTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void creativeBatchDoesNotReserveRecipeIngredients(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 5, 2, 3);
@@ -126,7 +126,7 @@ public final class CreativeMaterialTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void survivalBatchReservesOnlyOneCandidateForAlternativeIngredients(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -163,7 +163,7 @@ public final class CreativeMaterialTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void survivalBatchReservesHeldAndSelectedAlternativeIngredients(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -197,7 +197,7 @@ public final class CreativeMaterialTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void inFlightBatchGatherKeepsItsAlternativeReserved(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -247,7 +247,7 @@ public final class CreativeMaterialTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void survivalBatchDoesNotReserveUnusedRecipeBranchMaterials(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -299,7 +299,7 @@ public final class CreativeMaterialTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void survivalBatchProtectsShortageAfterPartialLiveOnlyIngredient(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -332,7 +332,7 @@ public final class CreativeMaterialTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 500)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 500)
     public void placeBlockGetsFreeMaterialForAuthorizedOwner(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 5, 2, 3);
@@ -352,7 +352,7 @@ public final class CreativeMaterialTests {
         });
     }
 
-    @GameTest(maxTicks = 700)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 700)
     public void buildGetsFreeBlueprintMaterials(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -376,7 +376,7 @@ public final class CreativeMaterialTests {
         });
     }
 
-    @GameTest(maxTicks = 1800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1800)
     public void houseBuildUsesUnlimitedCreativeMaterialsBeyondStackSize(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 7, 2, 7);
@@ -435,7 +435,7 @@ public final class CreativeMaterialTests {
         });
     }
 
-    @GameTest(maxTicks = 500)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 500)
     public void creativeBuildCanStepVerticallyOutOfOneBlockShaft(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 13, 2, 13);
@@ -493,7 +493,7 @@ public final class CreativeMaterialTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void tallCreativeBuildFliesWithoutPillaring(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 7, 2, 7);
@@ -547,7 +547,7 @@ public final class CreativeMaterialTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void placeBlockDoesNotGetFreeMaterialWithoutAnAuthorizedContext(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 5, 2, 3);

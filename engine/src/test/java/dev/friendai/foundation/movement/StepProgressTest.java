@@ -88,6 +88,15 @@ class StepProgressTest {
     }
 
     @Test
+    void movingDownCountsAsProgressOnAVerticalDescent() {
+        StepProgress progress = new StepProgress(new Pos(0, 65, 0), new Pos(0, 64, 0), 4, 0.15);
+        progress.reset(0.5, 65, 0.5);
+        for (int tick = 1; tick <= 8; tick++) {
+            assertEquals(Verdict.MOVING, progress.sample(0.5, 65 - tick * 0.1, 0.5));
+        }
+    }
+
+    @Test
     void aDiagonalStepProjectsOntoItsOwnAxis() {
         StepProgress progress = new StepProgress(new Pos(0, 64, 0), new Pos(3, 64, 3), 4, 0.15);
         progress.reset(0.5, 64, 0.5);

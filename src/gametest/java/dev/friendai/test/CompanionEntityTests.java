@@ -110,7 +110,7 @@ public class CompanionEntityTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void jumpTaskLeavesTheGroundAndLands(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

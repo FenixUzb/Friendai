@@ -27,7 +27,7 @@ public class CombatPotionTests {
         thrown.onHitAsPotion(h.getLevel(), stack, new EntityHitResult(target));
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void splashProjectileAppliesExpectedEffects(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -48,7 +48,7 @@ public class CombatPotionTests {
      * entity spawned and queried in the same tick was missed once in a full-suite run; the health is compared around
      * the call, so a zombie that burned in the meantime cannot pass for a damaged one.
      */
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void undeadEffectSemanticsMatchVanilla(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -82,7 +82,7 @@ public class CombatPotionTests {
         return zombie;
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 200)
     public void blockedThrowConsumesNothing(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -105,7 +105,7 @@ public class CombatPotionTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void validThrowConsumesExactlyOnce(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -132,7 +132,7 @@ public class CombatPotionTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void lastPotionNeverHitsFriendlies(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

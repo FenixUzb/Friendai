@@ -55,7 +55,7 @@ public class EnchantSkillTests {
         return total;
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void enchantsWithLapisAndLevels(GameTestHelper h) {
         CompanionEntity c = setup(h, 64, true);
         c.inventory().addItem(new ItemStack(Items.IRON_SWORD));
@@ -100,7 +100,7 @@ public class EnchantSkillTests {
         return new EnchantItemTask(ItemMatcher.parse("minecraft:iron_sword").orElseThrow(), option, null);
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void failsWithoutLapis(GameTestHelper h) {
         CompanionEntity c = setup(h, 68, true);
         c.inventory().addItem(new ItemStack(Items.IRON_SWORD));
@@ -113,7 +113,7 @@ public class EnchantSkillTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void failsWithoutLevels(GameTestHelper h) {
         CompanionEntity c = setup(h, 72, true);
         c.inventory().addItem(new ItemStack(Items.IRON_SWORD));
@@ -124,7 +124,7 @@ public class EnchantSkillTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void failsWithoutItem(GameTestHelper h) {
         CompanionEntity c = setup(h, 76, true);
         c.inventory().addItem(new ItemStack(Items.LAPIS_LAZULI, 3));
@@ -135,7 +135,7 @@ public class EnchantSkillTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void failsWhenNoTableNearby(GameTestHelper h) {
         CompanionEntity c = setup(h, 84, false);
         c.inventory().addItem(new ItemStack(Items.IRON_SWORD));
@@ -152,7 +152,7 @@ public class EnchantSkillTests {
                 });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void failsOnProtectedTable(GameTestHelper h) {
         CompanionEntity c = setup(h, 88, true);
         c.inventory().addItem(new ItemStack(Items.IRON_SWORD));

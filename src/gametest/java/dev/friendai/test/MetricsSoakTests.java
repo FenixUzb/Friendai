@@ -81,7 +81,7 @@ public class MetricsSoakTests {
         return Integer.parseInt("max".equals(which) ? matcher.group(1) : matcher.group(2));
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void aScriptedSessionReportsTheLoopCounters(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);

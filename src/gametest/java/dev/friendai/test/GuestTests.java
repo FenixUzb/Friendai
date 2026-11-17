@@ -95,7 +95,7 @@ public class GuestTests {
         throw new AssertionError("no user message in " + messages);
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(maxTicks = 100, structure = GameTestArenas.ARENA_16)
     public void aNearbyRenamedCompanionHearsItsOwnNameEvenWhenOursIsFar(GameTestHelper h) {
         ServerPlayer guest = GameTestSupport.mockPlayerAt(h, 3, 2, 3);
         ServerPlayer firstOwner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -104,9 +104,10 @@ public class GuestTests {
         var state = GameTestSupport.runtime(server);
         CompanionManager.get(server).summon(firstOwner);
         CompanionManager.get(server).summon(secondOwner);
-        // The guest's own companion is out of hearing; the nearby renamed one is the recipient.
+        // Keep the first companion out of hearing above the arena.
         var own = CompanionManager.get(server).find(firstOwner.getUUID()).orElseThrow();
-        own.snapTo(own.getX() + 64, own.getY(), own.getZ());
+        own.setNoGravity(true);
+        own.snapTo(own.getX(), own.getY() + 64, own.getZ());
         var recipient = CompanionManager.get(server).find(secondOwner.getUUID()).orElseThrow();
         recipient.setCustomName(Component.literal("Scout"));
         recipient.setCustomNameVisible(true);

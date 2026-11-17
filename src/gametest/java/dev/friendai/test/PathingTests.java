@@ -58,6 +58,13 @@ import net.minecraft.world.phys.Vec3;
 
 public class PathingTests {
 
+    // Reserve the actual fixture footprint so the structure grid cannot place other tests inside it.
+    private static final String ARENA = "friendai-gametest:arena_24";
+    private static final String WIDE_ARENA = "friendai-gametest:pathing_wide";
+    private static final String FOLLOW_ARENA = "friendai-gametest:arena_100";
+    private static final String SHORT_CORRIDOR = "friendai-gametest:pathing_short_corridor";
+    private static final String LONG_CORRIDOR = "friendai-gametest:pathing_long_corridor";
+
     /** What a finished task reported, so a test can wait for the outcome instead of a position. */
     private static final class Outcome implements TaskEventSink {
         TaskStatus status;
@@ -132,7 +139,7 @@ public class PathingTests {
         return view.at(absolute.getX(), absolute.getY(), absolute.getZ());
     }
 
-    @GameTest
+    @GameTest(structure = ARENA)
     public void cellViewClassifiesBlocks(GameTestHelper h) {
         GameTestSupport.platform(h, 10);
         h.setBlock(new BlockPos(2, 2, 2), Blocks.STONE);
@@ -180,7 +187,7 @@ public class PathingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 20)
+    @GameTest(structure = ARENA, maxTicks = 20)
     public void hazardPredicateCoversLavaAndFire(GameTestHelper h) {
         h.assertTrue(LevelCellView.hazardous(Blocks.LAVA.defaultBlockState()), "lava");
         h.assertTrue(LevelCellView.hazardous(Blocks.FIRE.defaultBlockState()), "fire");
@@ -190,7 +197,7 @@ public class PathingTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = ARENA)
     public void materialPickerPrefersDirt(GameTestHelper h) {
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 1, 2, 1);
         c.inventory().addItem(new ItemStack(Items.DIRT, 5));
@@ -210,7 +217,7 @@ public class PathingTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = ARENA)
     public void protectedWallIsNotDug(GameTestHelper h) {
         GameTestSupport.platform(h, 10);
         int wallX = h.absolutePos(new BlockPos(5, 2, 0)).getX();
@@ -233,7 +240,7 @@ public class PathingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = ARENA, maxTicks = 800)
     public void walksThroughAClosedDoor(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int z = 0; z <= 15; z++) {
@@ -261,13 +268,14 @@ public class PathingTests {
         walkTo(c, h, out, 12.5, 2, 8.5);
         h.succeedWhen(() -> {
             h.assertTrue(out.status == TaskStatus.SUCCESS, "go_to did not finish: " + out.why());
+            BlockState door = h.getBlockState(new BlockPos(8, 2, 8));
             h.assertTrue(
-                    h.getBlockState(new BlockPos(8, 2, 8)).getValue(DoorBlock.OPEN),
-                    "the door is still shut; paths: " + out.debug);
+                    door.is(Blocks.OAK_DOOR) && door.getValue(DoorBlock.OPEN),
+                    "the door did not open: " + door + "; paths: " + out.debug);
         });
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = ARENA, maxTicks = 100)
     public void approachDoesNotReachThroughAWall(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(new BlockPos(3, 2, 8), Blocks.STONE);
@@ -288,7 +296,7 @@ public class PathingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = ARENA, maxTicks = 600)
     public void goToDoesNotArriveAtTheFootOfAPillar(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int y = 2; y <= 4; y++) {
@@ -302,9 +310,9 @@ public class PathingTests {
                 "the top of a three-block pillar is not reached from its foot: " + out.why()));
     }
 
-    @GameTest(maxTicks = 500)
+    @GameTest(structure = ARENA, maxTicks = 500)
     public void shallowWaterIsWadedNotSwum(GameTestHelper h) {
-        int floor = 240;
+        int floor = 32;
         GameTestSupport.platformAt(h, floor, 14);
         for (int x = 5; x <= 9; x++) {
             for (int z = 1; z <= 5; z++) {
@@ -317,12 +325,14 @@ public class PathingTests {
         boolean[] swam = {false};
         h.onEachTick(() -> swam[0] |= c.isInWater() && c.getPose() == Pose.SWIMMING);
         h.succeedWhen(() -> {
-            h.assertTrue(out.status == TaskStatus.SUCCESS, "did not cross the shallow pond: " + out.why());
+            h.assertTrue(
+                    out.status == TaskStatus.SUCCESS,
+                    "did not cross the shallow pond: " + out.why() + " at " + c.position());
             h.assertFalse(swam[0], "a one-block pond is waded upright, not swum");
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = ARENA, maxTicks = 400)
     public void deepWaterIsSwum(GameTestHelper h) {
         int floor = 250;
         GameTestSupport.platformAt(h, floor, 14);
@@ -355,7 +365,7 @@ public class PathingTests {
         h.setBlock(new BlockPos(x, y + 1, z), lower.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = ARENA, maxTicks = 100)
     public void taskDebugReachesLog(GameTestHelper h) {
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
         var server = h.getLevel().getServer();
@@ -371,7 +381,7 @@ public class PathingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = ARENA, maxTicks = 800)
     public void goToBridgesPitWithDirt(GameTestHelper h) {
         GameTestSupport.platformAt(h, 1, 16);
         for (int x = 0; x < 16; x++) {
@@ -431,7 +441,7 @@ public class PathingTests {
         }
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = ARENA, maxTicks = 800)
     public void goToGathersDirtThenBridges(GameTestHelper h) {
         plankPitWithDirtMound(h);
         CompanionEntity c = walker(h, 5, 8, 8);
@@ -472,7 +482,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 800, environment = "friendai-gametest:pathing_stone_under_dirt")
+    @GameTest(structure = ARENA, maxTicks = 800, environment = "friendai-gametest:pathing_stone_under_dirt")
     public void minesStoneUnderDirt(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(new BlockPos(8, 2, 8), Blocks.POLISHED_ANDESITE);
@@ -498,14 +508,17 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = ARENA, maxTicks = 1600)
     public void minesWholeLogColumn(GameTestHelper h) {
-        GameTestSupport.platform(h, 16);
-        for (int y = 2; y <= 9; y++) {
+        int floor = 22;
+        GameTestSupport.platformAt(h, floor, 16);
+        for (int y = floor + 1; y <= floor + 8; y++) {
             h.setBlock(new BlockPos(8, y, 8), Blocks.CHERRY_LOG);
         }
-        CompanionEntity c = walker(h, 2, 2, 2);
-        for (int y = 2; y <= 9; y++) {
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, floor + 1, 2);
+        c.setPathBounds(
+                new AABB(h.absoluteVec(new Vec3(-1, floor - 2, -1)), h.absoluteVec(new Vec3(17, floor + 11, 17))));
+        for (int y = floor + 1; y <= floor + 8; y++) {
             h.assertTrue(
                     GameTestSupport.observeVisible(h, c, h.absolutePos(new BlockPos(8, y, 8))),
                     "log at y=" + y + " should be directly visible");
@@ -518,9 +531,11 @@ public class PathingTests {
         c.executionCoordinator().setEventSink(out);
         c.executionCoordinator().start(task, "mine_blocks");
         h.succeedWhen(() -> {
-            h.assertTrue(out.status == TaskStatus.SUCCESS, "mine_blocks did not finish: " + out.why());
+            h.assertTrue(
+                    out.status == TaskStatus.SUCCESS,
+                    "mine_blocks did not finish: " + out.why() + " at " + c.position() + " " + task.debugStatus());
             int left = 0;
-            for (int y = 2; y <= 9; y++) {
+            for (int y = floor + 1; y <= floor + 8; y++) {
                 if (h.getLevel()
                         .getBlockState(h.absolutePos(new BlockPos(8, y, 8)))
                         .is(Blocks.CHERRY_LOG)) {
@@ -536,10 +551,11 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = ARENA, maxTicks = 800)
     public void gatheringLeavesProtectedBlocks(GameTestHelper h) {
         plankPitWithDirtMound(h);
         CompanionEntity c = walker(h, 1, 8, 8);
+        c.setPathBounds(new AABB(h.absoluteVec(new Vec3(0, 0, 5)), h.absoluteVec(new Vec3(16, 14, 11))));
         // The mound is protected as a spawn region would be: gathering must leave it alone, so the pit stays
         // uncrossable.
         BlockPos mound = h.absolutePos(new BlockPos(2, 8, 7));
@@ -570,51 +586,61 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = ARENA, maxTicks = 1200, environment = "friendai-gametest:pathing_plank_wall")
     public void goToWalksAroundPlankWall(GameTestHelper h) {
-        GameTestSupport.platform(h, 16);
+        int floor = 160;
+        GameTestSupport.platformAt(h, floor, 16);
+        GameTestSupport.enclose(h, floor, 16, 3);
         for (int z = 1; z <= 12; z++) {
-            for (int y = 2; y <= 4; y++) {
+            for (int y = floor + 1; y <= floor + 3; y++) {
                 h.setBlock(8, y, z, Blocks.OAK_PLANKS);
             }
         }
-        CompanionEntity c = walker(h, 2, 2, 8);
+        CompanionEntity c = platformWalker(h, floor, 2, 8);
         Outcome out = new Outcome();
-        walkTo(c, h, out, 13.5, 2, 8.5);
+        walkTo(c, h, out, 13.5, floor + 1, 8.5);
         h.succeedWhen(() -> {
-            h.assertTrue(out.status == TaskStatus.SUCCESS, "go_to did not finish: " + out.why());
+            h.assertTrue(
+                    out.status == TaskStatus.SUCCESS,
+                    "go_to did not finish: " + out.why() + " at " + c.position() + " after " + c.tickCount
+                            + " entity ticks, alive=" + c.isAlive() + ", removed=" + c.getRemovalReason()
+                            + ", suspended=" + c.executionCoordinator().suspended());
             for (int z = 1; z <= 12; z++) {
-                for (int y = 2; y <= 4; y++) {
+                for (int y = floor + 1; y <= floor + 3; y++) {
                     assertBlock(h, 8, y, z, Blocks.OAK_PLANKS, "wall");
                 }
             }
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = ARENA, maxTicks = 1200)
     public void protectedWallIsWalkedAround(GameTestHelper h) {
-        GameTestSupport.platform(h, 16);
-        int wallX = h.absolutePos(new BlockPos(8, 2, 0)).getX();
+        int floor = 14;
+        GameTestSupport.platformAt(h, floor, 16);
+        int wallX = h.absolutePos(new BlockPos(8, floor + 1, 0)).getX();
         for (int z = 1; z <= 12; z++) {
-            for (int y = 2; y <= 4; y++) {
+            for (int y = floor + 1; y <= floor + 3; y++) {
                 h.setBlock(8, y, z, Blocks.STONE);
             }
         }
-        CompanionEntity c = walker(h, 2, 2, 8);
+        CompanionEntity c = platformWalker(h, floor, 2, 8);
         c.hands().overrideProtection(p -> p.getX() == wallX);
         Outcome out = new Outcome();
-        walkTo(c, h, out, 13.5, 2, 8.5);
+        walkTo(c, h, out, 13.5, floor + 1, 8.5);
         h.succeedWhen(() -> {
-            h.assertTrue(out.status == TaskStatus.SUCCESS, "go_to did not finish: " + out.why());
+            h.assertTrue(
+                    out.status == TaskStatus.SUCCESS,
+                    "go_to did not finish: " + out.why() + " at " + c.position() + " after " + c.tickCount
+                            + " entity ticks");
             for (int z = 1; z <= 12; z++) {
-                for (int y = 2; y <= 4; y++) {
+                for (int y = floor + 1; y <= floor + 3; y++) {
                     assertBlock(h, 8, y, z, Blocks.STONE, "protected wall");
                 }
             }
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = ARENA, maxTicks = 1200)
     public void tunnelBesideLavaRefused(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         // A stone wall at x=8 with a sealed lava seam right behind it: breaking the wall would open onto lava.
@@ -638,7 +664,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = ARENA, maxTicks = 1200)
     public void goToFollowsShiftingTarget(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = walker(h, 2, 2, 2);
@@ -656,7 +682,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = ARENA, maxTicks = 400)
     public void goToArrivesOnACarpet(GameTestHelper h) {
         int floor = 150;
         GameTestSupport.platformAt(h, floor, 12);
@@ -677,7 +703,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = ARENA, maxTicks = 400)
     public void navigatorDoesNotJumpOntoATwoBlockStackFromACarpet(GameTestHelper h) {
         int floor = 180;
         GameTestSupport.platformAt(h, floor, 12);
@@ -715,7 +741,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 500)
+    @GameTest(structure = ARENA, maxTicks = 500)
     public void goToClimbsAClimbableColumn(GameTestHelper h) {
         int floor = 160;
         GameTestSupport.platformAt(h, floor, 12);
@@ -735,7 +761,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 500)
+    @GameTest(structure = ARENA, maxTicks = 500)
     public void goToSwimsAcrossPool(GameTestHelper h) {
         int floor = 170;
         GameTestSupport.platformAt(h, floor, 14);
@@ -752,7 +778,7 @@ public class PathingTests {
                 out.status == TaskStatus.SUCCESS, "did not swim across: " + out.why() + " at " + c.blockPosition()));
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = ARENA, maxTicks = 300)
     public void goToSwimsThroughASubmergedTunnel(GameTestHelper h) {
         int floor = 172;
         GameTestSupport.platformAt(h, floor, 16);
@@ -772,7 +798,7 @@ public class PathingTests {
                 out.status == TaskStatus.SUCCESS, "did not swim through: " + out.why() + " at " + c.position()));
     }
 
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = WIDE_ARENA, maxTicks = 900)
     public void followNeverTeleports(GameTestHelper h) {
         int floor = 140;
         GameTestSupport.platformAt(h, floor, 32);
@@ -806,10 +832,10 @@ public class PathingTests {
                 "still " + c.position().distanceTo(owner.position()) + " blocks away"));
     }
 
-    @GameTest(maxTicks = 3000, environment = "friendai-gametest:pathing_long_approach")
+    @GameTest(structure = LONG_CORRIDOR, maxTicks = 3000, environment = "friendai-gametest:pathing_long_approach")
     public void approachCrossesThreeHundredBlocksWithoutTeleporting(GameTestHelper h) {
         int floor = 240;
-        GameTestSupport.platformAt(h, floor, 312);
+        GameTestSupport.corridor(h, floor, 312, 10);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2.0, floor + 1, 4.5);
         owner.setOnGround(true);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, floor + 1, 4);
@@ -841,15 +867,15 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 3000, environment = "friendai-gametest:pathing_long_crossing")
+    @GameTest(structure = LONG_CORRIDOR, maxTicks = 3000, environment = "friendai-gametest:pathing_long_crossing")
     public void goToCrossesThreeHundredBlocksWithoutTeleporting(GameTestHelper h) {
-        int floor = 200;
-        GameTestSupport.platformAt(h, floor, 312);
-        ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2.0, floor + 1, 4.5);
+        int floor = 70;
+        GameTestSupport.corridor(h, floor, 312, 24);
+        ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2.0, floor + 1, 12.5);
         owner.setOnGround(true);
-        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, floor + 1, 4);
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, floor + 1, 12);
         c.setOwner(owner.getUUID());
-        Vec3 target = h.absoluteVec(new Vec3(302.5, floor + 1, 4.5));
+        Vec3 target = h.absoluteVec(new Vec3(302.5, floor + 1, 12.5));
         Outcome out = new Outcome();
         c.executionCoordinator().setEventSink(out);
         c.executionCoordinator().start(new GoToTask(target), "go_to");
@@ -873,11 +899,12 @@ public class PathingTests {
                             + c.position() + " target " + target);
             h.assertTrue(
                     c.position().distanceTo(target) <= 2.0,
-                    "still " + c.position().distanceTo(target) + " blocks from the 300-block target");
+                    "still " + c.position().distanceTo(target) + " blocks from the 300-block target at " + c.position()
+                            + ", " + active.debugStatus());
         });
     }
 
-    @GameTest(maxTicks = 1500)
+    @GameTest(structure = FOLLOW_ARENA, maxTicks = 1500)
     public void followsAMovingOwnerWithoutTeleporting(GameTestHelper h) {
         int floor = 280;
         GameTestSupport.platformAt(h, floor, 96);
@@ -925,7 +952,7 @@ public class PathingTests {
      * no walkable ground here, only a shaft down to a lower floor; a route that snaps to whatever it finds under the
      * owner takes the companion there and leaves the owner alone at the rim.
      */
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = WIDE_ARENA, maxTicks = 900)
     public void followStaysOnTheOwnersLevelOverAShaft(GameTestHelper h) {
         int floor = 280;
         int bottom = 272;
@@ -964,10 +991,10 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 3000)
+    @GameTest(structure = LONG_CORRIDOR, maxTicks = 3000)
     public void followsThreeHundredBlocksWithoutTeleporting(GameTestHelper h) {
         int floor = 300;
-        GameTestSupport.platformAt(h, floor, 312);
+        GameTestSupport.corridor(h, floor, 312, 10);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 302.0, floor + 1, 4.5);
         owner.setOnGround(true);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, floor + 1, 4);
@@ -995,7 +1022,7 @@ public class PathingTests {
      * release the owner's ticket itself instead of leaving a loaded chunk behind until the lease expires; the task
      * stays current so following resumes on the next login.
      */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = SHORT_CORRIDOR, maxTicks = 400)
     public void followReleasesItsLeaseWhenTheOwnerLogsOut(GameTestHelper h) {
         int floor = 40;
         GameTestSupport.corridor(h, floor, 76, 10);
@@ -1048,7 +1075,7 @@ public class PathingTests {
     }
 
     /** The same release on a dimension change, and a fresh leg once the owner is back in the companion's level. */
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = SHORT_CORRIDOR, maxTicks = 600)
     public void followReleasesItsLeaseWhenTheOwnerChangesDimension(GameTestHelper h) {
         var nether = h.getLevel().getServer().getLevel(Level.NETHER);
         if (nether == null) {
@@ -1107,7 +1134,7 @@ public class PathingTests {
      * An owner the companion cannot resolve right now — logged out of the player list while the runner keeps ticking —
      * must still lose the leased leg at the task level, and following resumes when the same owner is back.
      */
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = SHORT_CORRIDOR, maxTicks = 600)
     public void followReleasesItsLeaseWhenTheTargetDisappears(GameTestHelper h) {
         int floor = 80;
         GameTestSupport.corridor(h, floor, 76, 10);
@@ -1162,7 +1189,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = ARENA, maxTicks = 600)
     public void followDoesNotPillarToAnAirborneOwner(GameTestHelper h) {
         int floor = 90;
         GameTestSupport.platformAt(h, floor, 20);
@@ -1181,7 +1208,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = ARENA, maxTicks = 600)
     public void blockBreakerWalksToItsViewSpot(GameTestHelper h) {
         int floor = 110;
         GameTestSupport.platformAt(h, floor, 14);
@@ -1216,7 +1243,7 @@ public class PathingTests {
         h.succeedWhen(() -> h.assertTrue(done[0], "the breaker has not finished"));
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = ARENA, maxTicks = 400)
     public void goToSwimsUpAWaterColumn(GameTestHelper h) {
         int floor = 175;
         GameTestSupport.platformAt(h, floor, 12);
@@ -1243,7 +1270,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 500)
+    @GameTest(structure = ARENA, maxTicks = 500)
     public void swimUsesTheSwimmingPose(GameTestHelper h) {
         int floor = 205;
         GameTestSupport.platformAt(h, floor, 14);
@@ -1264,8 +1291,12 @@ public class PathingTests {
             }
             swimAmount[0] = Math.max(swimAmount[0], c.getSwimAmount(1.0f));
         });
-        h.succeedWhen(() -> {
-            h.assertTrue(out.status == TaskStatus.SUCCESS, "did not swim across: " + out.why());
+        TaskTrace.of(h, c.executionCoordinator(), c).succeedWhen(() -> {
+            h.assertTrue(
+                    out.status == TaskStatus.SUCCESS,
+                    "did not swim across: " + out.why() + " at " + c.position() + " after " + c.tickCount
+                            + " entity ticks; chunk ticking="
+                            + h.getLevel().isPositionEntityTicking(c.blockPosition()));
             h.assertTrue(swam[0], "the companion never took the swimming pose in water");
             h.assertTrue(swimAmount[0] > 0.5f, "the swim animation never played: amount " + swimAmount[0]);
             h.assertTrue(c.getPose() == Pose.STANDING, "pose after the crossing was " + c.getPose());
@@ -1276,7 +1307,7 @@ public class PathingTests {
      * A companion trailing a swimmer used to sink between two routes, then be thrown up by the next route's forced
      * rise and dive again, losing speed each time. Once settled it must hold the surface the whole way and at rest.
      */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = WIDE_ARENA, maxTicks = 400)
     public void followingASwimmerHoldsTheSurface(GameTestHelper h) {
         int floor = 220;
         GameTestSupport.platformAt(h, floor, 40);
@@ -1319,7 +1350,7 @@ public class PathingTests {
     }
 
     /** With no water float goal an idle companion would sink and drown: it treads water instead. */
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = ARENA, maxTicks = 300)
     public void idleInDeepWaterFloatsBackToTheSurface(GameTestHelper h) {
         int floor = 210;
         GameTestSupport.platformAt(h, floor, 10);
@@ -1342,7 +1373,7 @@ public class PathingTests {
                 .is(FluidTags.WATER);
     }
 
-    @GameTest
+    @GameTest(structure = ARENA)
     public void executorRejectsADestinationBlockedAfterPlanning(GameTestHelper h) {
         GameTestSupport.platformAt(h, 185, 8);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 186, 2);
@@ -1370,7 +1401,7 @@ public class PathingTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = ARENA, maxTicks = 100)
     public void pillarCentersBeforeJumpingPastANeighboringOverhang(GameTestHelper h) {
         int base = 180;
         GameTestSupport.platformAt(h, base, 12);
@@ -1408,7 +1439,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = ARENA, maxTicks = 400)
     public void followClimbsOutOfAnOverhungPitWithoutReplayingTheRoute(GameTestHelper h) {
         int base = 175;
         GameTestSupport.platformAt(h, base, 16);
@@ -1441,7 +1472,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = ARENA, maxTicks = 200)
     public void moveHelperResetStopsTheRoute(GameTestHelper h) {
         GameTestSupport.platformAt(h, 190, 14);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 191, 2);
@@ -1456,7 +1487,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = ARENA, maxTicks = 200)
     public void stoppingGoToClearsPathingImmediately(GameTestHelper h) {
         GameTestSupport.platformAt(h, 195, 14);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 196, 2);
@@ -1468,7 +1499,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = ARENA, maxTicks = 200)
     public void moveHelperArrivesOnlyWithinItsPhysicalRadius(GameTestHelper h) {
         GameTestSupport.platformAt(h, 200, 8);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 201, 2);
@@ -1486,7 +1517,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = ARENA, maxTicks = 600)
     public void aWallPlacedMidWalkIsDugThroughAfterAReplan(GameTestHelper h) {
         int base = 304;
         GameTestSupport.platformAt(h, base, 24);
@@ -1514,7 +1545,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = WIDE_ARENA, maxTicks = 600)
     public void twoConcurrentRoutesFinishWithinFiniteWait(GameTestHelper h) {
         int base = 310;
         GameTestSupport.platformAt(h, base, 40);
@@ -1554,7 +1585,10 @@ public class PathingTests {
             for (int i = 0; i < companions; i++) {
                 h.assertTrue(
                         arrivedAt[i] >= 0,
-                        "companion " + i + " did not arrive: " + states[i] + " at " + bodies[i].position());
+                        "companion " + i + " did not arrive: " + states[i] + " at " + bodies[i].position()
+                                + " after " + bodies[i].tickCount + " entity ticks (removed=" + bodies[i].isRemoved()
+                                + ", chunk ticking=" + h.getLevel().isPositionEntityTicking(bodies[i].blockPosition())
+                                + "); " + navigators[i].lastSearch());
                 line.append(", #")
                         .append(i)
                         .append(" took ")
@@ -1572,7 +1606,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = ARENA, maxTicks = 400)
     public void companionEnclosedInBedrockReportsUnreachableWithoutBuilding(GameTestHelper h) {
         GameTestSupport.platform(h, 14);
         for (int dx = -1; dx <= 1; dx++) {
@@ -1626,6 +1660,7 @@ public class PathingTests {
      */
     private static void walkCorridorAndCheckYaw(GameTestHelper h, int base, double targetX, double targetY) {
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, base + 5, 11);
+        c.setPathBounds(new AABB(h.absoluteVec(new Vec3(0, base, 10)), h.absoluteVec(new Vec3(24, base + 10, 13))));
         Vec3 target = h.absoluteVec(new Vec3(targetX, targetY, 11.5));
         TaskContext context = new TaskContext(c, h.getLevel());
         Navigator navigator = new Navigator(context);
@@ -1644,7 +1679,9 @@ public class PathingTests {
             }
         });
         h.succeedWhen(() -> {
-            h.assertTrue(state[0] == Navigator.State.ARRIVED, "not arrived: " + state[0] + " at " + c.position());
+            h.assertTrue(
+                    state[0] == Navigator.State.ARRIVED,
+                    "not arrived: " + state[0] + " at " + c.position() + " " + navigator.lastSearch());
             // The policy caps at 30; vanilla's own rotlerp can add a fraction of a degree on top.
             h.assertTrue(maxStep[0] <= 31.0f, "turned " + maxStep[0] + " degrees in one tick");
             // A cap that stalls the walk would show up here: the 18-block corridor takes about 137 ticks.
@@ -1652,14 +1689,14 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = ARENA, maxTicks = 400)
     public void walksDownOneBlockWithoutTurningBack(GameTestHelper h) {
         int base = 210;
         descentCorridor(h, base);
         walkCorridorAndCheckYaw(h, base, 10.5, base + 4);
     }
 
-    @GameTest(maxTicks = 600, environment = "friendai-gametest:pathing_descend_steps")
+    @GameTest(structure = ARENA, maxTicks = 600, environment = "friendai-gametest:pathing_descend_steps")
     public void walksDownThreeBlocksWithoutTurningBack(GameTestHelper h) {
         int base = 220;
         descentCorridor(h, base);
@@ -1667,7 +1704,7 @@ public class PathingTests {
     }
 
     /** Climbs two one-block steps in a row; momentum past the target cell must not turn the body back. */
-    @GameTest(maxTicks = 600, environment = "friendai-gametest:pathing_climb_steps")
+    @GameTest(structure = WIDE_ARENA, maxTicks = 600, environment = "friendai-gametest:pathing_climb_steps")
     public void climbsStepsWithoutSteppingBack(GameTestHelper h) {
         int base = 250;
         GameTestSupport.platformAt(h, base, 40);
@@ -1700,11 +1737,13 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 600, environment = "friendai-gametest:pathing_straight_walk")
+    @GameTest(structure = WIDE_ARENA, maxTicks = 600, environment = "friendai-gametest:pathing_straight_walk")
     public void walksFortyBlocksWithoutReversalOrDetour(GameTestHelper h) {
         int base = 260;
         GameTestSupport.platformAt(h, base, 56);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, base + 1, 20);
+        c.setYRot(90.0f);
+        c.setYHeadRot(90.0f);
         Vec3 target = h.absoluteVec(new Vec3(42.5, base + 1, 20.5));
         TaskContext context = new TaskContext(c, h.getLevel());
         Navigator navigator = new Navigator(context);
@@ -1736,7 +1775,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 600, environment = "friendai-gametest:pathing_walk_budget")
+    @GameTest(structure = WIDE_ARENA, maxTicks = 600, environment = "friendai-gametest:pathing_walk_budget")
     public void walksThirtyTwoBlocksInBudget(GameTestHelper h) {
         int base = 230;
         GameTestSupport.platformAt(h, base, 40);
@@ -1763,7 +1802,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 800, environment = "friendai-gametest:pathing_two_turn")
+    @GameTest(structure = ARENA, maxTicks = 800, environment = "friendai-gametest:pathing_two_turn")
     public void twoTurnWalkKeepsTheBodyOnThePath(GameTestHelper h) {
         int base = 240;
         GameTestSupport.platformAt(h, base, 24);
@@ -1828,7 +1867,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = ARENA, maxTicks = 400)
     public void goToRunsOverAOneBlockGap(GameTestHelper h) {
         int base = 260;
         GameTestSupport.platformAt(h, base, 16);
@@ -1852,7 +1891,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 400, environment = "friendai-gametest:pathing_two_block_gap")
+    @GameTest(structure = ARENA, maxTicks = 400, environment = "friendai-gametest:pathing_two_block_gap")
     public void goToRunsOverATwoBlockGap(GameTestHelper h) {
         int base = 284;
         GameTestSupport.platformAt(h, base, 16);
@@ -1869,7 +1908,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = ARENA, maxTicks = 400)
     public void goToRunsOverAThreeBlockGap(GameTestHelper h) {
         int base = 296;
         GameTestSupport.platformAt(h, base, 16);
@@ -1886,7 +1925,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 400, environment = "friendai-gametest:pathing_corner_run")
+    @GameTest(structure = ARENA, maxTicks = 400, environment = "friendai-gametest:pathing_corner_run")
     public void runningCompanionDoesNotSwingWideAtCorners(GameTestHelper h) {
         int base = 120;
         GameTestSupport.platformAt(h, base, 24);
@@ -1920,7 +1959,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = ARENA, maxTicks = 400)
     public void runningCompanionTurnsIntoAGapAndClearsIt(GameTestHelper h) {
         int base = 110;
         GameTestSupport.platformAt(h, base, 16);
@@ -1937,7 +1976,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 400, environment = "friendai-gametest:pathing_hungry_gap")
+    @GameTest(structure = ARENA, maxTicks = 400, environment = "friendai-gametest:pathing_hungry_gap")
     public void hungryCompanionWalkJumpsAOneBlockGap(GameTestHelper h) {
         int base = 150;
         GameTestSupport.platformAt(h, base, 16);
@@ -1950,7 +1989,7 @@ public class PathingTests {
                 out.status == TaskStatus.SUCCESS, "did not hop the gap: " + out.why() + " at " + c.position()));
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = ARENA, maxTicks = 400)
     public void goToLeapsUpOntoAHigherLedge(GameTestHelper h) {
         int base = 160;
         GameTestSupport.platformAt(h, base, 16);
@@ -1968,9 +2007,9 @@ public class PathingTests {
                 out.status == TaskStatus.SUCCESS, "did not leap up: " + out.why() + " at " + c.position()));
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = ARENA, maxTicks = 400)
     public void goToLeapsDownOverAWideGap(GameTestHelper h) {
-        int base = 170;
+        int base = 54;
         GameTestSupport.platformAt(h, base, 16);
         trench(h, base, 8, 4);
         // The near side stands three blocks higher than the far one, and the long fall stretches the leap across.
@@ -2059,7 +2098,7 @@ public class PathingTests {
         return found;
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = ARENA, maxTicks = 800)
     public void goToDoesNotSpendItsOnlyBlockOnAStair(GameTestHelper h) {
         int base = 100;
         GameTestSupport.platformAt(h, base, 16);
@@ -2080,7 +2119,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = ARENA, maxTicks = 800)
     public void goToClimbsOutOfAShaftInOnePlan(GameTestHelper h) {
         int base = 140;
         GameTestSupport.platformAt(h, base, 16);
@@ -2100,7 +2139,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = ARENA, maxTicks = 600)
     public void goToWalksAroundAGapWhenItCannotRun(GameTestHelper h) {
         int base = 272;
         GameTestSupport.platformAt(h, base, 16);
@@ -2127,7 +2166,7 @@ public class PathingTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = ARENA)
     public void nearestPortalPrefersTheCloserFrame(GameTestHelper h) {
         GameTestSupport.platformAt(h, 260, 12);
         BlockPos near = h.absolutePos(new BlockPos(6, 261, 2));

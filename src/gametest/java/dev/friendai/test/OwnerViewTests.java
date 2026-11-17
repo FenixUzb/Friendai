@@ -36,7 +36,7 @@ public class OwnerViewTests {
         return player;
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void viewSeesTargetBlock(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         h.setBlock(8, 3, 2, Blocks.OAK_LOG);
@@ -51,7 +51,7 @@ public class OwnerViewTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void viewHoldingIsTheMainHandItem(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = lookingEast(h, 2.5, 2, 2.5);
@@ -62,7 +62,7 @@ public class OwnerViewTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void viewNamesTheOffhandAndTheWornArmor(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = lookingEast(h, 2.5, 2, 2.5);
@@ -82,7 +82,7 @@ public class OwnerViewTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void viewSaysNothingWornAndNothingHeldForABareOwner(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = lookingEast(h, 2.5, 2, 2.5);
@@ -93,7 +93,7 @@ public class OwnerViewTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void viewNamesAStackWithItsCount(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = lookingEast(h, 2.5, 2, 2.5);
@@ -104,7 +104,7 @@ public class OwnerViewTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void playerViewToolReportsTarget(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         h.setBlock(8, 3, 2, Blocks.OAK_LOG);
@@ -122,7 +122,7 @@ public class OwnerViewTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void viewSeesEntityInFrontOfBlock(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         h.setBlock(10, 3, 2, Blocks.OAK_LOG);
@@ -136,7 +136,7 @@ public class OwnerViewTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void viewStandingOn(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = lookingEast(h, 2.5, 2, 2.5);
@@ -190,7 +190,7 @@ public class OwnerViewTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void viewBlockedByWallIsOutOfSight(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         for (int x = 0; x <= 6; x++) {
@@ -206,12 +206,12 @@ public class OwnerViewTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void viewTooFarIsOutOfSight(GameTestHelper h) {
         // High in clear air, so only the distance can hide the player.
         ServerPlayer owner = lookingEast(h, 2.5, 30, 2.5);
         owner.setOnGround(false);
-        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 42, 30, 2);
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 70, 2);
         companion.setOwner(owner.getUUID());
         OwnerFocus focus = OwnerFocusBuilder.of(companion, owner.getUUID());
         h.assertTrue(focus.visibility() == Visibility.OUT_OF_SIGHT, "expected OUT_OF_SIGHT: " + focus);
@@ -219,7 +219,7 @@ public class OwnerViewTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void viewNoPlayerIsOffline(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -232,7 +232,7 @@ public class OwnerViewTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void viewReportsHealthFoodAndArmor(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = lookingEast(h, 2.5, 2, 2.5);
@@ -246,7 +246,7 @@ public class OwnerViewTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void viewReportsFacing(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = lookingEast(h, 2.5, 2, 2.5);
@@ -259,7 +259,7 @@ public class OwnerViewTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void viewBlockSaysWhichToolIsNeeded(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         h.setBlock(8, 3, 2, Blocks.IRON_ORE);
@@ -274,7 +274,7 @@ public class OwnerViewTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void guestViewIsTheGuest(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = lookingEast(h, 8.5, 2, 8.5);
@@ -287,7 +287,7 @@ public class OwnerViewTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void viewSpeakerLabel(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = lookingEast(h, 8.5, 2, 8.5);

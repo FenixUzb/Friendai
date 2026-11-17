@@ -55,7 +55,7 @@ public class UseBlockTests {
         h.setBlock(x, y + 1, z, upper);
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void useOpensDoor(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         doorAt(h, Blocks.OAK_DOOR, 8, 2, 3, false);
@@ -75,7 +75,7 @@ public class UseBlockTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void useWantAlreadyOpen(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         doorAt(h, Blocks.SPRUCE_DOOR, 8, 2, 3, true);
@@ -94,7 +94,7 @@ public class UseBlockTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void useLeverWantOn(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(8, 2, 3, Blocks.LEVER.defaultBlockState().setValue(LeverBlock.FACING, Direction.NORTH));
@@ -114,7 +114,7 @@ public class UseBlockTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void useButtonPressed(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(8, 2, 3, Blocks.STONE_BUTTON);
@@ -132,7 +132,7 @@ public class UseBlockTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void useIronDoorFails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         doorAt(h, Blocks.IRON_DOOR, 8, 2, 3, false);
@@ -150,7 +150,7 @@ public class UseBlockTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void useNotWhitelisted(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(8, 2, 3, Blocks.ANVIL);
@@ -168,7 +168,7 @@ public class UseBlockTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void useWantNotApplicable(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         doorAt(h, Blocks.BIRCH_DOOR, 8, 2, 3, false);

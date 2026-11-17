@@ -18,7 +18,7 @@ public class PerceptionTests {
                 companion, new PerceptionContext(state.resourceCandidates(), state.settings(), state.freeTime()));
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void selfReportsWhatItStandsOn(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -31,7 +31,7 @@ public class PerceptionTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void selfReportsAWaterBlockAtItsFeet(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         h.setBlock(2, 2, 2, Blocks.WATER);
@@ -43,7 +43,7 @@ public class PerceptionTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void threatsAreNamedWithTarget(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -56,7 +56,7 @@ public class PerceptionTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void threatsAreCappedAtThree(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -68,7 +68,7 @@ public class PerceptionTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void treesAreListedWithTheirKind(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         for (int y = 2; y <= 6; y++) {
@@ -97,7 +97,7 @@ public class PerceptionTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void landmarksFindStationsNearby(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         h.setBlock(6, 2, 2, Blocks.CRAFTING_TABLE);
@@ -115,7 +115,7 @@ public class PerceptionTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void landmarksAtTheWorldFloorDoNotThrow(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -125,7 +125,7 @@ public class PerceptionTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void landmarksAreCappedAtFive(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         h.setBlock(1, 2, 1, Blocks.LAVA);
@@ -151,7 +151,7 @@ public class PerceptionTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void surveyAreaShowsWhatIsVisibleAndHidesWhatIsNot(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         for (int x = 0; x < 8; x++) h.setBlock(x, 3, 5, Blocks.STONE);
@@ -191,7 +191,7 @@ public class PerceptionTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void surveyAreaShowsSelfWallAndSpeaker(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         for (int x = 0; x < 8; x++) {
@@ -217,7 +217,7 @@ public class PerceptionTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void selfReportsNoSkyUnderARoof(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         for (int x = 0; x < 5; x++) {

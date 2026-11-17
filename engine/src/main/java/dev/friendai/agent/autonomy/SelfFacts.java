@@ -8,6 +8,10 @@ package dev.friendai.agent.autonomy;
  * @param bedAtHome a bed inside the home place, so a sleep reflex has somewhere to go
  * @param enchantingTableAtHome an enchanting table inside the home place
  * @param anvilAtHome an anvil inside the home place
+ * @param unlitAndExposed the companion is under open sky without adequate block light
+ * @param unlitInterior a dark interior has a nearby floor cell where a carried torch can be placed
+ * @param oakPlanks carried oak planks, counted separately from the other kinds of planks
+ * @param cobblestone carried cobblestone, counted separately from cobbled deepslate
  */
 public record SelfFacts(
         int hunger,
@@ -17,9 +21,13 @@ public record SelfFacts(
         boolean enchantingTableAtHome,
         boolean anvilAtHome,
         boolean flintAndSteel,
-        int obsidian) {
+        int obsidian,
+        boolean unlitAndExposed,
+        boolean unlitInterior,
+        int oakPlanks,
+        int cobblestone) {
 
-    public static final SelfFacts NONE = new SelfFacts(20, 0, 1.0, false, false, false, false, 0);
+    public static final SelfFacts NONE = new SelfFacts(20, 0, 1.0, false, false, false, false, 0, true, false, 0, 0);
 
     public SelfFacts {
         hunger = Math.clamp(hunger, 0, 20);

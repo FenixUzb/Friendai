@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 public class InteractTests {
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void interactionApproachUsesSharedEntityMovement(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -29,7 +29,7 @@ public class InteractTests {
         assertApproachesEntity(h, c, target, new ApproachTask(target, 2.0), 2.0);
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void navigationApproachToolUsesSharedEntityMovement(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -43,7 +43,7 @@ public class InteractTests {
      * navigator latches that arrival. The approach then reported movement that never happened instead of walking the
      * last step. A target in a corner of its cell, with the companion starting on the diagonal, reproduces it.
      */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void approachClosesTheLastStepToAnEntityInACellCorner(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         Cow target = h.spawn(EntityTypes.COW, 4, 2, 4);
@@ -67,7 +67,7 @@ public class InteractTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void approachReachesBlock(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -82,7 +82,7 @@ public class InteractTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void approachReportsUnreachable(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos targetRel = new BlockPos(10, 2, 10);
@@ -106,7 +106,7 @@ public class InteractTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void handsReturnLeftoverAndStayEmpty(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 4, 2, 4);
@@ -121,7 +121,7 @@ public class InteractTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void handsPlaceOnOccupiedReturnsEverything(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(5, 2, 5, Blocks.STONE_BRICKS);

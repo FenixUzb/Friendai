@@ -44,7 +44,7 @@ public final class CreativeFlightTests {
         return new Caller(player.getUUID(), player.getName().getString(), AccessLevel.OWNER);
     }
 
-    @GameTest(maxTicks = 500)
+    @GameTest(maxTicks = 500, structure = GameTestArenas.ARENA_16)
     public void flyToRoutesAroundWallAndAscends(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 14, 2, 14);
@@ -78,7 +78,7 @@ public final class CreativeFlightTests {
         });
     }
 
-    @GameTest(maxTicks = 500)
+    @GameTest(maxTicks = 500, structure = GameTestArenas.ARENA_16)
     public void followUsesFlightAcrossAChasm(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 12, 2, 2);
@@ -94,7 +94,7 @@ public final class CreativeFlightTests {
                 "follow did not cross the gap; companion=" + companion.position() + ", owner=" + owner.position()));
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(maxTicks = 400, structure = GameTestArenas.ARENA_16)
     public void followKeepsCreativeCompanionHoveringAfterArrival(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 12, 10, 2);
@@ -153,8 +153,8 @@ public final class CreativeFlightTests {
         CompanionEntity companion = creativeCompanion(h, owner);
         BlockPos start = h.absolutePos(new BlockPos(2, 2, 2));
         companion.snapTo(start.getX() + 0.5, start.getY(), start.getZ() + 0.5, 0, 0);
-        // Keep it beyond the nearby structures used by other tests in this class, whose forced chunks can reach +64.
-        BlockPos target = BlockPos.containing(companion.position().add(256, 0, 0));
+        // Pick a destination beyond the shared GameTest grid and its forced chunks.
+        BlockPos target = BlockPos.containing(companion.position().add(4096, 0, 4096));
         h.assertFalse(h.getLevel().hasChunkAt(target), "test target chunk should be unloaded before flight starts");
         final TaskStatus[] status = {null};
         final String[] summary = {""};
@@ -177,7 +177,7 @@ public final class CreativeFlightTests {
         });
     }
 
-    @GameTest(maxTicks = 900)
+    @GameTest(maxTicks = 900, structure = GameTestArenas.ARENA_LONG_128)
     public void fliesFurtherThanTheSearchBoxInLegs(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -199,23 +199,24 @@ public final class CreativeFlightTests {
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(maxTicks = 1600, structure = GameTestArenas.ARENA_64)
     public void flightKeepsItsSearchWhenTheDestinationMoves(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 14, 2, 14);
         CompanionEntity companion = creativeCompanion(h, owner);
-        BlockPos start = h.absolutePos(new BlockPos(2, 160, 2));
+        int centerZ = 30;
+        BlockPos start = h.absolutePos(new BlockPos(2, 160, centerZ));
         companion.snapTo(start.getX() + 0.5, start.getY(), start.getZ() + 0.5, 0, 0);
-        GameTestSupport.keepLoaded(h, -8, -28, 56, 28);
+        GameTestSupport.keepLoaded(h, -8, 0, 56, 56);
         // A low wall across the way: going over it costs the search about five per-tick batches (a taller wall would
         // exhaust the whole node budget). A destination that moves every tick used to restart that search before it
         // could answer, so the companion never left the start.
         for (int y = 155; y <= 165; y++) {
-            for (int z = -20; z <= 20; z++) h.setBlock(10, y, z, Blocks.STONE);
+            for (int z = centerZ - 22; z <= centerZ + 18; z++) h.setBlock(10, y, z, Blocks.STONE);
         }
         // The destination circles behind the wall at a block a tick, so it moves on every tick and never stops to be
         // caught. The companion cannot match that speed; what it must do is keep flying, not stand at the start.
-        Vec3 center = h.absoluteVec(new Vec3(35.0, 160, 2.0));
+        Vec3 center = h.absoluteVec(new Vec3(35.0, 160, centerZ));
         double radius = 12.0;
         Vec3 startPosition = companion.position();
         companion.executionCoordinator().start(new StayTask(5000), "stay");
@@ -241,7 +242,7 @@ public final class CreativeFlightTests {
                         + startPosition + "; " + navigator.debugStatus()));
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(maxTicks = 400, structure = GameTestArenas.ARENA_16)
     public void creativeHoverEndsAfterTaskReplacementAndOperatorRevocation(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 12, 10, 2);
@@ -290,7 +291,7 @@ public final class CreativeFlightTests {
         private static final double VALUE = 1.0;
     }
 
-    @GameTest(maxTicks = 500)
+    @GameTest(maxTicks = 500, structure = GameTestArenas.ARENA_24)
     public void flightFacesTheRoute(GameTestHelper h) {
         GameTestSupport.platform(h, 20);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 18, 2, 18);
@@ -391,7 +392,7 @@ public final class CreativeFlightTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(maxTicks = 300, structure = GameTestArenas.ARENA_16)
     public void climbKeepsTheYawAndPitches(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 14, 2, 14);

@@ -9,6 +9,7 @@ import dev.friendai.agent.autonomy.TradeRef;
 import dev.friendai.entity.CompanionEntity;
 import dev.friendai.features.acquisition.ToolKind;
 import dev.friendai.features.acquisition.minecraft.search.DropIndex;
+import dev.friendai.features.construction.minecraft.task.LightAreaTask;
 import dev.friendai.features.cooking.minecraft.FuelPolicy;
 import dev.friendai.features.crafting.Station;
 import dev.friendai.features.crafting.minecraft.Stations;
@@ -30,6 +31,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
@@ -38,6 +40,7 @@ import net.minecraft.world.Container;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
@@ -88,6 +91,8 @@ final class AutonomyFactsBuilder {
         boolean fuel = false;
         boolean flintAndSteel = false;
         int obsidian = 0;
+        int oakPlanks = 0;
+        int cobblestone = 0;
         double wear = 1.0;
         List<ItemStack> stacks = new ArrayList<>();
         stacks.add(companion.getMainHandItem());
@@ -120,6 +125,8 @@ final class AutonomyFactsBuilder {
             if (stack.is(Items.OBSIDIAN)) {
                 obsidian += stack.getCount();
             }
+            if (stack.is(Items.OAK_PLANKS)) oakPlanks += stack.getCount();
+            if (stack.is(Items.COBBLESTONE)) cobblestone += stack.getCount();
             wear = Math.min(wear, wear(stack));
         }
         table |= !Stations.nearbyAll(companion, Station.CRAFTING_TABLE, 1).isEmpty();
@@ -174,6 +181,17 @@ final class AutonomyFactsBuilder {
                                                 r.place().createdTick()))
                                 * 50L))
                 .toList();
+        BlockPos feet = companion.blockPosition();
+        boolean unlit = level.getBrightness(LightLayer.BLOCK, feet) < LightAreaTask.DARK_BELOW;
+        boolean unlitInterior = false;
+        if (unlit && stock.getOrDefault(StockKind.TORCHES, 0) > 0 && level.getBrightness(LightLayer.SKY, feet) == 0) {
+            for (Direction direction : Direction.Plane.HORIZONTAL) {
+                if (LightAreaTask.isDarkTorchSite(level, feet.relative(direction))) {
+                    unlitInterior = true;
+                    break;
+                }
+            }
+        }
         SelfFacts self = new SelfFacts(
                 companion.hunger().food(),
                 companion.experience().level(),
@@ -184,7 +202,11 @@ final class AutonomyFactsBuilder {
                 homeHere.map(r -> hasBlock(level, r.place(), "#minecraft:anvil"))
                         .orElse(false),
                 flintAndSteel,
-                obsidian);
+                obsidian,
+                unlit && level.canSeeSky(feet),
+                unlitInterior,
+                oakPlanks,
+                cobblestone);
         Optional<Place> unloadAt = storages.stream()
                 .filter(PlaceQuery.Result::sameDimension)
                 .findFirst()

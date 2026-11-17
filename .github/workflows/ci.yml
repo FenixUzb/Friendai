@@ -7,9 +7,9 @@ on:
   merge_group:
   workflow_dispatch:
 
-# A newer push to the same branch/PR cancels the older run.
+# Cancel stale PR runs. Every main push can carry a distinct release.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || (github.event_name == 'push' && github.sha) || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -31,6 +31,8 @@ jobs:
           args: -color
       - name: shellcheck
         run: shellcheck scripts/*.sh
+      - name: Test release notes extraction
+        run: sh scripts/test-release-notes.sh
 
   docs:
     name: Docs links
@@ -202,6 +204,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: friendai-jar
+          overwrite: true
           path: |
             build/libs/*.jar
             !build/libs/*-sources.jar
@@ -225,3 +228,12 @@ jobs:
             echo "One or more required jobs did not succeed."
             exit 1
           fi
+
+  release:
+    name: Release on version change
+    needs: ci-gate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/release.yml

@@ -34,7 +34,7 @@ public class SocialBondTests {
         return GameTestSupport.mockPlayerAt(h, 2, 2, 2);
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void aMannerTheOwnerRejectsIsDroppedAndNeverDriftsBack(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionEntity companion =
@@ -72,7 +72,7 @@ public class SocialBondTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void aMoodChangeIsTracedWithTheInputsThatCausedIt(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionEntity companion =
@@ -94,7 +94,7 @@ public class SocialBondTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void sharedWorkRaisesTheBondAndAnOwnerHitLowersIt(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionEntity companion =
@@ -126,7 +126,7 @@ public class SocialBondTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void aGiftPaysOncePerKindAndARescueIsRemembered(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionEntity companion =
@@ -174,7 +174,7 @@ public class SocialBondTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void theBondSurvivesDeathAndRespawn(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionManager manager = CompanionManager.get(h.getLevel().getServer());
@@ -209,7 +209,7 @@ public class SocialBondTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void theDriftedMannerIsKeptInTheBook(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         ServerRuntime runtime = GameTestSupport.runtime(h.getLevel().getServer());
@@ -236,7 +236,7 @@ public class SocialBondTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void dangerShowsAWorriedFaceAndCalmReturns(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionEntity companion =
@@ -255,7 +255,7 @@ public class SocialBondTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void theBondAndMannerSurviveASaveAndLoad(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         CompanionEntity companion =
@@ -286,7 +286,7 @@ public class SocialBondTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 300, environment = "friendai-gametest:social_bond_guest")
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300, environment = "friendai-gametest:social_bond_guest")
     public void aGuestCannotReadOrChangeTheBond(GameTestHelper h) {
         ServerPlayer owner = ready(h);
         ServerPlayer guest = GameTestSupport.mockPlayerAt(h, 3, 2, 3);

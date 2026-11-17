@@ -13,7 +13,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 
 /** A short opt-in runner soak: long enough to catch a hang, a duplicate start or a terminal event leak. */
 public class SoakTests {
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void aLongRunnerSessionFinishesAndCanBeCancelled(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

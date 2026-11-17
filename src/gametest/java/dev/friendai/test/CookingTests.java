@@ -56,7 +56,7 @@ public class CookingTests {
         return pos.getX() + " " + pos.getY() + " " + pos.getZ();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void smeltDebugTargetShowsActiveFurnace(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
@@ -80,7 +80,7 @@ public class CookingTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void stationDebugTargetChangesFromCollectToBreak(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos station = h.absolutePos(new BlockPos(4, 2, 4));
@@ -973,7 +973,7 @@ public class CookingTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void campfireStationMatchesLitCampfireOnly(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 2, Blocks.CAMPFIRE);

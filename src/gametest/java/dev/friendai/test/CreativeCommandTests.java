@@ -107,7 +107,7 @@ public final class CreativeCommandTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void tpAtSIsTheCompanionAndGiveCanTargetOnlyItsOwner(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 14, 2, 14);

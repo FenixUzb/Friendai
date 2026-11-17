@@ -43,7 +43,7 @@ public class SocialOpeningTests {
         }
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void aJournalEntryReachesTheOwnerAsOneToollessLine(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -117,7 +117,7 @@ public class SocialOpeningTests {
         book.setOwnerLanguage(owner, language);
     }
 
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 900)
     public void aDeathOpensOneToollessLine(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         h.setBlock(new BlockPos(8, 2, 8), Blocks.BED.red().defaultBlockState());
@@ -154,7 +154,7 @@ public class SocialOpeningTests {
         });
     }
 
-    @GameTest(maxTicks = 3500)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 3500)
     public void aJournaledCompanionDeathDoesNotRepeatFromCarryFallback(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -211,7 +211,7 @@ public class SocialOpeningTests {
                                 "you died"));
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void anOwnerDeathSpeaksOnceOnlyInEarshot(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         GameTestSupport.platformAt(h, 200, 8);
@@ -263,7 +263,7 @@ public class SocialOpeningTests {
      * A threat keeps the line back: with a hostile mob holding the companion while the owner dies, nothing is said;
      * when the threat is gone the held death is spoken once.
      */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void noUrgentLineWhileAZombieIsOnTheOwner(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var level = h.getLevel();
@@ -326,7 +326,7 @@ public class SocialOpeningTests {
      * Finishing a task is not news: a short task that succeeds through the coordinator adds no journal happening and
      * raises no line about it. A self-raised subject may still arrive — the director's own opener, not a task report.
      */
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void aNormalTaskFinishProducesNoSocialLine(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -365,7 +365,7 @@ public class SocialOpeningTests {
      * batch as the task's report, and a batch that carries an opening has no tools. The report now gets a turn of its
      * own, because no opening is posted for ten seconds after work was reported.
      */
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void noOpeningLandsBesideAFreshWorkReport(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -387,7 +387,7 @@ public class SocialOpeningTests {
         });
     }
 
-    @GameTest(maxTicks = 1100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1100)
     public void advancementFactWaitsUntilAnOwnerJobFinishes(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -433,7 +433,7 @@ public class SocialOpeningTests {
         });
     }
 
-    @GameTest(maxTicks = 5500)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 5500)
     public void importantFactBypassesDeferredAdvancement(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -498,7 +498,7 @@ public class SocialOpeningTests {
      * A fresh Russian owner must never receive the invented cave: with no happenings and an empty book, the only
      * topic available is a neutral question from the bank, and no fabricated recollection may reach the request.
      */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void aFreshRussianOwnerGetsNoInventedMemory(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -525,7 +525,7 @@ public class SocialOpeningTests {
         });
     }
 
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 900)
     public void socialOpeningsWaitUntilOwnerLanguageIsKnown(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         // A unique owner keeps this test's journal and social state out of the shared mock-player record.
@@ -584,7 +584,7 @@ public class SocialOpeningTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void ordinarySmallTalkDoesNotCompeteWithFreeTimePlanning(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -612,7 +612,7 @@ public class SocialOpeningTests {
      * A fact the owner stated is said back with its source named. The companion may repeat what it was told; it may
      * not present that as something it witnessed.
      */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void anOwnerStatementIsAttributedNotWitnessed(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);

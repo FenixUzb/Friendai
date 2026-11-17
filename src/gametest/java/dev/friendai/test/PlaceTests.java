@@ -143,7 +143,7 @@ public class PlaceTests {
         return Optional.empty();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void place_tests_access(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -179,7 +179,7 @@ public class PlaceTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void place_tests_command_add_list(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -281,7 +281,7 @@ public class PlaceTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void place_tests_cross_dimension(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -330,7 +330,7 @@ public class PlaceTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void place_tests_near_place_scopes_a_search(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -413,7 +413,7 @@ public class PlaceTests {
                 .orElse("none");
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void place_tests_remember_and_go(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -474,7 +474,7 @@ public class PlaceTests {
         }
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void place_tests_farm_registers(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         wheatPlot(h);

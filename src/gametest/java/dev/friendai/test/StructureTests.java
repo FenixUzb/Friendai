@@ -52,7 +52,7 @@ public class StructureTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void snapshot_reports_free_site(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
@@ -67,7 +67,7 @@ public class StructureTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void snapshot_sees_companion_in_footprint(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 3, 2, 2);
@@ -76,7 +76,7 @@ public class StructureTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void snapshot_sees_player_in_footprint(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
@@ -87,7 +87,7 @@ public class StructureTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void player_on_site_waits_instead_of_failing(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
@@ -111,7 +111,7 @@ public class StructureTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void snapshot_counts_nearby_golems(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
@@ -123,7 +123,7 @@ public class StructureTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void snapshot_marks_matching_body_blocks(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
@@ -235,7 +235,7 @@ public class StructureTests {
                 + ",\"facing\":\"south\"}";
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void tool_build_special_builds_snow_golem(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 8, 2, 8);
@@ -248,7 +248,7 @@ public class StructureTests {
         h.succeedWhen(() -> h.assertTrue(count(h, EntityTypes.SNOW_GOLEM) >= 1, "a snow golem should exist"));
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void tool_build_special_rejects_unknown_kind(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 8, 2, 8);
@@ -259,7 +259,7 @@ public class StructureTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void tool_plan_special_reports_missing_item(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 8, 2, 8);
@@ -274,7 +274,7 @@ public class StructureTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void tool_build_special_needs_the_finishing_block(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 8, 2, 8);
@@ -286,7 +286,7 @@ public class StructureTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void tool_build_special_guest_denied(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 8, 2, 8);
@@ -296,7 +296,7 @@ public class StructureTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void snow_golem_spawns(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 8, 2, 8);
@@ -312,7 +312,7 @@ public class StructureTests {
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void iron_golem_spawns(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
@@ -328,7 +328,7 @@ public class StructureTests {
         });
     }
 
-    @GameTest(maxTicks = 4000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 4000)
     public void nether_portal_lights(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
@@ -345,7 +345,7 @@ public class StructureTests {
         });
     }
 
-    @GameTest(maxTicks = 5000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 5000)
     public void a_nether_portal_at_an_edge_site_transits(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
@@ -378,7 +378,7 @@ public class StructureTests {
         });
     }
 
-    @GameTest(maxTicks = 4000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 4000)
     public void a_lit_portal_transits_a_companion(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
@@ -405,7 +405,7 @@ public class StructureTests {
         });
     }
 
-    @GameTest(maxTicks = 4000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 4000)
     public void a_portal_task_walks_through_the_lit_portal(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
@@ -434,7 +434,7 @@ public class StructureTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void blocked_by_stone(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
@@ -451,7 +451,7 @@ public class StructureTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void protected_area_fails_with_reason(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
@@ -468,7 +468,7 @@ public class StructureTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void finishing_item_missing_names_item(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
@@ -484,7 +484,7 @@ public class StructureTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void existing_frame_skips_building(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
@@ -508,7 +508,7 @@ public class StructureTests {
         });
     }
 
-    @GameTest(maxTicks = 6000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 6000)
     public void portal_trip_builds_lights_and_records_the_return_anchor(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         // The runtime attaches the companion manager, which the trip needs to index the body it arrives in.
@@ -545,7 +545,7 @@ public class StructureTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void a_portal_build_without_materials_is_a_typed_refusal(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
@@ -566,7 +566,7 @@ public class StructureTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void a_cancelled_portal_trip_stops_without_a_turn(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 10, 2, 10);
