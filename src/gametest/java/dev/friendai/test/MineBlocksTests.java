@@ -37,7 +37,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public class MineBlocksTests {
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void explorationWaitsForTheLanding(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int x = 0; x < 16; x++) {
@@ -105,7 +105,7 @@ public class MineBlocksTests {
         }
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void veinWorkSetIncludesAllSixVisibleOreBlocks(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -134,7 +134,7 @@ public class MineBlocksTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void minesRequestedLogs(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos[] targets = {
@@ -175,7 +175,7 @@ public class MineBlocksTests {
         }
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void minesDeadBushesStandingOnRedSand(GameTestHelper h) {
         redSandFloor(h);
         BlockPos[] bushes = {new BlockPos(6, 3, 3), new BlockPos(9, 3, 6), new BlockPos(4, 3, 9)};
@@ -202,7 +202,7 @@ public class MineBlocksTests {
      * A live session: "break that cactus near us" sat in the approach phase for minutes with no path. A cactus hurts
      * whoever stands against it, so the cells beside it are no stance, but it is broken from reach like any block.
      */
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 900)
     public void minesATwoBlockCactusStandingOnSand(GameTestHelper h) {
         redSandFloor(h);
         BlockPos base = new BlockPos(8, 3, 7);
@@ -226,7 +226,7 @@ public class MineBlocksTests {
      * "Break the cactus near us" right after a summon: nothing had been seen yet, so the job went searching and broke a
      * wild cactus far away instead of the one beside the owner. One deliberate look now finds the visible one first.
      */
-    @GameTest(maxTicks = 900, environment = "friendai-gametest:mine_visible_fresh")
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 900, environment = "friendai-gametest:mine_visible_fresh")
     public void aFreshCompanionMinesTheVisibleBlockBeforeSearching(GameTestHelper h) {
         redSandFloor(h);
         BlockPos base = new BlockPos(6, 3, 2);
@@ -243,7 +243,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 900)
     public void focusedLookRespectsTheRequestedRadius(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos sand = new BlockPos(8, 2, 3);
@@ -265,13 +265,16 @@ public class MineBlocksTests {
      * "Clear this sand away" and "pick the flowers" name no number: the job takes every matching block in view and
      * succeeds when none is left, instead of stopping after the one block a cautious count asked for.
      */
-    @GameTest(maxTicks = 1500)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1500)
     public void allNearbyTakesEveryBlockInViewAndSucceeds(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos[] pile = {new BlockPos(6, 2, 3), new BlockPos(8, 2, 5), new BlockPos(5, 2, 7)};
         for (BlockPos sand : pile) h.setBlock(sand, Blocks.HAY_BLOCK);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
         c.setOwner(java.util.UUID.randomUUID());
+        for (BlockPos block : pile) {
+            h.assertTrue(GameTestSupport.observeVisible(h, c, h.absolutePos(block)), "hay must be visible: " + block);
+        }
         Result result = new Result();
         ExecutionCoordinator runner = runner(c, result);
         runner.start(
@@ -286,13 +289,16 @@ public class MineBlocksTests {
     }
 
     /** A job that asked for one block of a pile says how many are still in view, so the pile is not taken for gone. */
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 900)
     public void aFinishedCountSaysHowManyMoreAreInView(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos[] pile = {new BlockPos(6, 2, 3), new BlockPos(8, 2, 5), new BlockPos(5, 2, 7)};
         for (BlockPos sand : pile) h.setBlock(sand, Blocks.DRIED_KELP_BLOCK);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
         c.setOwner(java.util.UUID.randomUUID());
+        for (BlockPos block : pile) {
+            h.assertTrue(GameTestSupport.observeVisible(h, c, h.absolutePos(block)), "kelp must be visible: " + block);
+        }
         Result result = new Result();
         ExecutionCoordinator runner = runner(c, result);
         runner.start(
@@ -308,7 +314,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 900)
     public void minesRedSandOutOfTheFloor(GameTestHelper h) {
         redSandFloor(h);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 3, 2);
@@ -329,7 +335,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void minesAnOreWithGravelBesideAndAboveIt(GameTestHelper h) {
         redSandFloor(h);
         BlockPos ore = new BlockPos(6, 3, 3);
@@ -353,7 +359,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void partialWhenNotEnough(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         placeLogs(h, 2, Blocks.BIRCH_LOG);
@@ -370,7 +376,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void failsWhenNoneNearby(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -387,7 +393,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void skipsUnbreakable(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos bedrock = new BlockPos(4, 2, 2);
@@ -408,7 +414,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void equipsBestTool(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(4, 2, 2, Blocks.JUNGLE_LOG);
@@ -428,7 +434,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void breakingABlockWearsTheHeldTool(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(4, 2, 2, Blocks.STONE);
@@ -451,7 +457,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void theLastUseBreaksTheHeldTool(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(4, 2, 2, Blocks.STONE);
@@ -482,7 +488,7 @@ public class MineBlocksTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void miningSearchExposesSelectedBlockCandidates(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos relative = new BlockPos(6, 2, 2);
@@ -519,7 +525,7 @@ public class MineBlocksTests {
     }
 
     // Emerald is 500 ticks bare-handed (no correct tool drops), so the budget must cover the walk plus the break.
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void mineAtBreaksTargetAndCollects(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 2, Blocks.EMERALD_BLOCK);
@@ -546,7 +552,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void mineAtChangedBlockFails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 2, Blocks.LAPIS_BLOCK);
@@ -584,7 +590,7 @@ public class MineBlocksTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void mineAtUnbreakableFails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 2, Blocks.BEDROCK);
@@ -602,7 +608,7 @@ public class MineBlocksTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void mineAtProtectedFails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 2, Blocks.PRISMARINE_BRICKS);
@@ -622,7 +628,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void mineBlocksSkipsProtected(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 2, Blocks.DARK_PRISMARINE);
@@ -650,7 +656,7 @@ public class MineBlocksTests {
     }
 
     /** A block hidden inside a hill stays unknown until excavation exposes it. */
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void minesBlockBuriedInAHill(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int x = 5; x <= 9; x++) {
@@ -685,7 +691,7 @@ public class MineBlocksTests {
      * Two trunks side by side: the companion must finish the tree it started on before moving to the other one, so
      * the four logs of one tree are gone while the other tree stands untouched.
      */
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void fellsOneTreeBeforeTheNext(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int y = 2; y <= 6; y++) {
@@ -726,7 +732,7 @@ public class MineBlocksTests {
     }
 
     /** A pointed log is the whole trunk, not one block: mine_block_at must take the column down. */
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void mineAtLogFellsTheWholeTrunk(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int y = 2; y <= 5; y++) {
@@ -751,7 +757,7 @@ public class MineBlocksTests {
      * Two trunks; only the feet were observed. After the first break the next log up is outside the sight cache, and
      * the miner must follow the connected trunk instead of jumping to the other tree.
      */
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void finishesTheStartedTrunkBeforeAnotherTree(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int y = 2; y <= 5; y++) {
@@ -799,7 +805,7 @@ public class MineBlocksTests {
     /**
      * An unseen target is looked for once through the bound search port, then the job reports the existing message.
      */
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void missingTargetSearchesOnceBeforeFailing(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -835,7 +841,7 @@ public class MineBlocksTests {
      * The search sees a target the job's own radius could not: the one re-scan must use the search's reach and the
      * job must then mine the block, not merely finish.
      */
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void aSearchThatSeesTheTargetLetsTheJobMineIt(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos log = new BlockPos(10, 2, 2);
@@ -880,7 +886,7 @@ public class MineBlocksTests {
      * finish without an online owner here, which is exactly the actionable reason the job must report instead of the
      * generic "observed or remembered nearby" refusal a disabled port would leave.
      */
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void realCompositionSurfacesTheSearchReason(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -910,7 +916,7 @@ public class MineBlocksTests {
     }
 
     /** explore:false keeps the old refusal byte for byte and never creates a search. */
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void exploreFalseNeverSearches(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -945,7 +951,7 @@ public class MineBlocksTests {
      * A call that named its own origin keeps the job around it: the one bounded search must not start from the
      * companion and wander away from the place the caller named.
      */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void anExplicitOriginNeverSearchesAwayFromIt(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -998,7 +1004,7 @@ public class MineBlocksTests {
      * The tool call's caller reaches the delegated search unchanged: neither the tool nor the task may mint an
      * authority of its own.
      */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void theDelegatedSearchKeepsTheToolsCaller(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1135,7 +1141,7 @@ public class MineBlocksTests {
     }
 
     /** A failed search after some blocks were mined keeps both the count and the search's reason. */
-    @GameTest(maxTicks = 1400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1400)
     public void aFailedSearchKeepsWhatWasAlreadyMined(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos log = new BlockPos(5, 2, 2);
@@ -1190,7 +1196,7 @@ public class MineBlocksTests {
     }
 
     /** A hidden log is not discoverable through leaves without a separate task first exposing it. */
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void digsLeavesToTheHiddenLog(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         buryLog(h);
@@ -1212,7 +1218,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void mineAtHiddenLogFails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         buryLog(h);
@@ -1232,7 +1238,7 @@ public class MineBlocksTests {
     }
 
     /** Leaves cover one side only: the companion must step around them instead of mining through them. */
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void minesAroundLeavesInTheWay(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(new BlockPos(6, 2, 2), Blocks.OAK_LOG);
@@ -1253,7 +1259,7 @@ public class MineBlocksTests {
     }
 
     /** A breaker allowed to dig must break the leaf that hides the log it was sent for. */
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void breakerDigsCoverToReachALog(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         buryLog(h);
@@ -1284,7 +1290,7 @@ public class MineBlocksTests {
      * A mined block drops its item the way a player's does: it lands on the ground and lies there for the vanilla
      * pickup delay before the companion takes it, instead of vanishing into the inventory on the break tick.
      */
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void minedDropFallsBeforeItIsCollected(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos log = new BlockPos(6, 2, 2);
@@ -1326,7 +1332,7 @@ public class MineBlocksTests {
      * A drop the companion can never reach must not hold up the job: the mined log still counts and the task still
      * finishes, leaving the sealed drop where it lies.
      */
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void pickupDoesNotStallMining(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos log = new BlockPos(6, 2, 2);
@@ -1377,7 +1383,7 @@ public class MineBlocksTests {
         return e;
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void mineLogsStopsBeforeDroppingWhenFull(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos log = new BlockPos(6, 2, 2);
@@ -1400,7 +1406,7 @@ public class MineBlocksTests {
     }
 
     /** The reported bug: the drop fell into the one-block pit the mine left, and the old eye reach never took it. */
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void mineAtTakesTheDropFromTheHoleItDug(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         // A stone floor under the pit, so the drop rests one block below the walking surface.
@@ -1430,7 +1436,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void mineAtRefusesAFullInventory(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos ore = new BlockPos(6, 2, 2);
@@ -1452,7 +1458,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void mineAtMinesTheWholeVein(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos[] vein = {new BlockPos(6, 2, 2), new BlockPos(6, 3, 2), new BlockPos(6, 2, 3)};
@@ -1484,7 +1490,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void mineAtStopsAtAProtectedVeinNeighbour(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos first = new BlockPos(6, 2, 2);
@@ -1513,7 +1519,7 @@ public class MineBlocksTests {
      * A drop the sweep cannot reach is reported with its cell instead of a claim of success, and a later
      * {@code pickup_items} round takes it.
      */
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void mineAtReportsALeftDropThenPickupTakesIt(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos ore = new BlockPos(10, 2, 2);
@@ -1563,7 +1569,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 900)
     public void originSkipsAProtectedNearestCandidate(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos origin = new BlockPos(4, 2, 2);
@@ -1606,7 +1612,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1600)
     public void untilItemStopsAfterTheTakenCount(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos[] stones = {new BlockPos(4, 2, 2), new BlockPos(4, 2, 4)};
@@ -1645,7 +1651,7 @@ public class MineBlocksTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void requireToolLeavesTheBlockIntact(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos stone = new BlockPos(4, 2, 2);

@@ -89,7 +89,7 @@ public class StorageTests {
         container.setChanged();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void storeEverythingInBarrel(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.BARREL);
@@ -118,7 +118,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void storeByTagInChest(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -145,7 +145,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void storeFillsDoubleChest(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockState left = Blocks.CHEST
@@ -188,7 +188,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void storePartialWhenFull(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.BARREL);
@@ -212,7 +212,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void storeNothingFitsFails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.BARREL);
@@ -232,7 +232,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void storeAtFurnaceFails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.FURNACE);
@@ -266,7 +266,7 @@ public class StorageTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void storeKeepsComponents(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -292,7 +292,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void storeLeavesMainHand(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.BARREL);
@@ -311,7 +311,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void storeContainerRemovedWhileWalking(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(12, 2, 3, Blocks.CHEST);
@@ -335,7 +335,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void storeStopClosesContainer(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(12, 2, 3, Blocks.CHEST);
@@ -370,7 +370,7 @@ public class StorageTests {
     }
 
     /** A chest whose lid cannot open is not a chest the companion may empty. */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void blockedLidCannotBeOpened(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -395,7 +395,7 @@ public class StorageTests {
     }
 
     /** A locked chest refuses like it does for a player: vanilla's own menu check decides. */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void lockedChestCannotBeOpened(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -429,7 +429,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void takeExactAmount(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -453,7 +453,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void takeOnlyWhatIsThere(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -475,7 +475,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void takeFindsChestWithItem(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(5, 2, 5, Blocks.CHEST);
@@ -497,7 +497,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void takeWithFullInventory(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -516,7 +516,7 @@ public class StorageTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void takeMissingItemFails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -539,7 +539,7 @@ public class StorageTests {
      * "Bring me an ender pearl" in a house with ten chests the companion never opened: it looks through them, finds the
      * pearl in the last one and takes it from that chest, instead of answering that it would have to hunt endermen.
      */
-    @GameTest(maxTicks = 2400, environment = "friendai-gametest:storage_tour")
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400, environment = "friendai-gametest:storage_tour")
     public void anObtainLooksThroughTheChestsBeforeGoingOut(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         // A room of ten chests around the companion, three apart so no two pair into a double chest.
@@ -577,7 +577,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 1200, environment = "friendai-gametest:storage_tour")
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200, environment = "friendai-gametest:storage_tour")
     public void obtainChecksChestBeforeCrafting(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -605,7 +605,7 @@ public class StorageTests {
      * For five minutes after the companion opened a chest it still sees what the owner puts in; past that window what
      * it remembers is a hint that may have changed, and something new is not seen until it looks again.
      */
-    @GameTest(maxTicks = 600, environment = "friendai-gametest:storage_live")
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600, environment = "friendai-gametest:storage_live")
     public void aChestStaysInViewForAWhileAfterOpening(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -641,7 +641,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void liveViewDoesNotReadAfterProtectionIsApplied(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -663,7 +663,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void liveViewDoesNotReadAfterChestIsLocked(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -690,7 +690,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void liveViewDoesNotActivateTrappedChest(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         h.setBlock(6, 2, 6, Blocks.TRAPPED_CHEST);
@@ -720,7 +720,7 @@ public class StorageTests {
                 .content();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void checkListsContents(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.BARREL);
@@ -743,7 +743,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void checkEmpty(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -761,7 +761,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void checkManyKinds(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -807,7 +807,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void checkStopClosesContainer(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(5, 2, 5, Blocks.CHEST);
@@ -834,7 +834,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void containerSessionClosesWhenWorkThrows(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -858,7 +858,7 @@ public class StorageTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void checkContainerRecordsContents(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -880,7 +880,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void brokenContainerIsForgotten(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -918,7 +918,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void tagQueryFindsRecordedPlanks(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -939,7 +939,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void takeWithoutCoordinatesFindsRecordedChest(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(12, 2, 3, Blocks.CHEST);
@@ -968,7 +968,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void takeRevalidatesAStaleRecord(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(12, 2, 3, Blocks.CHEST);
@@ -1009,7 +1009,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void storeWithoutCoordinatesUsesRecordedFreeChest(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(12, 2, 3, Blocks.CHEST);
@@ -1042,7 +1042,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void moveItemsMovesExactCount(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(3, 2, 3, Blocks.CHEST);
@@ -1078,7 +1078,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void aSingleChestIsNotMergedIntoAnAdjacentDoubleChest(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockState left = Blocks.CHEST
@@ -1099,7 +1099,7 @@ public class StorageTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void moveItemsReturnsLeftoversToSource(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(3, 2, 3, Blocks.CHEST);
@@ -1128,7 +1128,7 @@ public class StorageTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void moveItemsNamesTheMissingTarget(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(3, 2, 3, Blocks.CHEST);

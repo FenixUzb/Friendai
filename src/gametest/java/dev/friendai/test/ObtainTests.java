@@ -161,7 +161,10 @@ public class ObtainTests {
         return step;
     }
 
-    @GameTest(maxTicks = 16000, environment = "friendai-gametest:obtain_scripted_kit")
+    @GameTest(
+            maxTicks = 16000,
+            environment = "friendai-gametest:obtain_scripted_kit",
+            structure = GameTestArenas.ARENA_32)
     public void scriptedForestKitUsesOneBatchAndFourStrictTransfers(GameTestHelper h) {
         ResourceWorkFixture.BirchKit fixture = ResourceWorkFixture.birchKit(h, 80, 2);
         ResourceWorkFixture.removeDeliveryObstruction(h, fixture);
@@ -423,7 +426,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(maxTicks = 100, structure = GameTestArenas.ARENA_32)
     public void birchKitFixtureStartsEmptyWithSafeSources(GameTestHelper h) {
         ResourceWorkFixture.BirchKit fixture = ResourceWorkFixture.birchKit(h);
         CompanionEntity companion = fixture.companion();
@@ -459,7 +462,7 @@ public class ObtainTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(maxTicks = 100, structure = GameTestArenas.ARENA_24)
     public void undergroundReturnFixtureHasAReversibleRouteAndRemovableObstruction(GameTestHelper h) {
         ResourceWorkFixture.UndergroundReturn fixture = ResourceWorkFixture.undergroundReturn(h);
         h.assertValueEqual(fixture.anchor().getY(), fixture.surfaceY() + 1, "the surface return anchor");
@@ -477,7 +480,7 @@ public class ObtainTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(maxTicks = 1600, structure = GameTestArenas.ARENA_64)
     public void kitDeliveryResumesWithoutRecrafting(GameTestHelper h) {
         int surfaceY = 80;
         ResourceWorkFixture.BirchKit fixture = ResourceWorkFixture.birchKit(h, surfaceY);
@@ -686,7 +689,10 @@ public class ObtainTests {
     }
 
     /** The complete caller-aware obtain chain must find face-adjacent stone while the sight queue is full. */
-    @GameTest(maxTicks = 2400, environment = "friendai-gametest:buried_stone_queue_pressure")
+    @GameTest(
+            maxTicks = 2400,
+            environment = "friendai-gametest:buried_stone_queue_pressure",
+            structure = GameTestArenas.ARENA_24)
     public void callerObtainsStonePickaxeFromBuriedStone(GameTestHelper h) {
         GameTestSupport.platformAt(h, 200, 24);
         for (int x = 0; x < 24; x++) {
@@ -769,7 +775,10 @@ public class ObtainTests {
                                 == dev.friendai.features.knowledge.ResourceObservation.EvidenceSource.ADJACENT_BREAK);
     }
 
-    @GameTest(maxTicks = 18000, environment = "friendai-gametest:obtain_buried_tool_set")
+    @GameTest(
+            maxTicks = 18000,
+            environment = "friendai-gametest:obtain_buried_tool_set",
+            structure = GameTestArenas.ARENA_24)
     public void callerObtainsAndDeliversStoneToolSetFromBuriedStone(GameTestHelper h) {
         GameTestSupport.platformAt(h, 200, 24);
         for (int x = 0; x < 24; x++) {
@@ -875,7 +884,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 4800)
+    @GameTest(maxTicks = 4800, structure = GameTestArenas.ARENA_24)
     public void callerObtainsStonePickaxeFromLogsOnly(GameTestHelper h) {
         GameTestSupport.platformAt(h, 300, 20);
         for (int x = 6; x <= 12; x++) {
@@ -1017,7 +1026,7 @@ public class ObtainTests {
     }
 
     private static void stoneColumn(GameTestHelper h, int upToZ) {
-        for (int x = -1; x <= 8; x++) {
+        for (int x = 0; x <= 9; x++) {
             for (int z = 0; z <= upToZ; z++) {
                 for (int y = -16; y <= 0; y++) {
                     h.setBlock(x, y, z, Blocks.STONE);
@@ -1091,7 +1100,7 @@ public class ObtainTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_32)
     public void scanCountsVisibleBlocksAndMobsWithoutInspectingChests(GameTestHelper h) {
         GameTestSupport.platformAt(h, 300, 32);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 301, 2);
@@ -1132,7 +1141,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void scanWithoutContainers(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1143,7 +1152,7 @@ public class ObtainTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void scanOverworldFlag(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1152,7 +1161,7 @@ public class ObtainTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(maxTicks = 100, structure = GameTestArenas.ARENA_16)
     public void worldScanCountsRecentlyObservedLogs(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1180,7 +1189,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(maxTicks = 1200, structure = GameTestArenas.ARENA_32)
     public void surfaceExploreFindsLogs(GameTestHelper h) {
         GameTestSupport.platformAt(h, 240, 32);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 241, 2);
@@ -1197,7 +1206,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(maxTicks = 1200, structure = GameTestArenas.ARENA_32)
     public void surfaceExploreGivesUp(GameTestHelper h) {
         GameTestSupport.platformAt(h, 280, 32);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 281, 2);
@@ -1210,12 +1219,13 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(maxTicks = 2400, structure = GameTestArenas.ARENA_24)
     public void staircaseFindsOre(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         stoneColumn(h, 16);
-        h.setBlock(2, -6, 10, Blocks.GOLD_ORE);
-        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        BlockPos ore = new BlockPos(3, -6, 10);
+        h.setBlock(ore, Blocks.GOLD_ORE);
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 3, 2, 2);
         c.inventory().addItem(new ItemStack(Items.DIAMOND_PICKAXE));
         Result result = new Result();
         ExecutionCoordinator runner = explore(
@@ -1223,21 +1233,20 @@ public class ObtainTests {
                 result,
                 new ExploreTask(BlockMatcher.parse("minecraft:gold_ore").orElseThrow(), true, -6, 64, 128, 6000));
         h.succeedWhen(() -> {
-            if (h.getBlockState(new BlockPos(2, -6, 10)).is(Blocks.GOLD_ORE))
-                GameTestSupport.observeVisible(h, c, h.absolutePos(new BlockPos(2, -6, 10)));
+            if (h.getBlockState(ore).is(Blocks.GOLD_ORE)) GameTestSupport.observeVisible(h, c, h.absolutePos(ore));
             runner.tick();
             h.assertTrue(result.status == TaskStatus.SUCCESS, "not finished: " + result.status + " " + result.summary);
             h.assertTrue(result.summary.startsWith("found minecraft:gold_ore at"), "summary was " + result.summary);
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(maxTicks = 2400, structure = GameTestArenas.ARENA_24)
     public void staircaseAvoidsLava(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         stoneColumn(h, 16);
-        h.setBlock(2, -1, 5, Blocks.LAVA);
         h.setBlock(3, -1, 5, Blocks.LAVA);
-        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
+        h.setBlock(4, -1, 5, Blocks.LAVA);
+        CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 3, 2, 2);
         c.inventory().addItem(new ItemStack(Items.DIAMOND_PICKAXE));
         float health = c.getHealth();
         Result result = new Result();
@@ -1249,7 +1258,7 @@ public class ObtainTests {
                     result.status == TaskStatus.SUCCESS || result.status == TaskStatus.FAILED,
                     "unexpected status " + result.status + " " + result.summary);
             h.assertValueEqual(c.getHealth(), health, "health changed");
-            for (int x = -1; x <= 8; x++) {
+            for (int x = 0; x <= 9; x++) {
                 for (int z = 0; z <= 16; z++) {
                     for (int y = -16; y <= 0; y++) {
                         BlockPos pos = new BlockPos(x, y, z);
@@ -1269,7 +1278,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 4800)
+    @GameTest(maxTicks = 4800, structure = GameTestArenas.ARENA_16)
     public void obtainWoodenPickaxe(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos[] logs = {new BlockPos(4, 2, 2), new BlockPos(4, 2, 7), new BlockPos(8, 2, 4), new BlockPos(8, 2, 6)};
@@ -1317,7 +1326,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 9600)
+    @GameTest(maxTicks = 9600, structure = GameTestArenas.ARENA_16)
     public void obtainStonePickaxe(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos[] logs = {new BlockPos(4, 2, 2), new BlockPos(4, 2, 7), new BlockPos(8, 2, 4), new BlockPos(8, 2, 6)};
@@ -1354,7 +1363,7 @@ public class ObtainTests {
      * A dirt cap hides the stone layer, and the search only mines what it can see, so the seams that break the
      * surface are the whole lead: the plan mines those three tops and the layer under them is what makes the pickaxe.
      */
-    @GameTest(maxTicks = 9600)
+    @GameTest(maxTicks = 9600, structure = GameTestArenas.ARENA_16)
     public void stonePickaxeFromBuriedStone(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int x = 0; x < 16; x++) {
@@ -1398,7 +1407,7 @@ public class ObtainTests {
      * What the companion has seen ages out of the observation window, and this chain is longer than the oak one, so
      * the test keeps its evidence fresh on every tick the way its sibling does.
      */
-    @GameTest(maxTicks = 9600)
+    @GameTest(maxTicks = 9600, structure = GameTestArenas.ARENA_16)
     public void stonePickaxeFromAcaciaOnly(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos[] logs = {new BlockPos(4, 2, 2), new BlockPos(4, 2, 7), new BlockPos(8, 2, 4), new BlockPos(8, 2, 6)};
@@ -1433,7 +1442,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(maxTicks = 2400, structure = GameTestArenas.ARENA_16)
     public void obtainTakesFromChest(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(4, 2, 2, Blocks.CHEST);
@@ -1466,7 +1475,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 4800)
+    @GameTest(maxTicks = 4800, structure = GameTestArenas.ARENA_16)
     public void obtainIronIngot(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(4, 2, 2, Blocks.IRON_ORE);
@@ -1497,7 +1506,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 9600)
+    @GameTest(maxTicks = 9600, structure = GameTestArenas.ARENA_16)
     public void replansAfterTheft(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos[] logs = {new BlockPos(4, 2, 2), new BlockPos(4, 2, 7), new BlockPos(8, 2, 4), new BlockPos(8, 2, 6)};
@@ -1534,7 +1543,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(maxTicks = 2400, structure = GameTestArenas.ARENA_16)
     public void obtainMissingWithoutExplore(GameTestHelper h) {
         GameTestSupport.platformAt(h, -40, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, -39, 2);
@@ -1550,7 +1559,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 4800)
+    @GameTest(maxTicks = 4800, structure = GameTestArenas.ARENA_16)
     public void exploreFailureEndsObtain(GameTestHelper h) {
         GameTestSupport.platformAt(h, -20, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, -19, 2);
@@ -1564,7 +1573,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(maxTicks = 600, structure = GameTestArenas.ARENA_16)
     public void alreadyHeldCountsAsObtained(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1580,7 +1589,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(maxTicks = 2400, structure = GameTestArenas.ARENA_16)
     public void stepLimit(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(4, 2, 2, Blocks.OAK_LOG);
@@ -1617,7 +1626,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 9600)
+    @GameTest(maxTicks = 9600, structure = GameTestArenas.ARENA_16)
     public void batchObtainsStoneToolSet(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         // The missing cobblestone comes from a chest rather than from mining: this test is about the batch planning
@@ -1712,7 +1721,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(maxTicks = 800, structure = GameTestArenas.ARENA_16)
     public void fullBagReportsTheUncollectedBatchRemainder(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos stone = new BlockPos(4, 2, 2);
@@ -1760,7 +1769,7 @@ public class ObtainTests {
     }
 
     /** Room is measured on the real stacks: compatibility follows components, and only a fully consumed stack frees. */
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void stackSpaceCountsOnlyCompatibleRoomAndRealFreedSlots(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1791,7 +1800,7 @@ public class ObtainTests {
      * Every slot is full, one of them with 63 cobblestone: the last cobblestone of a 64 request fills that stack, so
      * the work starts without a chest and without moving anything the owner is carrying.
      */
-    @GameTest(maxTicks = 800)
+    @GameTest(maxTicks = 800, structure = GameTestArenas.ARENA_16)
     public void aCompatiblePartialStackTakesTheLastItemWithoutMovingAnything(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos stone = new BlockPos(4, 2, 2);
@@ -1824,7 +1833,7 @@ public class ObtainTests {
     }
 
     /** A craft consumes its ingredient before its result arrives, so its own slot pays for the result. */
-    @GameTest(maxTicks = 800)
+    @GameTest(maxTicks = 800, structure = GameTestArenas.ARENA_16)
     public void aCraftThatConsumesItsIngredientSlotRunsWithAFullBag(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1849,7 +1858,7 @@ public class ObtainTests {
     }
 
     /** One missing slot moves one stack, not the whole bag, and the request completes from the chest. */
-    @GameTest(maxTicks = 2400)
+    @GameTest(maxTicks = 2400, structure = GameTestArenas.ARENA_16)
     public void oneNeededSlotMovesOneStackNotTheWholeBag(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos chestPos = new BlockPos(4, 2, 2);
@@ -1904,7 +1913,7 @@ public class ObtainTests {
     }
 
     /** A full stack of the requested item is still full: the request stops honestly instead of starting work. */
-    @GameTest(maxTicks = 400)
+    @GameTest(maxTicks = 400, structure = GameTestArenas.ARENA_16)
     public void aFullSameItemStackCannotTakeOneMore(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos stone = new BlockPos(4, 2, 2);
@@ -1939,7 +1948,7 @@ public class ObtainTests {
      * batch gathers the wood first and then stops on the missing stone family instead of touring the same hole. The
      * gathered wood stays in the bag and the result names exactly one actionable blocker.
      */
-    @GameTest(maxTicks = 1600, environment = "friendai-gametest:obtain_no_stone")
+    @GameTest(maxTicks = 1600, environment = "friendai-gametest:obtain_no_stone", structure = GameTestArenas.ARENA_16)
     public void impossibleStoneOrderKeepsItsWoodenWorkAndNamesOneBlocker(GameTestHelper h) {
         GameTestSupport.platformAt(h, 60, 16);
         // The deliberate observation can see the platform itself from its edge. Use a floor
@@ -2012,10 +2021,16 @@ public class ObtainTests {
             h.assertTrue(
                     result.summary.startsWith(work.blocker()),
                     "the blocker is the failure text, not a second one: " + work.compact());
-            h.assertTrue(work.reasonCode().equals("blocked"), "nothing was finished: " + work.compact());
-            for (TaskWorkResult.Line line : work.lines()) {
-                h.assertValueEqual(line.verified(), 0, "no tool was finished: " + work.compact());
-            }
+            int carriedWooden = c.inventory().countItem(Items.WOODEN_PICKAXE)
+                    + (c.getMainHandItem().is(Items.WOODEN_PICKAXE)
+                            ? c.getMainHandItem().getCount()
+                            : 0);
+            h.assertValueEqual(
+                    work.reasonCode(), carriedWooden > 0 ? "partial" : "blocked", "reason matches the remaining work");
+            h.assertValueEqual(work.lines().size(), 2, "one result for each requested tool");
+            h.assertValueEqual(
+                    work.lines().get(0).verified(), carriedWooden, "the crafted wooden pickaxe stays accounted for");
+            h.assertValueEqual(work.lines().get(1).verified(), 0, "the missing stone tool cannot be reported as made");
             h.assertTrue(h.getLevel().getGameTime() - startTick <= 1600, "the order stayed inside its tick bound");
         });
     }
@@ -2050,7 +2065,7 @@ public class ObtainTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void planObtainText(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(4, 2, 2, Blocks.IRON_ORE);
@@ -2083,7 +2098,7 @@ public class ObtainTests {
      * A wooden pickaxe needs planks, and the plan reads the logs out of the tree: the companion must fell the whole
      * tree, not stop after the three logs the recipe happens to need.
      */
-    @GameTest(maxTicks = 9600)
+    @GameTest(maxTicks = 9600, structure = GameTestArenas.ARENA_16)
     public void obtainWoodenPickaxeFellsAWholeTree(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> logs = new java.util.ArrayList<>();

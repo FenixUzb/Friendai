@@ -49,7 +49,7 @@ public class HungerTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 500)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 500)
     public void queueFreezesForFoodAndResumes(GameTestHelper h) {
         GameTestSupport.platformAt(h, 260, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 261, 2);
@@ -113,7 +113,7 @@ public class HungerTests {
         return entity;
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void miningAddsExhaustion(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -146,7 +146,7 @@ public class HungerTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 240)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 240)
     public void starvationFollowsDifficulty(GameTestHelper h) {
         GameTestSupport.platform(h, 10);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -163,7 +163,7 @@ public class HungerTests {
         });
     }
 
-    @GameTest(maxTicks = 500)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 500)
     public void noPassiveRegenAnyMore(GameTestHelper h) {
         GameTestSupport.platform(h, 10);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -244,7 +244,7 @@ public class HungerTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void eatingRestoresFoodNotHealth(GameTestHelper h) {
         GameTestSupport.platform(h, 10);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -258,7 +258,7 @@ public class HungerTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void eatsAtFood14(GameTestHelper h) {
         GameTestSupport.platform(h, 10);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -270,7 +270,7 @@ public class HungerTests {
                         + c.combatController().state()));
     }
 
-    @GameTest(maxTicks = 150)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 150)
     public void doesNotEatWhenFull(GameTestHelper h) {
         GameTestSupport.platform(h, 10);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -283,7 +283,7 @@ public class HungerTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void choosesFoodThatFits(GameTestHelper h) {
         GameTestSupport.platform(h, 10);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -300,7 +300,7 @@ public class HungerTests {
         });
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void ownerThrownAppleCollected(GameTestHelper h) {
         GameTestSupport.platform(h, 10);
         ServerPlayer owner = GameTestSupport.liveMockPlayer(h);
@@ -317,7 +317,7 @@ public class HungerTests {
         });
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void strangerThrownItemIgnored(GameTestHelper h) {
         GameTestSupport.platform(h, 10);
         ServerPlayer owner = GameTestSupport.liveMockPlayer(h);
@@ -332,7 +332,7 @@ public class HungerTests {
         });
     }
 
-    @GameTest(maxTicks = 120)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 120)
     public void ownerThrowIntoFullInventory(GameTestHelper h) {
         GameTestSupport.platform(h, 10);
         ServerPlayer owner = GameTestSupport.liveMockPlayer(h);
@@ -415,7 +415,7 @@ public class HungerTests {
         return total;
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void getFoodCooksFirst(GameTestHelper h) {
         GameTestSupport.platformAt(h, 200, 16);
         h.setBlock(8, 200, 4, Blocks.FURNACE);
@@ -440,7 +440,7 @@ public class HungerTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void getFoodFromChest(GameTestHelper h) {
         GameTestSupport.platformAt(h, 152, 16);
         h.setBlock(8, 152, 8, Blocks.CHEST);
@@ -462,7 +462,7 @@ public class HungerTests {
         });
     }
 
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2400)
     public void getFoodBakesBread(GameTestHelper h) {
         GameTestSupport.platformAt(h, 56, 16);
         h.setBlock(7, 56, 4, Blocks.CRAFTING_TABLE);
@@ -482,7 +482,7 @@ public class HungerTests {
         });
     }
 
-    @GameTest(maxTicks = 3600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 3600)
     public void getFoodHuntsAndCooks(GameTestHelper h) {
         GameTestSupport.platformAt(h, 80, 16);
         // Walled: a hurt cow panics and would otherwise run off the platform and die in the fall.
@@ -504,7 +504,7 @@ public class HungerTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void getFoodNothing(GameTestHelper h) {
         GameTestSupport.platformAt(h, 26, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 27, 2);
@@ -520,7 +520,7 @@ public class HungerTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void hungryNoticeNearOwner(GameTestHelper h) {
         GameTestSupport.platformAt(h, 176, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 7, 177, 2);
@@ -541,7 +541,7 @@ public class HungerTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void autoQuestWhenStarving(GameTestHelper h) {
         GameTestSupport.platformAt(h, 128, 16);
         h.setBlock(8, 128, 8, Blocks.CHEST);
@@ -568,7 +568,7 @@ public class HungerTests {
         });
     }
 
-    @GameTest(maxTicks = 800)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 800)
     public void autoQuestCoolDown(GameTestHelper h) {
         GameTestSupport.platformAt(h, 44, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 45, 2);
@@ -599,7 +599,7 @@ public class HungerTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void autoQuestNeedsStarvingStage(GameTestHelper h) {
         GameTestSupport.platformAt(h, 230, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 231, 2);
@@ -635,7 +635,7 @@ public class HungerTests {
     }
 
     /** Walking over flat ground is free while sprinting pays vanilla 0.1 exhaustion per block. */
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 300)
     public void sprintingDrainsHungerAndWalkingDoesNot(GameTestHelper h) {
         int floor = 160;
         GameTestSupport.platformAt(h, floor, 20);
@@ -665,7 +665,7 @@ public class HungerTests {
     }
 
     /** Below seven food points the companion walks; once fed it runs again. */
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 300)
     public void lowFoodBlocksSprinting(GameTestHelper h) {
         int floor = 170;
         GameTestSupport.platformAt(h, floor, 20);
@@ -700,7 +700,7 @@ public class HungerTests {
     }
 
     /** Swimming costs vanilla 0.01 a metre, a tenth of the sprinting rate: water travel must not be free. */
-    @GameTest(maxTicks = 500)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 500)
     public void swimmingSpendsHunger(GameTestHelper h) {
         int floor = 270;
         GameTestSupport.platformAt(h, floor, 14);

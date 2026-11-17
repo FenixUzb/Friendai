@@ -8,6 +8,9 @@ import java.util.Optional;
 
 /** Fixed step lists for routine needs, so the companion handles them without asking the model. */
 public final class ReflexPlans {
+    // A 5x5 floor and roof, plus two layers of perimeter walls with a two-block doorway.
+    private static final int SHELTER_BLOCKS = 80;
+
     private ReflexPlans() {}
 
     /** The template for a reflex need, or empty when the need has none or nowhere to go. */
@@ -23,11 +26,13 @@ public final class ReflexPlans {
                                 step("go_to_place", "name", place.name()),
                                 step("deposit_items", "place", place.name())));
             case SHELTER ->
-                Optional.of(f.homeHere()
+                f.homeHere()
                         .map(home -> List.of(step("go_to_place", "name", home.name()), step("stay")))
-                        .orElseGet(() -> s.allowBuilding() && hasShelterMaterial(f)
-                                ? List.of(buildShelterStep())
-                                : List.of(step("light_area"), step("stay"))));
+                        .or(() -> {
+                            if (canLightInterior(f)) return Optional.of(List.of(step("light_area")));
+                            if (!s.allowBuilding() || !f.self().unlitAndExposed()) return Optional.empty();
+                            return shelterMaterial(f).map(material -> List.of(buildShelterStep(material)));
+                        });
             case SURVIVE -> Optional.of(survivePlan(f));
             case COLLECT ->
                 f.homeHere().map(home -> List.of(step("go_to_place", "name", home.name()), step("collect_smelted")));
@@ -43,7 +48,7 @@ public final class ReflexPlans {
             case PROCESS -> Optional.of(List.of(step("smelt_items")));
             case FOOD -> Optional.of(List.of(step("get_food")));
             case LIGHT -> Optional.of(List.of(step("obtain_item", "item", "minecraft:torch", "count", 16)));
-            case BUILD -> hasShelterMaterial(f) ? Optional.of(List.of(buildShelterStep())) : Optional.empty();
+            case BUILD -> shelterMaterial(f).map(material -> List.of(buildShelterStep(material)));
             case STORAGE ->
                 f.homeHere()
                         .map(home -> List.of(
@@ -66,12 +71,12 @@ public final class ReflexPlans {
 
     private static List<ReflexStep> survivePlan(AutonomyFacts f) {
         List<ReflexStep> steps = new ArrayList<>();
-        f.homeHere()
-                .ifPresentOrElse(
-                        home -> steps.add(step("go_to_place", "name", home.name())),
-                        () -> steps.add(step("light_area")));
+        f.homeHere().ifPresent(home -> steps.add(step("go_to_place", "name", home.name())));
         if (f.foodPoints() > 0) {
             steps.add(step("eat"));
+        }
+        if (f.homeHere().isEmpty() && canLightInterior(f)) {
+            steps.add(step("light_area"));
         }
         steps.add(step("stay"));
         return steps;
@@ -85,22 +90,34 @@ public final class ReflexPlans {
         return new ReflexStep("farm", args);
     }
 
-    private static boolean hasShelterMaterial(AutonomyFacts f) {
-        return f.count(StockKind.PLANKS) >= 16 || f.count(StockKind.COBBLE) >= 16 || f.count(StockKind.LOGS) >= 8;
+    static boolean canShelterWithoutHome(AutonomyFacts f, AutonomySettings settings) {
+        return canLightInterior(f)
+                || (f.self().unlitAndExposed()
+                        && settings.allowBuilding()
+                        && shelterMaterial(f).isPresent());
     }
 
-    /** A small wooden house; the finished build is remembered as a home by {@code BuildTask}. */
-    private static ReflexStep buildShelterStep() {
-        JsonObject generator = new JsonObject();
-        generator.addProperty("type", "house");
-        generator.addProperty("width", 5);
-        generator.addProperty("depth", 5);
-        generator.addProperty("walls", "minecraft:oak_planks");
-        generator.addProperty("floor", "minecraft:oak_planks");
-        generator.addProperty("roof", "minecraft:oak_planks");
-        generator.addProperty("name", "shelter");
+    private static boolean canLightInterior(AutonomyFacts f) {
+        return f.self().unlitInterior() && f.count(StockKind.TORCHES) > 0;
+    }
+
+    private static Optional<String> shelterMaterial(AutonomyFacts f) {
+        if (f.self().cobblestone() >= SHELTER_BLOCKS) return Optional.of("minecraft:cobblestone");
+        if (f.self().oakPlanks() >= SHELTER_BLOCKS) return Optional.of("minecraft:oak_planks");
+        return Optional.empty();
+    }
+
+    /** A simple house built from one material; BuildTask remembers it as a home. */
+    private static ReflexStep buildShelterStep(String material) {
         JsonObject args = new JsonObject();
-        args.addProperty("generator", generator.toString());
+        args.addProperty("blueprint", """
+                {"name":"shelter","palette":{"B":"%s","A":"minecraft:air"},"ops":[
+                  {"op":"box","from":[0,0,0],"to":[4,0,4],"block":"B"},
+                  {"op":"walls","from":[0,1,0],"to":[4,2,4],"block":"B"},
+                  {"op":"box","from":[2,1,4],"to":[2,2,4],"block":"A"},
+                  {"op":"box","from":[0,3,0],"to":[4,3,4],"block":"B"}
+                ]}
+                """.formatted(material));
         return new ReflexStep("build_structure", args);
     }
 

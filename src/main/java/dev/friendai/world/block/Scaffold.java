@@ -51,6 +51,7 @@ public final class Scaffold {
     }
 
     private static final int JUMP_TIMEOUT = 40;
+    private static final double CENTER_TOLERANCE = 0.1;
     private Pillar pillarPhase = Pillar.IDLE;
     private BlockPos pillarFeet;
     private int pillarTicks;
@@ -246,6 +247,7 @@ public final class Scaffold {
         failure = "";
         ServerLevel level = level();
         if (pillarPhase == Pillar.JUMPING) {
+            holdColumn();
             if (++pillarTicks > JUMP_TIMEOUT) {
                 resetPillar();
                 failure = "couldn't jump onto the scaffold block";
@@ -259,6 +261,7 @@ public final class Scaffold {
             return State.CLIMBING;
         }
         if (pillarPhase == Pillar.PLACING) {
+            holdColumn();
             if (!companion.placement().ready()) {
                 // Stay in the placing phase: the countdown ends and the block goes in under the feet.
                 return State.CLIMBING;
@@ -298,11 +301,16 @@ public final class Scaffold {
             failure = "couldn't land before starting the scaffold climb";
             return State.FAILED;
         }
-        pillarTicks = 0;
         BlockPos feet = companion.blockPosition();
         if (feet.getY() >= y) {
+            pillarTicks = 0;
             climbing = false;
             return State.READY;
+        }
+        // The body can stand on the edge of a block while its centre is already in the next cell.
+        BlockPos overSupport = companion.getOnPos().above();
+        if (overSupport.getY() == feet.getY()) {
+            feet = overSupport;
         }
         if (!climbing || feet.getX() != climbX || feet.getZ() != climbZ || feet.getY() < climbBaseY) {
             climbing = true;
@@ -328,12 +336,33 @@ public final class Scaffold {
             failure = materialFailure();
             return State.FAILED;
         }
+        double centerX = feet.getX() + 0.5;
+        double centerZ = feet.getZ() + 0.5;
+        companion.getNavigation().stop();
+        if (Math.abs(companion.getX() - centerX) > CENTER_TOLERANCE
+                || Math.abs(companion.getZ() - centerZ) > CENTER_TOLERANCE) {
+            if (++pillarTicks > JUMP_TIMEOUT) {
+                resetPillar();
+                failure = "couldn't center over the scaffold support";
+                return State.FAILED;
+            }
+            companion.getMoveControl().setWantedPosition(centerX, companion.getY(), centerZ, 0.5);
+            return State.CLIMBING;
+        }
+        holdColumn();
         pillarFeet = feet;
         pillarTicks = 0;
         pillarPhase = Pillar.JUMPING;
-        companion.getNavigation().stop();
         companion.getJumpControl().jump();
         return State.CLIMBING;
+    }
+
+    /** A scaffold jump travels straight up, even after walking or sprinting into the column. */
+    private void holdColumn() {
+        companion.getMoveControl().setWait();
+        companion.setZza(0.0f);
+        companion.setXxa(0.0f);
+        companion.setDeltaMovement(0.0, companion.getDeltaMovement().y, 0.0);
     }
 
     /**
@@ -422,12 +451,13 @@ public final class Scaffold {
      * Breaks every block this scaffold placed, highest first. The block breaker walks within reach of each block.
      * Returns
      * {@link State#CLIMBING} while a block is being broken, {@link State#READY} when none is left, and
-     * {@link State#FAILED} when one cannot be reached or is protected. A block that no longer holds what the
-     * scaffold placed is left alone.
+     * {@link State#FAILED} after attempting all supports if any cannot be removed. Blocks that no longer hold
+     * the scaffold material are skipped.
      */
     public State removeAll() {
         ServerLevel level = level();
         if (removal == null) {
+            failure = "";
             removal = new ArrayList<>(placed);
             removal.sort(Comparator.comparingInt((BlockPos pos) -> pos.getY()).reversed());
             removalIndex = 0;
@@ -445,26 +475,19 @@ public final class Scaffold {
                         removalIndex++;
                     }
                     case UNREACHABLE -> {
-                        breaker = null;
-                        failure = "couldn't reach scaffold at " + coords(removal.get(removalIndex));
-                        return State.FAILED;
+                        return skipBlockedSupport("couldn't reach scaffold at " + coords(removal.get(removalIndex)));
                     }
                     case PROTECTED -> {
                         String why = breaker.reason(BlockBreaker.State.PROTECTED);
-                        breaker = null;
                         BlockPos blocked = removal.get(removalIndex);
                         if (!companion.hands().canInteract(blocked)
                                 || level.getBlockState(blocked).getDestroySpeed(level, blocked) < 0) {
-                            failure = why;
-                        } else {
-                            failure = "scaffold breaker was blocked at " + coords(blocked);
+                            return skipBlockedSupport(why);
                         }
-                        return State.FAILED;
+                        return skipBlockedSupport("scaffold breaker was blocked at " + coords(blocked));
                     }
                     case OUT_OF_SIGHT -> {
-                        breaker = null;
-                        failure = "scaffold is out of sight at " + coords(removal.get(removalIndex));
-                        return State.FAILED;
+                        return skipBlockedSupport("scaffold is out of sight at " + coords(removal.get(removalIndex)));
                     }
                 }
                 continue;
@@ -478,7 +501,16 @@ public final class Scaffold {
             // is worse, so this breaker does not require line of sight.
             breaker = new BlockBreaker(pos, Scaffold::isScaffold, false, true);
         }
-        return State.READY;
+        return failure.isEmpty() ? State.READY : State.FAILED;
+    }
+
+    private State skipBlockedSupport(String reason) {
+        if (failure.isEmpty()) {
+            failure = reason;
+        }
+        breaker = null;
+        removalIndex++;
+        return State.CLIMBING;
     }
 
     /** How many of the placed blocks still hold the scaffold material. */

@@ -61,6 +61,7 @@ import net.minecraft.world.level.block.WallSignBlock;
 import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.Vec3;
 
 public class BuildTests {
     private static final Block RED_BED = Blocks.BED.pick(DyeColor.RED);
@@ -291,7 +292,7 @@ public class BuildTests {
                 .orElseThrow(() -> new AssertionError("no spec at " + pos));
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void defaultOriginInFrontOfOwner(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -374,7 +375,7 @@ public class BuildTests {
         return saved.substring(0, saved.indexOf(','));
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void saveDataFormat(GameTestHelper h) throws Exception {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -439,7 +440,7 @@ public class BuildTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 200)
     public void preflightReadsTheSiteInBoundedSlices(GameTestHelper h) {
         GameTestSupport.platform(h, 24);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -482,7 +483,7 @@ public class BuildTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 2000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2000)
     public void aFailedCheckpointWriteDoesNotAbortTheBuild(GameTestHelper h) throws Exception {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -542,7 +543,7 @@ public class BuildTests {
         Files.deleteIfExists(path);
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void ownerLeftKeepsTheBuildForReload(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -577,7 +578,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 4000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 4000)
     public void restoreResumes(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -624,7 +625,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 20000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 20000)
     public void restoreRemovesOldScaffold(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         clearAir(h, 16, 2, 14);
@@ -682,7 +683,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 4000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 4000)
     public void floorBuildsWhileStandingInTheMiddle(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 5, 2, 5);
@@ -712,7 +713,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 2000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2000)
     public void aCellUnderTheCompanionIsFilledAfterSteppingOut(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 5, 2, 5);
@@ -734,7 +735,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 3000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 3000)
     public void aZombieInTheCellIsWaitedOut(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -759,7 +760,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 1000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1000)
     public void aPlayerOnTheSiteIsNamed(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -779,7 +780,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 1000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1000)
     public void aFailedBuildResumesAtItsOrigin(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -836,7 +837,7 @@ public class BuildTests {
      * obstacle and the resume hint, the in-progress record lists only the cell that is still missing, and the same
      * build finishes once the obstacle is gone.
      */
-    @GameTest(maxTicks = 3000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 3000)
     public void aPartialBuildLeavesOnlyTheRestResumable(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -921,7 +922,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void anOwnScaffoldIsNotASiteProblem(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -945,7 +946,7 @@ public class BuildTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void cancelKeepsTheRecord(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -974,7 +975,7 @@ public class BuildTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void chestBlocksSite(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(5, 2, 5, Blocks.CHEST);
@@ -985,7 +986,7 @@ public class BuildTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void naturalBlocksCleared(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(5, 2, 5, Blocks.SHORT_GRASS);
@@ -1014,7 +1015,7 @@ public class BuildTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void clearSiteOff(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(5, 2, 5, Blocks.DIRT);
@@ -1026,7 +1027,7 @@ public class BuildTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void foundationFillsHole(GameTestHelper h) {
         GameTestSupport.platformAt(h, 3, 16);
         h.setBlock(5, 3, 5, Blocks.AIR);
@@ -1043,7 +1044,7 @@ public class BuildTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void foundationTooDeep(GameTestHelper h) {
         GameTestSupport.platformAt(h, 6, 16);
         for (int y = 2; y <= 6; y++) {
@@ -1063,7 +1064,7 @@ public class BuildTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void foundationOnlyUnderBlocks(GameTestHelper h) {
         GameTestSupport.platformAt(h, 3, 16);
         for (int y = 2; y <= 3; y++) {
@@ -1095,7 +1096,7 @@ public class BuildTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void protectedPosition(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1130,7 +1131,7 @@ public class BuildTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void haveCountsOnlyCompanionInventory(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1217,7 +1218,7 @@ public class BuildTests {
         return result.blueprint().get();
     }
 
-    @GameTest(maxTicks = 2000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2000)
     public void buildsGeneratedWall(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1259,7 +1260,7 @@ public class BuildTests {
      * A survival build must rise at a player's pace, not twenty blocks a second. Measured before the pace existed:
      * one block per tick, so this wall went up in nine placement ticks with a one-tick gap between them.
      */
-    @GameTest(maxTicks = 2000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2000)
     public void aSurvivalWallRisesAtAPlayersPace(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1314,7 +1315,7 @@ public class BuildTests {
     }
 
     /** Creative is the printer players know: one block per tick, whatever the survival setting says. */
-    @GameTest(maxTicks = 2000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2000)
     public void aCreativeWallKeepsThePrinterSpeed(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1354,7 +1355,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 8000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 8000)
     public void buildsSmallHouseFromChest(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1392,7 +1393,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 8000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 8000)
     public void buildsHouseWithPlanksRoof(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1438,7 +1439,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 2000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2000)
     public void buildOnlyTheFloor(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1474,7 +1475,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 2000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2000)
     public void wallTorchOnItsWallBuildsInOnePass(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1508,7 +1509,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 4000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 4000)
     public void stairRoofOnTemporarySupport(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1555,7 +1556,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void aPartSelectionThatMatchesNothingFails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1575,7 +1576,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 2000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2000)
     public void rotationKeepsAxisAndFacing(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1620,7 +1621,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void missingMaterialsFails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1637,7 +1638,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 12000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 12000)
     public void gatherObtainsPlanks(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         // Four logs on the platform are enough to craft the twelve planks the wall needs; a crafting table is not
@@ -1685,7 +1686,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 2000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2000)
     public void gatherFailureStopsEarly(GameTestHelper h) {
         GameTestSupport.platformAt(h, -40, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, -39, 2);
@@ -1725,7 +1726,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void withoutGatherStillFails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1757,7 +1758,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void siteProblemFails(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(6, 2, 6, Blocks.CHEST);
@@ -1778,7 +1779,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 3000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 3000)
     public void clearsAndFills(GameTestHelper h) {
         GameTestSupport.platformAt(h, 3, 16);
         h.setBlock(5, 4, 5, Blocks.TALL_GRASS);
@@ -1813,7 +1814,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 4000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 4000)
     public void takesOnlyShortfall(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1850,7 +1851,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void noScaffoldStillFailsWithoutBlocks(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1872,7 +1873,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 12000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 12000)
     public void towerWithScaffold(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         clearAir(h, 16, 2, 12);
@@ -1904,7 +1905,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 12000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 12000)
     public void cancelRemovesItsScaffold(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         clearAir(h, 16, 2, 12);
@@ -1930,7 +1931,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 12000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 12000)
     public void outOfScaffoldCleansUp(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         clearAir(h, 16, 2, 12);
@@ -1958,7 +1959,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 3000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 3000)
     public void floatingBlockUsesSupport(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1993,7 +1994,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 3000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 3000)
     public void stairInMidAirUsesTemporarySupport(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -2034,7 +2035,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 1200)
     public void wallTorchWithoutItsWallNamesTheMissingCell(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -2074,7 +2075,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 4000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 4000)
     public void deferredSupportKeepsBlueprintCellsClear(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -2128,7 +2129,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 12000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 12000)
     public void foundationSpendingKeepsScaffoldSurplus(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         clearAir(h, 16, 2, 12);
@@ -2163,7 +2164,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 12000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 12000)
     public void scaffoldKeepsBlueprintMaterial(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         clearAir(h, 16, 2, 12);
@@ -2187,7 +2188,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 12000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 12000)
     public void cleanupProtectionReportsFailure(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         clearAir(h, 16, 2, 12);
@@ -2219,6 +2220,30 @@ public class BuildTests {
                             + result.summary);
             h.assertTrue(result.summary.contains("left 1 scaffold blocks behind"), "summary was " + result.summary);
             h.assertTrue(h.getBlockState(guarded[0]).is(Blocks.DIRT), "the protected block must stay");
+        });
+    }
+
+    @GameTest(maxTicks = 300)
+    public void scaffoldCleanupContinuesPastAProtectedSupport(GameTestHelper h) {
+        int floor = 170;
+        GameTestSupport.platformAt(h, floor, 8);
+        BlockPos protectedSupport = new BlockPos(3, floor + 1, 2);
+        BlockPos otherSupport = new BlockPos(4, floor + 1, 2);
+        h.setBlock(protectedSupport, Blocks.DIRT);
+        h.setBlock(otherSupport, Blocks.DIRT);
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, floor + 1, 2);
+        companion.hands().overrideProtection(h.absolutePos(protectedSupport)::equals);
+        Scaffold scaffold = new Scaffold(companion);
+        scaffold.adopt(List.of(h.absolutePos(protectedSupport), h.absolutePos(otherSupport)));
+        Scaffold.State[] state = {Scaffold.State.CLIMBING};
+
+        h.succeedWhen(() -> {
+            if (state[0] == Scaffold.State.CLIMBING) {
+                state[0] = scaffold.removeAll();
+            }
+            h.assertTrue(state[0] == Scaffold.State.FAILED, "waiting for cleanup to report the protection failure");
+            h.assertTrue(h.getBlockState(protectedSupport).is(Blocks.DIRT), "protected scaffolding was removed");
+            h.assertTrue(h.getBlockState(otherSupport).isAir(), "cleanup stopped before the unprotected support");
         });
     }
 
@@ -2296,6 +2321,33 @@ public class BuildTests {
     }
 
     @GameTest(maxTicks = 300)
+    public void scaffoldCentersOverTheSupportingBlockBeforeJumping(GameTestHelper h) {
+        int floor = 190;
+        GameTestSupport.keepLoaded(h, 0, 0, 8, 8);
+        BlockPos support = new BlockPos(5, floor, 5);
+        h.setBlock(support, Blocks.STONE);
+        CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, new Vec3(6.05, floor + 1, 5.5));
+        companion.inventory().addItem(new ItemStack(Items.DIRT, 1));
+        Scaffold scaffold = new Scaffold(companion);
+        int targetY = h.absolutePos(support.above(2)).getY();
+        Scaffold.State[] state = {Scaffold.State.CLIMBING};
+        h.runAfterDelay(3, () -> {
+            h.assertTrue(companion.onGround(), "the body must be standing on the edge");
+            h.assertTrue(
+                    companion.getBlockX() != h.absolutePos(support).getX(),
+                    "the centre of the body must be over the empty cell beside the support");
+            h.succeedWhen(() -> {
+                if (state[0] == Scaffold.State.CLIMBING) {
+                    state[0] = scaffold.pillarTo(targetY);
+                }
+                h.assertTrue(state[0] == Scaffold.State.READY, "scaffold: " + scaffold.failure());
+                h.assertTrue(companion.onGround(), "the companion has not landed on the pillar");
+                h.assertTrue(h.getBlockState(support.above()).is(Blocks.DIRT), "pillar is missing above the support");
+            });
+        });
+    }
+
+    @GameTest(maxTicks = 300)
     public void scaffoldPillarsWithoutTeleport(GameTestHelper h) {
         int floor = 180;
         GameTestSupport.platformAt(h, floor, 8);
@@ -2319,7 +2371,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 2000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2000)
     public void stepsAsideToPlace(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 3, 2, 3);
@@ -2340,7 +2392,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 4000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 4000)
     public void progressNotices(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -2363,7 +2415,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 3000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 3000)
     public void foreignChangeNotBroken(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -2388,7 +2440,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void gableRoofHasStandingGround(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         Blueprint house = generator("""
@@ -2406,7 +2458,7 @@ public class BuildTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void tallTowerStaysOutOfReach(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         Blueprint tower =
@@ -2421,7 +2473,7 @@ public class BuildTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 2000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2000)
     public void doorHalvesShareOrientation(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -2452,7 +2504,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest(maxTicks = 2000)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2000)
     public void bedHalvesMatchBlueprint(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -2492,7 +2544,7 @@ public class BuildTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void doorUpperHalfFollowsTheLower(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerLevel level = h.getLevel();
@@ -2505,7 +2557,7 @@ public class BuildTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void strayBedHeadMovesToTheBlueprint(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerLevel level = h.getLevel();
@@ -2519,7 +2571,7 @@ public class BuildTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void defaultOriginLeavesRoomForTheWholeStructure(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         var owner = GameTestSupport.mockPlayerAt(h, 4, 2, 4);

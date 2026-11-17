@@ -43,6 +43,10 @@ final class Facts {
     private boolean anvilAtHome;
     private boolean flintAndSteel;
     private int obsidian;
+    private boolean unlitAndExposed = true;
+    private boolean unlitInterior;
+    private int oakPlanks;
+    private int cobblestone;
     private final List<TradeRef> trades = new ArrayList<>();
     private boolean portalKnown;
     private long now = NOW;
@@ -260,6 +264,22 @@ final class Facts {
         return this;
     }
 
+    Facts oakPlanks(int count) {
+        oakPlanks = count;
+        return stock(StockKind.PLANKS, count);
+    }
+
+    Facts cobblestone(int count) {
+        cobblestone = count;
+        return stock(StockKind.COBBLE, count);
+    }
+
+    Facts underCover(boolean unlit) {
+        unlitAndExposed = false;
+        unlitInterior = unlit;
+        return this;
+    }
+
     AutonomyFacts build() {
         return new AutonomyFacts(
                 freeSlots,
@@ -294,7 +314,11 @@ final class Facts {
                         enchantingTableAtHome,
                         anvilAtHome,
                         flintAndSteel,
-                        obsidian),
+                        obsidian,
+                        unlitAndExposed,
+                        unlitInterior,
+                        oakPlanks,
+                        cobblestone),
                 trades,
                 portalKnown,
                 now);

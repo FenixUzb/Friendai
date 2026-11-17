@@ -46,7 +46,7 @@ public class SkinRenameTests {
         TestMenuRequests.handle(owner, TestMenuRequests.menuRequest(TestMenuRequests.Action.RENAME, name, ""));
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void rename_request_updates_book_and_entity(GameTestHelper h) {
         ServerPlayer owner = owner(h);
         CompanionEntity companion =
@@ -59,7 +59,7 @@ public class SkinRenameTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void rename_blank_is_rejected(GameTestHelper h) {
         ServerPlayer owner = owner(h);
         CompanionEntity companion =
@@ -73,7 +73,7 @@ public class SkinRenameTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void rename_over_32_chars_is_rejected(GameTestHelper h) {
         ServerPlayer owner = owner(h);
         CompanionManager.get(h.getLevel().getServer()).summon(owner);
@@ -85,7 +85,7 @@ public class SkinRenameTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void rename_with_formatting_code_is_rejected(GameTestHelper h) {
         ServerPlayer owner = owner(h);
         CompanionManager.get(h.getLevel().getServer()).summon(owner);
@@ -97,7 +97,7 @@ public class SkinRenameTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void rename_without_companion_changes_nothing(GameTestHelper h) {
         ServerPlayer owner = owner(h);
 
@@ -142,7 +142,7 @@ public class SkinRenameTests {
         return SkinHash.of(((SkinImage.Valid) SkinImage.validate(png)).png());
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void skin_upload_sets_entity_hash_and_persists(GameTestHelper h) {
         ServerPlayer owner = skinOwner(h);
         CompanionEntity companion =
@@ -158,7 +158,7 @@ public class SkinRenameTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void skin_upload_invalid_png_is_rejected(GameTestHelper h) {
         ServerPlayer owner = skinOwner(h);
         CompanionEntity companion =
@@ -174,7 +174,7 @@ public class SkinRenameTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void skin_upload_without_companion_is_ignored(GameTestHelper h) {
         ServerPlayer owner = skinOwner(h);
 
@@ -189,7 +189,7 @@ public class SkinRenameTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void skin_reset_clears_hash_and_store(GameTestHelper h) {
         ServerPlayer owner = skinOwner(h);
         CompanionEntity companion =
@@ -208,7 +208,7 @@ public class SkinRenameTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void skin_request_for_foreign_hash_is_ignored(GameTestHelper h) {
         ServerPlayer owner = skinOwner(h);
         CompanionManager.get(h.getLevel().getServer()).summon(owner);
@@ -223,7 +223,7 @@ public class SkinRenameTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void skin_request_for_current_hash_sends_png(GameTestHelper h) {
         ServerPlayer owner = skinOwner(h);
         CompanionManager.get(h.getLevel().getServer()).summon(owner);
@@ -243,7 +243,7 @@ public class SkinRenameTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void skin_survives_respawn(GameTestHelper h) {
         ServerPlayer owner = skinOwner(h);
         var manager = CompanionManager.get(h.getLevel().getServer());

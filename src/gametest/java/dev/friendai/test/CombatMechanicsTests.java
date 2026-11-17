@@ -24,7 +24,7 @@ import net.minecraft.world.phys.EntityHitResult;
 public class CombatMechanicsTests {
 
     /** PathfinderMob melee has no player critical-hit path; damage must be equal on the ground and while falling. */
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void mobMeleeHasNoCriticalBonus(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity attacker = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -55,7 +55,7 @@ public class CombatMechanicsTests {
     }
 
     /** A raised shield blocks damage from the front and leaves a rear hit unblocked. */
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void shieldBlocksByDirectionAfterBlockDelay(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 4, 2, 4);
@@ -98,7 +98,7 @@ public class CombatMechanicsTests {
     }
 
     /** A real splash projectile applies its effects; instant damage follows the vanilla undead rules. */
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void splashPotionEffectsAndAttribution(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -121,7 +121,7 @@ public class CombatMechanicsTests {
     }
 
     /** The bow path consumes exactly one ammunition item and the arrow entity exists. */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void bowConsumesOneArrowAndSpawnsOneProjectile(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

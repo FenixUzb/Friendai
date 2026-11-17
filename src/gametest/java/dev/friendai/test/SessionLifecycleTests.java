@@ -124,7 +124,7 @@ public class SessionLifecycleTests {
      * while the owner is away, so it must never be dropped on logout, and a returning owner must find the same brain
      * instead of a second one built over the same goal.
      */
-    @GameTest(maxTicks = 120)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 120)
     public void logoutKeepsTheSessionAndItsGoalEvidenceUntilTheOwnerReturns(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -340,7 +340,7 @@ public class SessionLifecycleTests {
         });
     }
 
-    @GameTest(maxTicks = 240)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 240)
     public void completedSneakingStepReleasesItsSneakScope(GameTestHelper h) {
         int floor = 300;
         GameTestSupport.platformAt(h, floor, 16);

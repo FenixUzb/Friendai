@@ -26,7 +26,7 @@ import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 
 public class ResourceObservationTests {
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void exposedOreObserved(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
@@ -45,7 +45,7 @@ public class ResourceObservationTests {
      * A block the companion broke is queued for a sight ray, and a staircase dig moves the eye immediately. Dropping
      * the queued ray because the eye moved would lose exactly the face the dig exposed.
      */
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void queuedSightingSurvivesAStep(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
@@ -66,7 +66,7 @@ public class ResourceObservationTests {
      * queue doing so — including the changed-block rays its own digging had queued in the same tick. The face a dig
      * just opened is exactly what must survive the restart.
      */
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void dugOpenBlockSurvivesTheSweepRestart(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
@@ -89,7 +89,7 @@ public class ResourceObservationTests {
      * never saw any of it. The ray a dig queues for the face it just exposed must make room for itself instead of
      * being dropped behind a full queue.
      */
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void digFaceIsQueuedBehindAFullSweepBacklog(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
@@ -114,7 +114,7 @@ public class ResourceObservationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 20)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 20)
     public void ownBreakPublishesOnlyLoadedFaceNeighborsWithoutSightQueue(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 3);
@@ -177,7 +177,7 @@ public class ResourceObservationTests {
      * the newest sweep was never reached; the companion stood in the stone it had dug and saw nothing. A new sweep
      * waits for the one in flight, and the next interval schedules again once it is done.
      */
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void aSecondSweepWaitsForTheOneInFlight(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
@@ -197,7 +197,7 @@ public class ResourceObservationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 40)
     public void sealedCaveOreUnknown(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
@@ -223,7 +223,7 @@ public class ResourceObservationTests {
      * bush it passed, and must not report a bush behind a wall. Neither bush sits on a cell a sweep aims at, so only
      * a ray that crosses the bush's outline can see it.
      */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void theSweepSeesAPlantItPassesButNotOneBehindAWall(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         for (int x = 0; x < 16; x++) {
@@ -262,7 +262,7 @@ public class ResourceObservationTests {
     }
 
     /** A pit under a dirt ceiling is still worth looking into: the walls beside the companion are what its eyes reach. */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void aPocketUnderACeilingShowsItsWalls(GameTestHelper h) {
         GameTestSupport.platformAt(h, 120, 16);
         for (int x = 2; x <= 13; x++) {
@@ -286,7 +286,7 @@ public class ResourceObservationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 60)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 60)
     public void newFaceLearnedOnlyAfterBreak(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
@@ -309,7 +309,7 @@ public class ResourceObservationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 60)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 60)
     public void glassVisibleTintedGlassOccluded(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
@@ -330,7 +330,7 @@ public class ResourceObservationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 40)
     public void partialShapeOccludesOnlyIntersectedSamples(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
@@ -350,7 +350,7 @@ public class ResourceObservationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 40)
     public void terrainSamplerNeverReadsAnUnloadedColumn(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         var owner =
@@ -378,7 +378,7 @@ public class ResourceObservationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 20)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 20)
     public void unloadedRayDoesNotLoadChunk(GameTestHelper h) {
         GameTestSupport.platform(h, 8);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -391,7 +391,7 @@ public class ResourceObservationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 30)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 30)
     public void hiddenResourceAbsentFromWorldFactsAndStations(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 3);
@@ -441,7 +441,7 @@ public class ResourceObservationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void followingLearnsCoalWithoutBrainTurn(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 3);
@@ -477,7 +477,7 @@ public class ResourceObservationTests {
         });
     }
 
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void ownerlessCompanionRetainsOnlyItsCurrentSightEvidence(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
@@ -516,7 +516,7 @@ public class ResourceObservationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void schedulerObservesLoadedOwnerlessCompanion(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
@@ -545,7 +545,7 @@ public class ResourceObservationTests {
         });
     }
 
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 80)
     public void directSightRecordsAnOpenDescendingCaveEntrance(GameTestHelper h) {
         GameTestSupport.keepLoaded(h, -2, -2, 20, 20);
         var owner = GameTestSupport.mockPlayerAt(h, 7, 14, 8);
@@ -607,7 +607,7 @@ public class ResourceObservationTests {
         });
     }
 
-    @GameTest(maxTicks = 40)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 40)
     public void sealedUndergroundWallDoesNotCreateCaveEntranceEvidence(GameTestHelper h) {
         GameTestSupport.keepLoaded(h, -2, -2, 20, 20);
         var owner = GameTestSupport.mockPlayerAt(h, 7, 14, 8);
@@ -639,15 +639,16 @@ public class ResourceObservationTests {
 
     // Three profiles of 1,200 ticks are the test's own work; a server that misses a batch boundary here and there
     // (a loaded runner, the world still loading) spends the old 3,700-tick budget before the third profile ends.
-    @GameTest(maxTicks = 4400)
+    @GameTest(structure = GameTestArenas.ARENA_32, maxTicks = 4400)
     public void manyCompanionsRespectGlobalObservationCaps(GameTestHelper h) {
         GameTestSupport.platform(h, 32);
         var server = h.getLevel().getServer();
-        var state = GameTestSupport.runtime(server);
+        var horizon = GameTestSupport.runtime(server).chunkLoader().expeditionHorizon();
         List<CompanionEntity> companions = new ArrayList<>();
         for (int x = 0; x < 4; x++)
             for (int z = 0; z < 4; z++) {
                 CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2 + x * 3, 2, 2 + z * 3);
+                companion.setOwner(java.util.UUID.randomUUID());
                 companions.add(companion);
             }
         int[] profileSizes = {1, 4, 16};
@@ -674,11 +675,10 @@ public class ResourceObservationTests {
                 h.assertTrue(
                         scheduler[0].observer(companion).queuedJobs() <= 512,
                         "companion observation queue exceeded its cap");
+                h.assertFalse(
+                        horizon.holdsLease(companion.ownerUuid()), "observation work requested expedition chunks");
             }
             metrics.completedByCompanion().forEach((id, rays) -> completed.merge(id, rays, Integer::sum));
-            h.assertTrue(
-                    state.chunkLoader().expeditionHorizon().activeLeases() == 0,
-                    "observation work must not request expedition chunks");
             h.assertFalse(h.getLevel().hasChunkAt(far), "observation loaded the distant sentinel chunk");
             totals[0] += metrics.scheduledRays();
             totals[1] += metrics.completedRays();
@@ -707,7 +707,7 @@ public class ResourceObservationTests {
         });
     }
 
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 80)
     public void observerHonoursConfiguredRadius(GameTestHelper h) {
         GameTestSupport.platform(h, 24);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
@@ -725,7 +725,7 @@ public class ResourceObservationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void recentEvidenceSurvivesTicks(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
@@ -759,7 +759,7 @@ public class ResourceObservationTests {
         });
     }
 
-    @GameTest(maxTicks = 80)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 80)
     public void replacedBlockDropsOutOfRecentEvidence(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 5);
@@ -789,7 +789,7 @@ public class ResourceObservationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 20)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 20)
     public void unloadingCompanionReleasesItsTransientSight(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 3);
@@ -840,7 +840,7 @@ public class ResourceObservationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_32, maxTicks = 100)
     public void focusedLookKeepsScanningBounded(GameTestHelper h) {
         GameTestSupport.platform(h, 32);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -875,7 +875,7 @@ public class ResourceObservationTests {
         return scheduler;
     }
 
-    @GameTest(maxTicks = 20)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 20)
     public void ownSuccessfulBreakRemovesExactlyOneMember(GameTestHelper h) {
         GameTestSupport.platform(h, 10);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 3);
@@ -899,7 +899,10 @@ public class ResourceObservationTests {
      * Closes and rebuilds the server runtime to simulate a restart, so it must not share a batch with any other test:
      * every test in its batch would lose the runtime it already holds. Its own test environment gives it its own batch.
      */
-    @GameTest(maxTicks = 20, environment = "friendai-gametest:restart_resource_observation")
+    @GameTest(
+            structure = GameTestArenas.ARENA_16,
+            maxTicks = 20,
+            environment = "friendai-gametest:restart_resource_observation")
     public void dismissAndReloadRetainsKnowledge(GameTestHelper h) {
         GameTestSupport.platform(h, 10);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 3);
@@ -922,7 +925,7 @@ public class ResourceObservationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 20)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 20)
     public void dimensionChangeDropsPendingObservation(GameTestHelper h) {
         GameTestSupport.platform(h, 10);
         var owner = GameTestSupport.mockPlayerAt(h, 2, 2, 3);

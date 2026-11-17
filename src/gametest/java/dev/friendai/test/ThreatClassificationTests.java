@@ -10,7 +10,7 @@ import net.minecraft.world.entity.monster.zombie.ZombifiedPiglin;
 
 /** The two threat queries: what may be attacked, and what must only be avoided. */
 public class ThreatClassificationTests {
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void wardenIsDangerNotTarget(GameTestHelper h) {
         CompanionEntity companion = setup(h, 80);
         var warden = h.spawn(EntityTypes.WARDEN, 5, 81, 5);
@@ -27,7 +27,7 @@ public class ThreatClassificationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void aLonePiglinIsNeutralUntilProvoked(GameTestHelper h) {
         CompanionEntity companion = setup(h, 82);
         ZombifiedPiglin piglin = h.spawn(EntityTypes.ZOMBIFIED_PIGLIN, 5, 83, 5);
@@ -49,7 +49,7 @@ public class ThreatClassificationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void aPiglinGroupIsAvoided(GameTestHelper h) {
         CompanionEntity companion = setup(h, 84);
         ZombifiedPiglin first = h.spawn(EntityTypes.ZOMBIFIED_PIGLIN, 4, 85, 4);
@@ -67,7 +67,7 @@ public class ThreatClassificationTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void aZombieIsAnOrdinaryTarget(GameTestHelper h) {
         CompanionEntity companion = setup(h, 86);
         var zombie = h.spawn(EntityTypes.ZOMBIE, 5, 87, 5);

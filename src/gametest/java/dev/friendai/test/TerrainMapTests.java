@@ -8,6 +8,7 @@ import dev.friendai.server.cartography.TerrainSamplerService;
 import dev.friendai.server.runtime.ServerRuntime;
 import java.util.UUID;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,9 +16,9 @@ import net.minecraft.server.level.ServerPlayer;
 /** The terrain sampler records only already-loaded columns and stays inside its per-tick budget. */
 public class TerrainMapTests {
     /** A route walked in short samples still accumulates, because the comparison point is the last recorded end. */
-    @GameTest(maxTicks = 700)
+    @GameTest(structure = GameTestArenas.ARENA_LONG_128, maxTicks = 700)
     public void walkingAccumulatesRoadSegments(GameTestHelper h) {
-        GameTestSupport.platform(h, 16);
+        GameTestSupport.corridor(h, 1, 120, 5);
         GameTestSupport.keepLoaded(h, -16, -16, 120, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
         ServerRuntime runtime = GameTestSupport.runtime(h.getLevel().getServer());
@@ -27,11 +28,22 @@ public class TerrainMapTests {
         h.onEachTick(() -> runtime.terrainSampler().tick(runtime));
         for (int step = 1; step <= 24; step++) {
             int x = 2 + step * 4;
-            h.runAfterDelay(step * 20, () -> companion.snapTo(x, 2, 2));
+            BlockPos waypoint = h.absolutePos(new BlockPos(x, 2, 2));
+            h.runAfterDelay(
+                    step * 20, () -> companion.snapTo(waypoint.getX() + 0.5, waypoint.getY(), waypoint.getZ() + 0.5));
         }
         h.runAfterDelay(24 * 20 + 40, () -> {
             var roads = runtime.terrainSampler().grid(id).roads();
             h.assertTrue(!roads.isEmpty(), "a walked route must be recorded");
+            BlockPos first = h.absolutePos(new BlockPos(0, 2, 2));
+            BlockPos last = h.absolutePos(new BlockPos(119, 2, 2));
+            h.assertTrue(
+                    roads.stream()
+                            .allMatch(road -> road.fromX() >= first.getX()
+                                    && road.fromX() <= last.getX()
+                                    && road.toX() >= first.getX()
+                                    && road.toX() <= last.getX()),
+                    "the route must stay in its test arena: " + roads);
             int total = roads.stream()
                     .mapToInt(
                             road -> (int) Math.round(Math.hypot(road.toX() - road.fromX(), road.toZ() - road.fromZ())))
@@ -41,7 +53,7 @@ public class TerrainMapTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void samplerRecordsLoadedColumnsWithinBudget(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);

@@ -63,13 +63,12 @@ public class GoalTickTests {
      * minute later the goal's nudge woke the planner and the companion went back to chopping. A stop order now holds
      * the nudges until new work is given. Its own environment keeps the server-wide autonomy setting to itself.
      */
-    @GameTest(maxTicks = 2_400, environment = "friendai-gametest:goal_tick_stop")
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 2_400, environment = "friendai-gametest:goal_tick_stop")
     public void a_stop_order_holds_goal_nudges_until_new_work(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
         var server = h.getLevel().getServer();
         ServerRuntime state = GameTestSupport.runtime(server);
-        ServerConfig original = state.config();
         state.applyConfig(fastTicks("assistive"));
         CompanionSessions brains = state.sessions();
         Recorder recorder = new Recorder();
@@ -82,13 +81,13 @@ public class GoalTickTests {
                 .bind(c)
                 .execute(stop, new Caller(player.getUUID(), "Steve", AccessLevel.OWNER));
         h.assertFalse(stopped.error(), "stop failed: " + stopped.content());
-        h.runAfterDelay(600, () -> {
+        int intervalTicks = state.config().agent.goalTickSec * 20;
+        h.runAfterDelay(intervalTicks + 20, () -> {
             h.assertFalse(recorder.sawNudge(), "a stop order must hold the goal's nudges; saw " + recorder.userLines);
             // New work released the hold: once it ends, the unfinished goal is nudged again.
             c.executionCoordinator().start(new dev.friendai.features.interaction.minecraft.task.WaitTask(5), "wait");
             h.succeedWhen(() -> {
                 h.assertTrue(recorder.sawNudge(), "new work must release the hold; saw " + recorder.userLines);
-                state.applyConfig(original);
             });
         });
     }
@@ -97,13 +96,15 @@ public class GoalTickTests {
      * One test for both levels: the autonomy setting is server-wide, so two tests flipping it in parallel would
      * see each other's setting. First an assistive companion is nudged, then a passive one is not.
      */
-    @GameTest(maxTicks = 1_200)
+    @GameTest(
+            structure = GameTestArenas.ARENA_16,
+            maxTicks = 2_400,
+            environment = "friendai-gametest:goal_tick_autonomy")
     public void assistive_companion_is_nudged_and_passive_one_is_not(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
         var server = h.getLevel().getServer();
         ServerRuntime state = GameTestSupport.runtime(server);
-        ServerConfig original = state.config();
         state.applyConfig(fastTicks("assistive"));
         CompanionSessions brains = state.sessions();
         Recorder recorder = new Recorder();
@@ -114,7 +115,8 @@ public class GoalTickTests {
         h.assertFalse(goalResult.error(), "set_goal failed: " + goalResult.content());
         h.assertTrue(
                 state.goals().board(player.getUUID()).primary().isPresent(), "set_goal did not persist a primary goal");
-        h.runAfterDelay(600, () -> {
+        int intervalTicks = state.config().agent.goalTickSec * 20;
+        h.runAfterDelay(intervalTicks + 40, () -> {
             var runner = c.executionCoordinator();
             var session = brains.find(player.getUUID()).orElse(null);
             var primary = state.goals().board(player.getUUID()).primary().orElseThrow();
@@ -137,8 +139,8 @@ public class GoalTickTests {
                             + ", levelTicks=" + h.getLevel().getGameTime());
             state.applyConfig(fastTicks("passive"));
             int before = recorder.userLines.size();
-            h.runAfterDelay(450, () -> {
-                state.applyConfig(original);
+            int passiveIntervalTicks = state.config().agent.goalTickSec * 20;
+            h.runAfterDelay(passiveIntervalTicks * 2 + 20, () -> {
                 long nudgesAfter = recorder.userLines.subList(before, recorder.userLines.size()).stream()
                         .filter(line -> line.contains("is not finished"))
                         .count();

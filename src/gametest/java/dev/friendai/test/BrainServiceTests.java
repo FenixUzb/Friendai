@@ -145,7 +145,7 @@ public class BrainServiceTests {
 
     // The brain waits brain.cooldownMs (500 ms of real time) between turns, while a gametest tick is far shorter
     // than 50 ms: 900 ticks is only just over two cooldowns, so leave a wide budget.
-    @GameTest(maxTicks = 3600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 3600)
     public void toolCallStartsQueuedTaskWithoutPerJobBrainEvent(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos log = new BlockPos(4, 2, 2);
@@ -276,7 +276,7 @@ public class BrainServiceTests {
         });
     }
 
-    @GameTest
+    @GameTest(environment = "friendai-gametest:brain_reload_provider")
     public void reloadSwapsProvider(GameTestHelper h) {
         var server = h.getLevel().getServer();
         ServerRuntime state = GameTestSupport.runtime(server);

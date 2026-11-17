@@ -146,7 +146,7 @@ public class ExcavationTests {
         }
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 300)
     public void miningRetriesReportOwnedRefusalFacts(GameTestHelper h) {
         CompanionEntity c = companion(h);
         c.inventory().clearContent();
@@ -189,7 +189,7 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 300)
     public void successfulMiningHasNoRetryDiagnostic(GameTestHelper h) {
         CompanionEntity c = companion(h);
         BlockPos cell = new BlockPos(4, 2, 2);
@@ -212,7 +212,7 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 1600)
     public void boxMinesEveryCellAndCollectsDrops(GameTestHelper h) {
         CompanionEntity c = companion(h);
         BlockPos[] cells = {new BlockPos(4, 2, 2), new BlockPos(5, 2, 2), new BlockPos(4, 2, 3), new BlockPos(5, 2, 3)};
@@ -241,15 +241,18 @@ public class ExcavationTests {
      * the shaft was the air at its feet, so only one layer of earth came out. A shaft started by "near" now begins with
      * the ground under the feet.
      */
-    @GameTest(maxTicks = 2400, environment = "friendai-gametest:excavate_full_pit")
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 2400, environment = "friendai-gametest:excavate_full_pit")
     public void aPitDugFromWhereTheCompanionStandsGoesTheFullDepth(GameTestHelper h) {
         CompanionEntity c = companion(h);
         for (int x = 0; x <= 7; x++) {
             for (int z = 0; z <= 7; z++) {
                 h.setBlock(x, 1, z, Blocks.COARSE_DIRT);
                 h.setBlock(x, 0, z, Blocks.COARSE_DIRT);
+                h.setBlock(x, -1, z, Blocks.STONE);
             }
         }
+        Result result = new Result();
+        c.executionCoordinator().setEventSink(result);
         var tools = GameTestToolRegistry.create(c, () -> 32).bind(c);
         String json = "{\"shape\":\"shaft\",\"run\":{\"direction\":\"down\",\"length\":2,\"width\":3,\"height\":3},"
                 + "\"start\":{\"near\":\"self\"}}";
@@ -260,21 +263,23 @@ public class ExcavationTests {
                 json,
                 null));
         h.assertTrue(!started.error(), "excavate starts: " + started.content());
-        h.succeedWhen(() -> {
-            c.executionCoordinator().tick();
-            int left = 0;
+        TaskTrace.of(h, c.executionCoordinator(), c).succeedWhen(() -> {
+            List<BlockPos> left = new ArrayList<>();
             for (int x = 2; x <= 4; x++) {
                 for (int z = 2; z <= 4; z++) {
                     for (int y = 0; y <= 1; y++) {
-                        if (h.getBlockState(new BlockPos(x, y, z)).is(Blocks.COARSE_DIRT)) left++;
+                        BlockPos pos = new BlockPos(x, y, z);
+                        if (h.getBlockState(pos).is(Blocks.COARSE_DIRT)) {
+                            left.add(pos);
+                        }
                     }
                 }
             }
-            h.assertValueEqual(left, 0, "earth left in the pit's two layers");
+            h.assertTrue(left.isEmpty(), "earth left in the pit's two layers: " + left + "; " + result.summary);
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 1600)
     public void tunnelLeavesAWalkableCorridor(GameTestHelper h) {
         CompanionEntity c = companion(h);
         BlockPos[] cells = {
@@ -311,7 +316,7 @@ public class ExcavationTests {
      * ever opened. This is the shape an owner reported as a low staircase the companion could not walk down and had to
      * mine from the side.
      */
-    @GameTest(maxTicks = 4000)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 4000)
     public void stairLeavesAWalkablePassage(GameTestHelper h) {
         int base = 240;
         int height = ExcavationGeometry.MIN_STAIR_HEIGHT;
@@ -379,7 +384,7 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 1200)
     public void containersAreSkippedByDefault(GameTestHelper h) {
         CompanionEntity c = companion(h);
         BlockPos stone = new BlockPos(4, 2, 2);
@@ -402,7 +407,7 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 200)
     public void missingToolDoesNotCompleteASolidRegion(GameTestHelper h) {
         CompanionEntity c = companion(h);
         c.inventory().clearContent();
@@ -420,7 +425,7 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 400)
     public void unbreakableFinalBatchDoesNotCompleteTheRegion(GameTestHelper h) {
         CompanionEntity c = companion(h);
         BlockPos target = new BlockPos(4, 2, 2);
@@ -437,7 +442,10 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 400, environment = "friendai-gametest:excavate_protected_batch")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = 400,
+            environment = "friendai-gametest:excavate_protected_batch")
     public void protectedFinalBatchDoesNotCompleteTheRegion(GameTestHelper h) {
         CompanionEntity c = companion(h);
         BlockPos target = new BlockPos(4, 2, 2);
@@ -455,7 +463,7 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 200)
     public void alreadyEmptyShaftCompletesWithoutInventingMining(GameTestHelper h) {
         CompanionEntity c = companion(h);
         BlockPos low = new BlockPos(4, 2, 2);
@@ -472,7 +480,7 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 600)
     public void undergroundSearchTriesAnotherHeadingAfterALiveDescentRefusal(GameTestHelper h) {
         CompanionEntity c = companion(h);
         for (int x = 0; x < 12; x++) {
@@ -498,7 +506,7 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 1600)
     public void shaftRefusesTheCellAboveLava(GameTestHelper h) {
         CompanionEntity c = companion(h);
         h.setBlock(new BlockPos(4, 1, 2), Blocks.LAVA);
@@ -531,7 +539,7 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 1200)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 1200)
     public void veinFalseMinesOnlyThePointedBlock(GameTestHelper h) {
         CompanionEntity c = companion(h);
         BlockPos pointed = new BlockPos(4, 2, 2);
@@ -554,7 +562,7 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 1600)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 1600)
     public void veinNeighbourAboveLavaIsRefused(GameTestHelper h) {
         CompanionEntity c = companion(h);
         BlockPos pointed = new BlockPos(4, 2, 2);
@@ -632,7 +640,7 @@ public class ExcavationTests {
         return new ExcavateTask(spec);
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 400)
     public void aStalledHorizontalRegionDoesNotDigAnUnrelatedShaft(GameTestHelper h) {
         CompanionEntity c = companion(h);
         h.setBlock(new BlockPos(2, 0, 2), Blocks.STONE);
@@ -651,7 +659,7 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 400)
     public void excavateFallbackDigsBelowAPlanningStall(GameTestHelper h) {
         CompanionEntity c = companion(h);
         h.setBlock(new BlockPos(2, 0, 2), Blocks.STONE);
@@ -675,7 +683,7 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 400)
     public void excavateFallbackFailsWhenTheDescentIsRefused(GameTestHelper h) {
         CompanionEntity c = companion(h);
         h.setBlock(new BlockPos(2, 1, 2), Blocks.BEDROCK);
@@ -696,7 +704,7 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 400)
     public void excavateFallbackRefusesAnUnsafeLanding(GameTestHelper h) {
         CompanionEntity c = companion(h);
         h.setBlock(new BlockPos(2, 0, 2), Blocks.LAVA);
@@ -719,7 +727,7 @@ public class ExcavationTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 400)
     public void excavateFallbackRefusesAContainerSupport(GameTestHelper h) {
         CompanionEntity c = companion(h);
         // A chest is not a full cube: its 0.875 collision top drops blockPosition() into the cell above it, so the
@@ -755,7 +763,7 @@ public class ExcavationTests {
      * fourth cell would be dug, and the test would fail on the still-solid assertion instead of waiting out its budget.
      * The companion must also stay over that column, or a raised cap could pass by digging somewhere else.
      */
-    @GameTest(maxTicks = 2400)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 2400)
     public void excavateFallbackStopsAtTheDescentCap(GameTestHelper h) {
         CompanionEntity c = companion(h);
         for (int y = 0; y >= -3; y--) {

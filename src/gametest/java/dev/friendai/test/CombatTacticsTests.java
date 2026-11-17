@@ -16,7 +16,7 @@ import net.minecraft.world.item.Items;
 /** Melee spacing, weapon choice and action-time permission rechecks. */
 public class CombatTacticsTests {
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void axeOnlyCombatUsesAxe(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -41,7 +41,7 @@ public class CombatTacticsTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void weaponSwapKeepsOneCopyOnStop(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -66,7 +66,7 @@ public class CombatTacticsTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void targetBecomingIneligibleBeforeMeleeHitIsNotHit(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 2, 2, 2);
@@ -88,7 +88,7 @@ public class CombatTacticsTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void pursuitStopsAtConfiguredLimit(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

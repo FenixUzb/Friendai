@@ -402,7 +402,7 @@ const CODE = {
   "~ElevenLabs": ["engine/src/main/java/dev/friendai/features/speech/tts/ElevenLabsTtsProtocol.java"],
   "~Yandex SpeechKit": ["engine/src/main/java/dev/friendai/features/speech/tts/YandexTtsProtocol.java"],
   "~Spatial audio": ["engine/src/main/java/dev/friendai/features/speech/SpatialAudio.java"],
-  "~Voice chat output": ["src/client/java/dev/friendai/client/voicechat/VoiceChatPlayback.java", "engine/src/main/java/dev/friendai/features/speech/tts/VoiceFrames.java"],
+  "~Voice chat": ["src/client/java/dev/friendai/client/voicechat/VoiceChatPlayback.java", "engine/src/main/java/dev/friendai/features/speech/tts/VoiceFrames.java"],
   "~Stop speaking key": ["src/client/java/dev/friendai/client/tts/SpeechKeybind.java"],
   "~Off by default": ["engine/src/main/java/dev/friendai/infrastructure/config/ClientConfig.java"],
   "~Overview": ["src/client/java/dev/friendai/client/ui/ControlTab.java"],

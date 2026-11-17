@@ -28,7 +28,8 @@ Java 25 is required. If needed, set `JAVA_HOME` to a JDK 25 before invoking Grad
 ```
 
 The full command table, the test-scope rules, the formatter invocation and the prompt-golden workflow live in
-`AGENTS.md` ("Commands", "Testing", "Formatting"). Run only the group covering the change; CI owns the full gate.
+`AGENTS.md` ("Commands", "Testing", "Formatting"). Start with the group covering the change. Run the full suite
+locally before pushing broad gameplay changes or fixes for recurring failures across classes. CI verifies the final revision.
 Compilation is not a substitute for running a GameTest when a world behavior changed.
 
 ## Common changes
@@ -116,21 +117,16 @@ registration checks. The `CI gate` job is required; the `Commit lint gate` check
 manual checks complete unless they were performed; record remaining platform/provider/microphone checks in
 `MANUAL_CHECKLIST.md`.
 
-Set `mod_version` in `gradle.properties` according to the sizing rules in `AGENTS.md`. Release tags are the
-maintainer's call; do not create tags or publish a release unless asked.
+Set `mod_version` in `gradle.properties` according to the sizing rules in `AGENTS.md`.
 
 ## Releases
 
-A release is one tag, one jar and one checksum. The maintainer does the tagging; the workflow verifies and publishes.
+Merge the version bump and its nonempty `CHANGELOG.md` section in the same push to `main`. After `CI gate` passes,
+GitHub Actions verifies that run's jar, tags the tested commit `vX.Y.Z`, and publishes `friendai-X.Y.Z.jar` and
+`friendai-X.Y.Z.jar.sha256` with the notes for that version. Retry a transient failure from its original CI run. If the notes need a
+correction, merge it with a new version bump or manually tag the corrected commit after its CI passes.
+If an existing tag points to another commit, the run fails.
 
-1. `main` is green and the `CHANGELOG.md` section for the version is written.
-2. `./gradlew assemble`, then `scripts/check-release.sh vX.Y.Z` — it checks the version format, the tag, the jar name,
-   the `fabric.mod.json` version inside the jar and any sidecar checksum, and prints the SHA-256.
-3. `git tag vX.Y.Z && git push origin vX.Y.Z` runs `.github/workflows/release.yml`: it refuses a tag that does not match
-   `mod_version`, a commit that is not an ancestor of `origin/main`, or a commit without a green CI run, builds with
-   `./gradlew clean build`, verifies the artifact with the same script, and publishes (or idempotently replaces) the
-   release with `friendai-X.Y.Z.jar` and `friendai-X.Y.Z.jar.sha256`. Release notes are the changelog section, or the
-   generated notes when there is none.
-4. To exercise the pipeline without publishing, dispatch the workflow manually with a tag and `dry_run: true`: it builds,
-   verifies and uploads the jar as an artifact only. The workflow never creates a tag and never edits
-   `gradle.properties`; a version bump is a normal commit on `main`.
+To verify a tagged version, dispatch the Release workflow with the tag and `dry_run: true`. It builds and uploads
+the verified files as an Actions artifact. To check a local jar, run `./gradlew assemble` and then
+`scripts/check-release.sh vX.Y.Z`. Manual tagging and publication are maintainer actions.

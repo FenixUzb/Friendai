@@ -138,7 +138,11 @@ public class LiveCompanionTests {
 
     // ---- movement ----------------------------------------------------------------------------------------------
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_01")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_01")
     public void follow(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -154,7 +158,11 @@ public class LiveCompanionTests {
                         "distance to owner " + round(live.ownerDistance())));
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_02")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_02")
     public void stay(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -176,7 +184,11 @@ public class LiveCompanionTests {
                 });
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_03")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_03")
     public void comeHere(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -197,7 +209,11 @@ public class LiveCompanionTests {
 
     // ---- gathering ---------------------------------------------------------------------------------------------
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_04")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_04")
     public void chopWood(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -212,7 +228,11 @@ public class LiveCompanionTests {
                         live.carried(Items.OAK_LOG) >= 3, "oak logs carried " + live.carried(Items.OAK_LOG)));
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_05")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_05")
     public void deadBushes(GameTestHelper h) throws Exception {
         BlockPos[] bushes = {
             new BlockPos(7, 2, 5),
@@ -242,7 +262,11 @@ public class LiveCompanionTests {
                 });
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_06")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_06")
     public void digDirt(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -263,7 +287,11 @@ public class LiveCompanionTests {
                 live -> new Verdict(live.carried(Items.DIRT) >= 5, "dirt carried " + live.carried(Items.DIRT)));
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_07")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_07")
     public void pickFlowers(GameTestHelper h) throws Exception {
         BlockPos[] flowers = {
             new BlockPos(9, 2, 9), new BlockPos(12, 2, 8), new BlockPos(8, 2, 13), new BlockPos(14, 2, 12)
@@ -294,7 +322,11 @@ public class LiveCompanionTests {
                 });
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_08")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_08")
     public void harvestWheat(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -323,7 +355,11 @@ public class LiveCompanionTests {
                 live -> new Verdict(live.carried(Items.WHEAT) >= 3, "wheat carried " + live.carried(Items.WHEAT)));
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_09")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_09")
     public void pickUpApples(GameTestHelper h) throws Exception {
         double[][] spots = {{9, 2, 6}, {11, 2, 9}, {7, 2, 11}, {13, 2, 5}, {10, 2, 12}};
         scenario(
@@ -348,7 +384,11 @@ public class LiveCompanionTests {
 
     // ---- mining ------------------------------------------------------------------------------------------------
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_10")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_10")
     public void cobbleWithPickaxe(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -367,7 +407,11 @@ public class LiveCompanionTests {
                         "cobblestone carried " + live.carried(Items.COBBLESTONE)));
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_11")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_11")
     public void stoneWithoutPickaxe(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -386,7 +430,11 @@ public class LiveCompanionTests {
                         "cobblestone carried " + live.carried(Items.COBBLESTONE) + "; " + live.inventory()));
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_12")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_12")
     public void visibleIron(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -410,7 +458,11 @@ public class LiveCompanionTests {
                         "raw iron carried " + live.carried(Items.RAW_IRON)));
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_13")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_13")
     public void digAPit(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -436,7 +488,11 @@ public class LiveCompanionTests {
 
     // ---- crafting ----------------------------------------------------------------------------------------------
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_14")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_14")
     public void craftPlanks(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -451,7 +507,11 @@ public class LiveCompanionTests {
                         live.carried(Items.OAK_PLANKS) >= 4, "oak planks carried " + live.carried(Items.OAK_PLANKS)));
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_15")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_15")
     public void craftTable(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -468,7 +528,11 @@ public class LiveCompanionTests {
                 });
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_16")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_16")
     public void woodenPickaxeFromScratch(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -487,7 +551,11 @@ public class LiveCompanionTests {
 
     // ---- inventory ---------------------------------------------------------------------------------------------
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_17")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_17")
     public void inventoryQuestion(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -516,7 +584,11 @@ public class LiveCompanionTests {
                 });
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_18")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_18")
     public void giveBread(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -534,7 +606,11 @@ public class LiveCompanionTests {
                 });
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_19")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_19")
     public void storeInChest(GameTestHelper h) throws Exception {
         BlockPos chest = new BlockPos(8, 2, 4);
         scenario(
@@ -561,7 +637,11 @@ public class LiveCompanionTests {
                 });
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_20")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_20")
     public void eat(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -582,7 +662,11 @@ public class LiveCompanionTests {
 
     // ---- building and combat -----------------------------------------------------------------------------------
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_21")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_21")
     public void placeTorches(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -599,7 +683,11 @@ public class LiveCompanionTests {
                 });
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_22")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_22")
     public void smallHouse(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -619,7 +707,11 @@ public class LiveCompanionTests {
                 });
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_23")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_23")
     public void killZombie(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -641,7 +733,11 @@ public class LiveCompanionTests {
 
     // ---- honesty -----------------------------------------------------------------------------------------------
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_24")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_24")
     public void diamondsNearby(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -663,7 +759,11 @@ public class LiveCompanionTests {
                 });
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_25")
+    @GameTest(
+            structure = GameTestArenas.ARENA_24,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_25")
     public void cactusThenHandItOver(GameTestHelper h) throws Exception {
         BlockPos base = new BlockPos(12, 2, 9);
         scenario(

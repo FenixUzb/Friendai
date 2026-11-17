@@ -32,7 +32,7 @@ public class CombatCoordinationTests {
         return texts;
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void retreatNoticeEmittedOnce(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 7, 2, 7);
@@ -50,7 +50,7 @@ public class CombatCoordinationTests {
         });
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void settingsChangeClearsUseAndResumesTask(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 3, 2, 3);
@@ -78,7 +78,7 @@ public class CombatCoordinationTests {
     }
 
     /** Many companions and threats must stay bounded; this records the tick cost of a dense scene. */
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void manyCompanionsStayWithinTickBudget(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         List<CompanionEntity> companions = new CopyOnWriteArrayList<>();

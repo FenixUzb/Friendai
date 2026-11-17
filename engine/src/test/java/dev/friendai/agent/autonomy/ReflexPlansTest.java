@@ -3,6 +3,7 @@ package dev.friendai.agent.autonomy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import dev.friendai.features.construction.blueprint.BlueprintParser;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -54,27 +55,50 @@ class ReflexPlansTest {
 
     @Test
     void shelterWithoutHomeNeverFollowsTheOwner() {
-        var online = ReflexPlans.plan(
+        assertTrue(ReflexPlans.plan(
                         need(NeedKind.SHELTER),
-                        Facts.base().home("home", 40).otherDimension().build(),
+                        Facts.base().dark().home("home", 40).otherDimension().build(),
                         S)
-                .orElseThrow();
-        assertEquals(List.of("light_area", "stay"), tools(online));
+                .isEmpty());
+        assertEquals(
+                List.of("light_area"),
+                tools(ReflexPlans.plan(
+                                need(NeedKind.SHELTER),
+                                Facts.base()
+                                        .underCover(true)
+                                        .stock(StockKind.TORCHES, 1)
+                                        .build(),
+                                S)
+                        .orElseThrow()));
         var survive = ReflexPlans.plan(
                         need(NeedKind.SURVIVE), Facts.base().ownerOffline().build(), S)
                 .orElseThrow();
-        assertEquals(List.of("light_area", "eat", "stay"), tools(survive));
+        assertEquals(List.of("eat", "stay"), tools(survive));
+    }
+
+    @Test
+    void lowHealthWithoutHomeCanEatWithoutTorches() {
+        var steps = ReflexPlans.plan(need(NeedKind.SURVIVE), Facts.base().dark().build(), S)
+                .orElseThrow();
+        assertEquals(List.of("eat", "stay"), tools(steps));
     }
 
     @Test
     void nightShelterBuildsIfMaterialsAreAvailable() {
         var steps = ReflexPlans.plan(
                         need(NeedKind.SHELTER),
-                        Facts.base().dark().stock(StockKind.LOGS, 8).build(),
+                        Facts.base().dark().cobblestone(80).build(),
                         S)
                 .orElseThrow();
         assertEquals(List.of("build_structure"), tools(steps));
-        assertTrue(steps.get(0).args().get("generator").getAsString().contains("\"type\":\"house\""));
+        String spec = steps.getFirst().args().get("blueprint").getAsString();
+        var blueprint = BlueprintParser.parse(spec, state -> true).blueprint().orElseThrow();
+        var solids = blueprint.blocks().stream()
+                .filter(block -> !block.state().equals("minecraft:air"))
+                .toList();
+        assertEquals(80, solids.size());
+        assertEquals(4, blueprint.height());
+        assertTrue(solids.stream().allMatch(block -> block.state().equals("minecraft:cobblestone")));
     }
 
     @Test

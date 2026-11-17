@@ -108,7 +108,7 @@ public class TrustTests {
         return GameTestSupport.runtime(owner.level().getServer()).sessions().runTool(owner.getUUID(), name, json);
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 100)
     public void trustToolOpensRequest(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         Mock owner = mockPlayerNamed(h, unique("owner"), 2, 2, 2);

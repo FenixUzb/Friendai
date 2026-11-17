@@ -55,7 +55,7 @@ public class ItemTaskTests {
         return e;
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void pickupCollectsAllInRadius(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -75,7 +75,7 @@ public class ItemTaskTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void pickupFilterTakesOnlyMatching(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -93,7 +93,7 @@ public class ItemTaskTests {
         });
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_32, maxTicks = 100)
     public void pickupIgnoresOutsideRadius(GameTestHelper h) {
         GameTestSupport.platform(h, 32);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -109,7 +109,7 @@ public class ItemTaskTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void pickupTakesADropAboveMagma(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -130,7 +130,7 @@ public class ItemTaskTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void pickupSkipsUnreachableDrop(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -166,7 +166,7 @@ public class ItemTaskTests {
                 .sum();
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void giveDeliversAnItemHeldInTheMainHand(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 8.5, 2, 2.5);
@@ -188,7 +188,7 @@ public class ItemTaskTests {
      * A swapped-out tool lands at the companion's feet when the bag is full (`ToolSelector.putAway`), so a queued
      * delivery must own what lies beside it instead of reporting the stack missing.
      */
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void giveCollectsAStackDroppedAtItsFeet(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 8.5, 2, 2.5);
@@ -206,7 +206,7 @@ public class ItemTaskTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void giveSplitsBetweenTheBagAndTheHand(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 4.5, 2, 2.5);
@@ -226,7 +226,7 @@ public class ItemTaskTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void strictTransferKeepsTheReservedShare(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 4.5, 2, 2.5);
@@ -274,7 +274,7 @@ public class ItemTaskTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void strictTransferRefusesWhenReservedStockIsMissing(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 4.5, 2, 2.5);
@@ -299,7 +299,7 @@ public class ItemTaskTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 900)
     public void strictTransferDoesNotSpendItemsWhileTheOwnerIsUnreachable(GameTestHelper h) {
         int surfaceY = 120;
         GameTestSupport.platformAt(h, surfaceY, 24);
@@ -368,7 +368,7 @@ public class ItemTaskTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void legacyGiveStillTransfersAnOffhandItem(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 4.5, 2, 2.5);
@@ -386,7 +386,7 @@ public class ItemTaskTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void legacyGiveStillTransfersAnAvailablePartialShare(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 4.5, 2, 2.5);
@@ -406,7 +406,7 @@ public class ItemTaskTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void giveReportsAMissingStackInPlainWords(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 8.5, 2, 2.5);
@@ -426,7 +426,7 @@ public class ItemTaskTests {
      * A `delivered` goal criterion asks whether the owner has the item. The companion's own drop at their feet is
      * the evidence while it lies there; once it is gone the criterion has nothing to stand on again.
      */
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void deliveredCriterionIsMetByTheCompanionsOwnDrop(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 4.5, 2, 2.5);
@@ -464,7 +464,7 @@ public class ItemTaskTests {
         });
     }
 
-    @GameTest(maxTicks = 600)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 600)
     public void giveDropsTowardOwner(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 8.5, 2, 2.5);
@@ -495,7 +495,7 @@ public class ItemTaskTests {
      * away the job keeps running and the bag untouched; it only ends once the companion is close enough to hand the
      * items over, and the drop lands at the owner rather than at the companion.
      */
-    @GameTest(maxTicks = 1000)
+    @GameTest(structure = GameTestArenas.ARENA_24, maxTicks = 1000)
     public void givingWaitsUntilTheItemsReachTheOwner(GameTestHelper h) {
         GameTestSupport.platform(h, 20);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 14, 2, 2);
@@ -548,7 +548,7 @@ public class ItemTaskTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void giveAcceptsTag(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer owner = GameTestSupport.mockPlayerAt(h, 5.5, 2, 2.5);
@@ -597,7 +597,7 @@ public class ItemTaskTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void insertOrDropSpillsLeftover(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -614,7 +614,7 @@ public class ItemTaskTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void dropById(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -634,7 +634,7 @@ public class ItemTaskTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void dropByTag(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -663,7 +663,7 @@ public class ItemTaskTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void ownDropsAreNotCollectedAfterTheDelay(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -693,7 +693,7 @@ public class ItemTaskTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void droppedItemsAreNotPickedUpBack(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

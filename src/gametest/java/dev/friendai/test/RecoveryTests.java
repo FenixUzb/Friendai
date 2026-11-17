@@ -94,7 +94,7 @@ public class RecoveryTests {
      * collect items at the arena floor, and a recorded drop is only collectable evidence while it still lies where it
      * fell.
      */
-    @GameTest(maxTicks = 900)
+    @GameTest(structure = GameTestArenas.ARENA_32, maxTicks = 900)
     public void aFarDeathSiteIsWalkedToBeforeCollecting(GameTestHelper h) {
         int floor = 260;
         GameTestSupport.platformAt(h, floor, 32);
@@ -166,7 +166,7 @@ public class RecoveryTests {
         });
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void failed_plan_event_carries_the_diagnosis(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -190,17 +190,19 @@ public class RecoveryTests {
      * The event reaches the log through tick-deferred hops only: the task has to fail, the queue has to settle it and
      * the brain has to open a turn. Four hundred ticks is enough locally and was not under the shard's load.
      */
-    @GameTest(maxTicks = 1200)
+    @GameTest(
+            structure = GameTestArenas.ARENA_16,
+            maxTicks = 1200,
+            environment = "friendai-gametest:recovery_no_replans")
     public void spent_replan_budget_blocks_the_goal_and_asks_the_player(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
         var server = h.getLevel().getServer();
         ServerRuntime state = GameTestSupport.runtime(server);
-        // Narrow the live config instead of replacing it: a test that fails before its restore would otherwise leave
-        // a whole different configuration behind for the next test in this class.
         ServerConfig config = state.config();
-        int originalReplans = config.agent.maxReplans;
         config.agent.maxReplans = 0;
+        // GameTest accelerates ticks; the production inter-turn cooldown is wall-clock time.
+        config.brain.cooldownMs = 0;
         state.applyConfig(config);
         CompanionSessions brains = state.sessions();
         Set<String> prompts = Collections.synchronizedSet(new LinkedHashSet<>());
@@ -224,8 +226,6 @@ public class RecoveryTests {
                                     .status()
                             == GoalStatus.BLOCKED,
                     "the goal should be blocked");
-            config.agent.maxReplans = originalReplans;
-            state.applyConfig(config);
         });
     }
 
@@ -237,17 +237,19 @@ public class RecoveryTests {
      * <p>The repair is the one the failure line names: a started structured plan is not rewritten behind its cursor,
      * so the step is re-armed and pointed at another route the way the model does it with {@code queue_edit}.
      */
-    @GameTest(maxTicks = 2400)
+    @GameTest(
+            structure = GameTestArenas.ARENA_16,
+            maxTicks = 2400,
+            environment = "friendai-gametest:recovery_one_replan")
     public void a_failed_route_changes_its_remedy_then_names_the_blocker(GameTestHelper h) {
         GameTestSupport.platform(h, 14);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 12, 2, 12);
         var server = h.getLevel().getServer();
         ServerRuntime state = GameTestSupport.runtime(server);
-        // Narrow the live config instead of replacing it, so a failed run cannot hand a different configuration to
-        // the next test in this class.
         ServerConfig config = state.config();
-        int originalReplans = config.agent.maxReplans;
         config.agent.maxReplans = 1;
+        // GameTest accelerates ticks; the production inter-turn cooldown is wall-clock time.
+        config.brain.cooldownMs = 0;
         state.applyConfig(config);
         CompanionSessions brains = state.sessions();
         Set<String> prompts = Collections.synchronizedSet(new LinkedHashSet<>());
@@ -335,8 +337,6 @@ public class RecoveryTests {
                                     .status()
                             == GoalStatus.BLOCKED,
                     "the goal is blocked once the budget is spent");
-            config.agent.maxReplans = originalReplans;
-            state.applyConfig(config);
         });
     }
 

@@ -21,7 +21,7 @@ public class GoalTests {
         return new Caller(player.getUUID(), "Steve", AccessLevel.OWNER);
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void set_goal_stores_the_goal_in_the_owner_record(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -42,7 +42,7 @@ public class GoalTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void goal_survives_dismiss_and_summon(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -68,7 +68,7 @@ public class GoalTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void guest_cannot_set_goals(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -89,7 +89,7 @@ public class GoalTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void trusted_player_cannot_set_goals_because_goals_run_with_owner_authority(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -110,7 +110,7 @@ public class GoalTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void second_primary_goal_is_an_error_and_finish_frees_the_slot(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -132,7 +132,7 @@ public class GoalTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void queue_add_links_the_plan_to_the_primary_goal(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -150,7 +150,7 @@ public class GoalTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void a_plan_queued_before_the_goal_links_by_its_id(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);
@@ -178,7 +178,7 @@ public class GoalTests {
         return match.find() ? Long.parseLong(match.group(1)) : 0L;
     }
 
-    @GameTest(maxTicks = 300)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 300)
     public void finishingWithAnUnmetCriterionIsRefused(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         ServerPlayer player = GameTestSupport.mockPlayerAt(h, 4, 2, 4);

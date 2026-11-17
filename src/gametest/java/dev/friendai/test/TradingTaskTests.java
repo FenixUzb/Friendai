@@ -141,7 +141,7 @@ public final class TradingTaskTests {
         return f.authority().authorize(caller, requested);
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void inspect_then_trade_runs_one_vanilla_fill_and_finishes(GameTestHelper h) {
         Fixture f = setup(h, "task-inspect-trade", 3, 3, 1, false, false);
         InspectTraderTask inspect = new InspectTraderTask(f.villager().getUUID());
@@ -179,7 +179,7 @@ public final class TradingTaskTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void level_task_stops_when_real_trade_xp_reaches_target_without_filler(GameTestHelper h) {
         Fixture f = setup(h, "task-level-trader", 1, 1, 1, false, true);
         f.villager().setVillagerXp(8);
@@ -206,7 +206,7 @@ public final class TradingTaskTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void disallowed_batch_overshoot_fails_before_payment(GameTestHelper h) {
         Fixture f = setup(h, "task-overshoot", 3, 5, 2, false, false);
         TradeTask task = new TradeTask(f.order());
@@ -226,7 +226,7 @@ public final class TradingTaskTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void allowed_batch_overshoot_completes_five_requested_with_six_received(GameTestHelper h) {
         Fixture f = setup(h, "task-overshoot-allowed", 3, 5, 2, false, true);
         TradeTask task = new TradeTask(f.order());
@@ -257,7 +257,7 @@ public final class TradingTaskTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void partial_order_records_one_receipt_and_stops_at_shared_budget(GameTestHelper h) {
         Fixture f = setup(h, "task-partial", 3, 6, 1, true, false);
         TradeTask task = new TradeTask(f.order());
@@ -304,7 +304,7 @@ public final class TradingTaskTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void partial_stop_after_payment_keeps_the_real_receipt_and_closes_session(GameTestHelper h) {
         Fixture f = setup(h, "task-stop-after-fill", 3, 6, 2, true, false);
         TradeTask task = new TradeTask(f.order());
@@ -332,7 +332,7 @@ public final class TradingTaskTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void stop_before_payment_terminalizes_authority_and_prevents_replay(GameTestHelper h) {
         Fixture f = setup(h, "task-stop-before-fill", 1, 1, 1, false, false);
         TradeTask stopped = new TradeTask(f.order());
@@ -365,7 +365,7 @@ public final class TradingTaskTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void paused_runner_does_not_begin_a_trade_and_dismissal_interrupts_order(GameTestHelper h) {
         Fixture f = setup(h, "task-paused-dismissal", 1, 1, 1, false, false);
         TradeTask task = new TradeTask(f.order());
@@ -390,7 +390,7 @@ public final class TradingTaskTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void cancelling_frozen_trade_after_payment_terminalizes_authority_and_prevents_replay(GameTestHelper h) {
         Fixture f = setup(h, "task-frozen-cancel", 3, 6, 2, true, false);
         TradeTask trade = new TradeTask(f.order());
@@ -434,7 +434,7 @@ public final class TradingTaskTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void task_context_from_another_dimension_is_rejected(GameTestHelper h) {
         Fixture f = setup(h, "task-dimension", 1, 1, 1, false, false);
         TradeTask task = new TradeTask(f.order());
@@ -458,7 +458,7 @@ public final class TradingTaskTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void known_insufficient_budget_with_partial_disallowed_spends_nothing(GameTestHelper h) {
         Fixture f = setup(h, "task-insufficient-budget", 3, 6, 1, false, false);
         TradeTask task = new TradeTask(f.order());
@@ -478,7 +478,7 @@ public final class TradingTaskTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void full_inventory_rejects_before_payment_or_stock_use(GameTestHelper h) {
         Fixture f = setup(h, "task-full-inventory", 1, 1, 2, false, false);
         for (int slot = 1; slot < f.companion().inventory().getContainerSize(); slot++) {
@@ -502,7 +502,7 @@ public final class TradingTaskTests {
         }
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void expired_order_does_not_open_a_session_or_spend(GameTestHelper h) {
         Fixture f = setup(h, "task-deadline", 1, 1, 1, false, false, 1);
         TradeTask task = new TradeTask(f.order());
@@ -521,7 +521,7 @@ public final class TradingTaskTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void dead_exact_trader_fails_without_spending_or_leaving_a_lease(GameTestHelper h) {
         Fixture f = setup(h, "task-dead-trader", 1, 1, 1, false, false);
         TradeTask task = new TradeTask(f.order());
@@ -542,7 +542,7 @@ public final class TradingTaskTests {
         }
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void navigation_walks_around_obstacle_without_changing_blocks(GameTestHelper h) {
         Fixture f = setup(h, "task-navigation", 1, 1, 1, false, false, 400);
         f.companion().setNoAi(false);
@@ -569,7 +569,7 @@ public final class TradingTaskTests {
         });
     }
 
-    @GameTest(maxTicks = 160)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 160)
     public void navigation_tracks_the_same_loaded_trader_after_it_moves(GameTestHelper h) {
         Fixture f = setup(h, "task-follow-moving-trader", 1, 1, 1, false, false, 140);
         f.companion().setNoAi(false);
@@ -591,7 +591,7 @@ public final class TradingTaskTests {
         });
     }
 
-    @GameTest(maxTicks = 200)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 200)
     public void sealed_path_fails_without_changing_terrain_or_trading(GameTestHelper h) {
         Fixture f = setup(h, "task-sealed-path", 1, 1, 1, false, false, 140);
         f.companion().setNoAi(false);
@@ -650,7 +650,7 @@ public final class TradingTaskTests {
         });
     }
 
-    @GameTest(maxTicks = 150)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 150)
     public void task_does_not_substitute_a_nearby_merchant_for_bound_uuid(GameTestHelper h) {
         Fixture f = setup(h, "task-exact-uuid", 1, 1, 1, false, false);
         Villager substitute = h.spawn(EntityTypes.VILLAGER, 3, 2, 3);
@@ -686,7 +686,7 @@ public final class TradingTaskTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void task_save_data_never_serializes_a_trade_order(GameTestHelper h) {
         Fixture f = setup(h, "task-no-replay", 1, 1, 1, false, false);
         TradeTask task = new TradeTask(f.order());

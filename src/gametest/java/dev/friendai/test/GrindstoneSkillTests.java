@@ -56,7 +56,7 @@ public class GrindstoneSkillTests {
         return ItemStack.EMPTY;
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void stripsEnchantsAndGivesExperience(GameTestHelper h) {
         CompanionEntity c = setup(h, 144, true);
         var sharpness = h.getLevel()
@@ -80,7 +80,7 @@ public class GrindstoneSkillTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void failsOnPlainItem(GameTestHelper h) {
         CompanionEntity c = setup(h, 148, true);
         c.inventory().addItem(new ItemStack(Items.STICK));
@@ -98,7 +98,7 @@ public class GrindstoneSkillTests {
         });
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void failsWithoutGrindstone(GameTestHelper h) {
         CompanionEntity c = setup(h, 156, false);
         c.inventory().addItem(new ItemStack(Items.DIAMOND_SWORD));

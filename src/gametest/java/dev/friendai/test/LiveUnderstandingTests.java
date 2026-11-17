@@ -141,7 +141,11 @@ public class LiveUnderstandingTests {
 
     // ---- food and animals --------------------------------------------------------------------------------------
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_u06")
+    @GameTest(
+            structure = GameTestArenas.ARENA_16,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_u06")
     public void findFood(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -165,7 +169,11 @@ public class LiveUnderstandingTests {
                 });
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_u07")
+    @GameTest(
+            structure = GameTestArenas.ARENA_16,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_u07")
     public void feedCows(GameTestHelper h) throws Exception {
         scenario(
                 h,
@@ -194,7 +202,11 @@ public class LiveUnderstandingTests {
                 });
     }
 
-    @GameTest(maxTicks = MAX_TICKS, skyAccess = true, environment = "friendai-gametest:live_u08")
+    @GameTest(
+            structure = GameTestArenas.ARENA_16,
+            maxTicks = MAX_TICKS,
+            skyAccess = true,
+            environment = "friendai-gametest:live_u08")
     public void plantWheat(GameTestHelper h) throws Exception {
         scenario(
                 h,

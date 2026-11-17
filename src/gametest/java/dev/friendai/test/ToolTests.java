@@ -52,7 +52,7 @@ public class ToolTests {
         return GameTestSupport.onlinePlayer(h, name, x, y, z).player();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void jumpToolStartsTask(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -204,7 +204,7 @@ public class ToolTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void lookAroundListsNearbyLogs(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         List<BlockPos> logs =
@@ -502,7 +502,7 @@ public class ToolTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void standToolLetsSitTaskFinish(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity companion = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -582,7 +582,7 @@ public class ToolTests {
         return p.getX() + " " + p.getY() + " " + p.getZ();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void findBlocksListsNearestFirst(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         h.setBlock(9, 2, 2, Blocks.IRON_BLOCK);
@@ -614,7 +614,7 @@ public class ToolTests {
      * A live session: "break the cactus near us" was answered "I see no cactus" because the model asked for 8 blocks
      * and the cactus stood 11 away. An empty answer now names the nearest known block past the radius.
      */
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void findBlocksNamesTheNearestBlockJustPastTheRadius(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos far = new BlockPos(13, 2, 4);
@@ -636,7 +636,7 @@ public class ToolTests {
      * "Mine that diamond" right after a summon: the passive sweeps had not reached the ore in plain view yet and the
      * companion said it saw none. A deliberate look now finds it, while ore sealed inside stone stays unseen.
      */
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void findBlocksLooksForAVisibleBlockItHasNotSeenYet(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         BlockPos inView = new BlockPos(10, 2, 4);
@@ -657,7 +657,7 @@ public class ToolTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(structure = GameTestArenas.ARENA_32, maxTicks = 100)
     public void findBlocksReportsAnIncompleteFocusedLook(GameTestHelper h) {
         GameTestSupport.platform(h, 32);
         for (int x = 4; x < 20; x++) {
@@ -908,7 +908,7 @@ public class ToolTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void attackPlayerFollowsOwnerConsentAndTeams(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         String ownerName = "friendai-owner-" + UUID.randomUUID().toString().substring(0, 8);
@@ -961,7 +961,7 @@ public class ToolTests {
         h.succeed();
     }
 
-    @GameTest(maxTicks = 400)
+    @GameTest(structure = GameTestArenas.ARENA_16, maxTicks = 400)
     public void ownerOrderedFightHitsTheOwner(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         String ownerName = "friendai-hit-owner-" + UUID.randomUUID().toString().substring(0, 8);
@@ -1026,7 +1026,7 @@ public class ToolTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void previewText(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1056,7 +1056,7 @@ public class ToolTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void saveFromLastPreview(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1073,7 +1073,7 @@ public class ToolTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void listShowsSaved(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1186,7 +1186,7 @@ public class ToolTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void buildToolStartsTask(GameTestHelper h) {
         GameTestSupport.platform(h, 16);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1200,7 +1200,7 @@ public class ToolTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void describeBlockReportsToolNeed(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         h.setBlock(6, 2, 2, Blocks.IRON_ORE);
@@ -1231,7 +1231,7 @@ public class ToolTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void describeBlockDescribesAir(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         CompanionEntity c = h.spawn(dev.friendai.entity.FriendaiEntities.COMPANION, 2, 2, 2);
@@ -1253,7 +1253,7 @@ public class ToolTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void describeBlockSeesAnOffhandTool(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         h.setBlock(6, 2, 2, Blocks.IRON_ORE);
@@ -1280,7 +1280,7 @@ public class ToolTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void describeBlockHandlesUnbreakableBlocks(GameTestHelper h) {
         GameTestSupport.platform(h, 12);
         h.setBlock(6, 2, 2, Blocks.BEDROCK);
@@ -1313,7 +1313,7 @@ public class ToolTests {
         h.succeed();
     }
 
-    @GameTest
+    @GameTest(structure = GameTestArenas.ARENA_16)
     public void clearAreaToolUsesTheGivenCoordinates(GameTestHelper h) {
         GameTestSupport.platform(h, 15);
         CompanionEntity c = h.spawn(FriendaiEntities.COMPANION, 2, 2, 2);

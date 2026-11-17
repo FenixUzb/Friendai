@@ -1,5 +1,6 @@
 package dev.friendai.server.agent;
 
+import com.google.gson.JsonObject;
 import dev.friendai.agent.autonomy.AutonomyFacts;
 import dev.friendai.agent.autonomy.AutonomySettings;
 import dev.friendai.agent.autonomy.Executor;
@@ -13,11 +14,16 @@ import dev.friendai.agent.autonomy.ReflexPlans;
 import dev.friendai.agent.autonomy.ReflexStep;
 import dev.friendai.agent.autonomy.ShiftPolicy;
 import dev.friendai.entity.CompanionEntity;
+import dev.friendai.features.construction.minecraft.build.BlueprintResolver;
+import dev.friendai.features.construction.minecraft.build.BlueprintStore;
 import dev.friendai.server.execution.tools.TaskToolDefinition;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 /** Queues the deterministic free-time templates: one named need, or the first agenda entry that has one. */
 final class ReflexQueue {
@@ -60,6 +66,11 @@ final class ReflexQueue {
             AutonomySettings s,
             long nowMillis,
             boolean ownerGoalActive) {
+        if (need.kind() == NeedKind.SHELTER
+                && steps.isPresent()
+                && steps.get().getFirst().tool().equals("build_structure")) {
+            steps = localShelter(companion, steps.get().getFirst());
+        }
         if (steps.isEmpty()) {
             service.cooldown(owner, need.kind(), nowMillis + s.failCooldownMin() * 60_000L);
             return false;
@@ -88,6 +99,48 @@ final class ReflexQueue {
                 need.text()));
         host.factsInvalidated(owner);
         return true;
+    }
+
+    /** The template is five blocks wide with a south-facing doorway. New shelters go north of the companion. */
+    private static Optional<List<ReflexStep>> localShelter(CompanionEntity companion, ReflexStep build) {
+        ServerLevel level = (ServerLevel) companion.level();
+        JsonObject buildArgs = build.args();
+        var blueprint = BlueprintResolver.resolve(buildArgs, level, companion.ownerUuid())
+                .blueprint();
+        if (blueprint.isEmpty()) return Optional.empty();
+        BlockPos origin = BlueprintStore.forLevel(level)
+                .findResumable(
+                        blueprint.get(),
+                        companion.ownerUuid(),
+                        level.dimension().identifier().toString(),
+                        null)
+                .map(BlueprintStore.InProgress::origin)
+                .orElseGet(
+                        () -> newShelterOrigin(companion, level, blueprint.get().height()));
+        if (origin == null) return Optional.empty();
+        buildArgs.addProperty("x", origin.getX());
+        buildArgs.addProperty("y", origin.getY());
+        buildArgs.addProperty("z", origin.getZ());
+        JsonObject inside = new JsonObject();
+        inside.addProperty("x", origin.getX() + 2.5);
+        inside.addProperty("y", origin.getY() + 1);
+        inside.addProperty("z", origin.getZ() + 2.5);
+        return Optional.of(List.of(
+                new ReflexStep(build.tool(), buildArgs),
+                new ReflexStep("go_to", inside),
+                new ReflexStep("stay", null)));
+    }
+
+    private static BlockPos newShelterOrigin(CompanionEntity companion, ServerLevel level, int height) {
+        BlockPos center = companion.blockPosition().north(5);
+        if (!level.hasChunkAt(center.offset(-2, 0, -2))
+                || !level.hasChunkAt(center.offset(-2, 0, 2))
+                || !level.hasChunkAt(center.offset(2, 0, -2))
+                || !level.hasChunkAt(center.offset(2, 0, 2))) {
+            return null;
+        }
+        int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, center.getX(), center.getZ());
+        return y + height - 1 > level.getMaxY() ? null : new BlockPos(center.getX() - 2, y, center.getZ() - 2);
     }
 
     /**

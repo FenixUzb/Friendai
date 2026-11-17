@@ -202,7 +202,7 @@ Replies from a provider that supports streaming (today the OpenAI-compatible cha
 
 Volume, the output device, the maximum length of a spoken phrase and speaking replies addressed to other players are on the same screen. **Voice comes from the companion** is on by default: every reply plays from the companion's position, pans left or right as you turn, and fades with distance until it is silent at the hearing radius. Turn it off to hear replies centred at full volume. **Test voice** speaks a sample sentence. Pressing push-to-talk or the **Stop speaking** key (unbound by default; set it in Controls) cuts a reply off.
 
-**Voice output** chooses what plays a reply that comes from the companion. **Built-in** (the default) is the mod's own output on the device chosen above. **Simple Voice Chat** hands the voice to the optional [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) mod, which plays it from the companion like another player's voice; with [Sound Physics Remastered](https://modrinth.com/mod/sound-physics-remastered) also installed, the voice then echoes in a cave and is muffled behind a wall. It needs that mod installed, its first-run setup finished and its voice chat connected (in singleplayer it connects on its own unless you turned its local server off), and **Voice comes from the companion** on; the volume slider still applies, while the output device and the voice-chat volume follow Simple Voice Chat's own settings. Whenever it cannot be used — the mod is missing, disconnected or its sound is switched off, or the reply is the settings preview — the built-in output speaks instead. Only your own client hears this voice: nothing is sent through the voice-chat server. In `friendai-client.json` the choice is `voice.tts.playback`: `builtin` or `voicechat`.
+**Voice output** chooses what plays a reply that comes from the companion. **Off** uses Friendai's built-in output on the device chosen above. **Auto** (the default) hands the voice to the optional [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) mod, which plays it from the companion like another player's voice; with [Sound Physics Remastered](https://modrinth.com/mod/sound-physics-remastered) also installed, the voice then echoes in a cave and is muffled behind a wall. It needs that mod installed, its first-run setup finished and its voice chat connected (in singleplayer it connects on its own unless you turned its local server off), and **Voice comes from the companion** on; the volume slider still applies, while the output device and the voice-chat volume follow Simple Voice Chat's own settings. Whenever it cannot be used — the mod is missing, disconnected or its sound is switched off, or the reply is the settings preview — the built-in output speaks instead. Only your own client hears this voice: nothing is sent through the voice-chat server. In `friendai-client.json` the choice is `voice.tts.playback`: `auto` or `builtin`. With Auto, an armed wake word can also listen to your own outgoing voice-chat audio. If voice chat is disconnected, muted or disabled, the armed wake word uses Friendai's built-in microphone.
 
 ## Resource knowledge and search
 
@@ -281,9 +281,9 @@ exactly one mod jar, `friendai-<version>.jar`, and `friendai-<version>.jar.sha25
 (`sha256sum -c friendai-<version>.jar.sha256`, or `shasum -a 256 -c` on macOS), and put the jar in `mods/` on the client
 and on the server. The release notes are the `CHANGELOG.md` section for that version.
 
-Only the maintainer creates a tag. Pushing `vX.Y.Z` starts the release workflow, which refuses a tag that does not match
-`mod_version`, a commit that is not on `main`, or a commit whose CI run is not green; it then runs the full build and
-publishes the verified jar. See `CONTRIBUTING.md` for the dry run and the local checks.
+When `mod_version` changes on `main`, a green `CI gate` triggers the release workflow. It takes the verified jar
+from that CI run, tags the tested commit `vX.Y.Z` and publishes the release with notes for that version.
+See `CONTRIBUTING.md` for the dry run and local checks.
 
 ## Contributing
 

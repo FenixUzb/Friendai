@@ -1288,7 +1288,12 @@ public final class BuildTask implements Task {
             }
             return cell;
         }
-        return null;
+        if (!c.canUseCreativeAction(CreativeAction.FLIGHT)) {
+            return null;
+        }
+        // A narrow shaft has no stance beside the target. One block up is within flight's arrival tolerance.
+        BlockPos above = pos.above(2);
+        return !rejectedStances.contains(above) && stanceUsable(c, above, pos) ? above : null;
     }
 
     /** Whether the companion can stand at {@code candidate} and still click the target from there. */

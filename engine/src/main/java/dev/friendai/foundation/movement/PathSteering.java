@@ -36,6 +36,16 @@ public final class PathSteering {
 
     private PathSteering() {}
 
+    /** Waits for an ordinary ground step to face its destination before applying forward thrust. */
+    public static boolean readyToWalk(PathStep step, double x, double z, float yaw) {
+        if (step.move() != Move.WALK && step.move() != Move.WALK_DIAGONAL && step.move() != Move.DOOR) {
+            return true;
+        }
+        double dx = step.to().x() + 0.5 - x;
+        double dz = step.to().z() + 0.5 - z;
+        return dx * dx + dz * dz < MIN_AIM * MIN_AIM || Facing.difference(yaw, Facing.yawToward(dx, dz)) <= MAX_TURN;
+    }
+
     /**
      * The share of full speed to walk with this tick. Ground friction keeps a running body's velocity pointing the
      * way it was going for several ticks after it turns, so a body that takes a corner at full speed swings wide
